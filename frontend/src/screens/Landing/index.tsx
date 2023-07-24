@@ -25,7 +25,7 @@ const Landing: React.FC = () => {
               <div className="row gy-3">
                 <div className="col-xl-5 col-lg-6">
                   <Button
-                    onClick={signIn}
+                    onClick={()=>signIn('idir')}
                     renderIcon={Login}
                     data-testid="landing-button__idir"
                     className="btn-landing"
@@ -36,7 +36,7 @@ const Landing: React.FC = () => {
                 <div className="col-xl-5 col-lg-6 ">
                   <Button
                     kind="tertiary"
-                    onClick={() => { console.log("Hi BCEid was clicked") }}
+                    onClick={() => {signIn('bceid')}}
                     renderIcon={Login}
                     data-testid="landing-button__bceid"
                     className="btn-landing"
