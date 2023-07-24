@@ -35,7 +35,7 @@ const TestComponent = () => {
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault(); // Prevent the default form submission behavior
     window.scrollTo(0,0)
     const unansweredQuestions = userAnswers.filter((answer) => answer === undefined);
@@ -45,6 +45,7 @@ const TestComponent = () => {
     }
     setIsSubmitted(true);
     generateResultJson(); // Call the function to generate the result JSON
+    await callEmailService();
   };
 
   const getChoiceClassName = (questionIndex, choiceIndex) => {
@@ -111,6 +112,21 @@ const TestComponent = () => {
     console.log('Questions Answered Rightly:', correctAnswers);
     console.log('Questions Answered Wrongly:', questionsWrong);
   };
+
+  const callEmailService = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/');
+      if (response.ok) {
+        const data = await response.json(); // Parse the response body as JSON
+        console.log('Email service request succeeded. Data received:', data);
+      } else {
+        console.error('Email service request failed.');
+      }
+    } catch (error) {
+      console.error('An error occurred while calling the email service:', error);
+    }
+  };
+  
   
   
 
