@@ -49,13 +49,13 @@ app.use(ipWhitelistMiddleware);
 // Configure CORS options
 const corsOptions = {
   origin: 'http://localhost:3000', // Replace with the actual frontend domain
-  methods: ['POST'], // Specify the allowed HTTP methods
+  methods: ['GET','POST'], // Specify the allowed HTTP methods
 };
-
+app.use(express.json());
 app.use(cors(corsOptions));
 
-app.use('/', indexRoutes);
-app.use('/mail', mailRoutes);
+app.use('/api/', indexRoutes);
+app.use('/api/mail', mailRoutes);
 
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
