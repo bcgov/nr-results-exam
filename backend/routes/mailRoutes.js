@@ -3,5 +3,5 @@ const { sendMail } = require('../controllers/mailControllers');
 var router = express.Router();
 
 /* GET home page. */
-router.route('/').get(sendMail);
+router.route('/').post(sendMail);
 module.exports = router;

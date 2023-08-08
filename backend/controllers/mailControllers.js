@@ -6,7 +6,6 @@ async function requestToken() {
     // Replace 'YOUR_SERVICE_CLIENT_ID' and 'YOUR_SERVICE_CLIENT_SECRET' with the actual values
     const clientId = process.env.CHES_CLIENT_ID;
     const clientSecret = process.env.CHES_CLIENT_SECRET;
-    console.log('id:'+process.env.CHES_CLIENT_ID)
     const authHost = 'https://test.loginproxy.gov.bc.ca';
 
     const tokenEndpoint = `${authHost}/auth/realms/comsvcauth/protocol/openid-connect/token`;
@@ -40,44 +39,75 @@ async function requestToken() {
   }
 }
 
+async function sendEmail(token, emailDetails) {
+  try {
+    const session_tag = "0b7565ca";
+    // Set up the email sending endpoint URL
+    const emailEndpoint = "https://ches-test.api.gov.bc.ca/api/v1/email";
 
+    // Construct the email payload using the emailDetails object
+    const emailPayload = {
+      bcc: [],
+      bodyType: "html",
+      body: emailDetails.mailBody,
+      cc: [],
+      delayTS: 0,
+      encoding: "utf-8",
+      from: emailDetails.from,
+      priority: "normal",
+      subject: emailDetails.subject,
+      to: emailDetails.to,
+      tag: `email_${session_tag}`,
+    };
+
+    // Set the headers for the request
+    const headers = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    };
+
+    // Send the POST request using Axios to send the email
+    const response = await axios.post(emailEndpoint, emailPayload, { headers });
+
+    // Handle the response here if needed
+    console.log("Email sent successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    // Handle errors gracefully
+    console.error("Error sending email:", error.message);
+    throw new Error("Failed to send email");
+  }
+}
 
 
 // @desc    Send Email report to both user and admin
 // @route   POST /api/mail
 // @access  Public
 const sendMail = asyncHandler(async (req, res) => {
-    const accessToken = await requestToken();
-    console.log("result="+accessToken);
   try {
-    // Set up the API endpoint to fetch the health status
-    const healthUrl = "https://ches-test.api.gov.bc.ca/api/v1/health";
-
-    // Set the Authorization header with the bearer token
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
+    const accessToken = await requestToken();
+    const emailDetails = {
+      from: req.body.fromEmail,
+      to: req.body.toEmails,
+      subject: req.body.subject,
+      mailBody: req.body.mailBody,
     };
+    
+    const sentEmail = await sendEmail(accessToken, emailDetails);
 
-    // Send the GET request using Axios to fetch the health status
-    const response = await axios.get(healthUrl, {headers});
-
-    console.log("response:")
-    console.log(response)
-
-    // Return the JSON results in the response
     res.json({
       status: 200,
-      message: "Health status fetched successfully",
+      message: "Email sent successfully",
       success: true,
-      healthStatus: response.data,
+      emailSent: sentEmail,
     });
   } catch (error) {
-    // Handle errors gracefully
-    console.error("Error fetching health status:", error.message);
+    console.error("Error sending email:", error.message);
     res.status(500).json({
       status: 500,
-      message: "Failed to fetch health status",
+      message: "Failed to send email",
       success: false,
+      error: error.message,
     });
   }
 });
