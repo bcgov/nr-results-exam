@@ -1,25 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import yaml from 'yaml';
+import { sendAdminReport, sendUserReport } from '../services/EmailService';
 
-const TestComponent = () => {
-  const [questions, setQuestions] = useState([]);
-  const [userAnswers, setUserAnswers] = useState([]);
+interface Choice {
+  option: string;
+  isCorrect: boolean;
+}
+
+interface Question {
+  question: string;
+  choices: Choice[];
+}
+
+interface ComponentProps {
+  user: any;
+  testName:string;
+  questionFileName:string;
+}
+
+const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
   }, []);
 
-  const getRandomQuestions = (questions, count) => {
+  const getRandomQuestions = (questions: Question[], count: number): Question[] => {
     const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
     return shuffledQuestions.slice(0, count);
   };
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch('/questions.yaml');
+      const response = await fetch(`/${questionFileName}`);
       const data = await response.text();
-      const parsedQuestions = yaml.parse(data);
+      const parsedQuestions: Question[] = yaml.parse(data);
       const randomQuestions = getRandomQuestions(parsedQuestions, 5);
       setQuestions(randomQuestions);
     } catch (error) {
@@ -27,7 +44,7 @@ const TestComponent = () => {
     }
   };
 
-  const handleAnswer = (questionIndex, selectedChoiceIndex) => {
+  const handleAnswer = (questionIndex: number, selectedChoiceIndex: number) => {
     setUserAnswers((prevAnswers) => {
       const updatedAnswers = [...prevAnswers];
       updatedAnswers[questionIndex] = selectedChoiceIndex;
@@ -35,20 +52,23 @@ const TestComponent = () => {
     });
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault(); // Prevent the default form submission behavior
-    window.scrollTo(0,0)
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    window.scrollTo(0, 0);
     const unansweredQuestions = userAnswers.filter((answer) => answer === undefined);
     if (unansweredQuestions.length > 0) {
       alert('Please answer all the questions before submitting.');
       return;
     }
     setIsSubmitted(true);
-    generateResultJson(); // Call the function to generate the result JSON
+    const results = await generateResultJson();
+    const percentage = calculateScorePercentage()
+    await sendUserReport(user.displayName,user.email,percentage, testName);
+    await sendAdminReport(user.displayName, user.email,percentage, testName, results);
     await callEmailService();
   };
 
-  const getChoiceClassName = (questionIndex, choiceIndex) => {
+  const getChoiceClassName = (questionIndex: number, choiceIndex: number): string => {
     if (!isSubmitted) return '';
     const userAnswer = userAnswers[questionIndex];
     const isCorrect = questions[questionIndex].choices[choiceIndex].isCorrect;
@@ -60,7 +80,7 @@ const TestComponent = () => {
     return '';
   };
 
-  const calculateScorePercentage = () => {
+  const calculateScorePercentage = (): number => {
     const totalQuestions = questions.length;
     const totalAnswered = userAnswers.filter((answer) => answer !== undefined).length;
     const correctAnswers = userAnswers.reduce((count, answer, index) => {
@@ -70,7 +90,7 @@ const TestComponent = () => {
     return Math.round((correctAnswers / totalAnswered) * 100);
   };
 
-  const isPassing = () => {
+  const isPassing = (): boolean => {
     const scorePercentage = calculateScorePercentage();
     return scorePercentage >= 50;
   };
@@ -87,11 +107,11 @@ const TestComponent = () => {
     return null;
   };
 
-  const isRadioChecked = (questionIndex, choiceIndex) => {
+  const isRadioChecked = (questionIndex: number, choiceIndex: number): boolean => {
     return userAnswers[questionIndex] === choiceIndex;
   };
 
-  const generateResultJson = () => {
+  const generateResultJson = async () => {
     const result = questions.map((question, index) => ({
       question: question.question,
       answer: question.choices[question.choices.findIndex((choice) => choice.isCorrect)].option,
@@ -106,18 +126,19 @@ const TestComponent = () => {
     }, 0);
     const scorePercentage = Math.round((correctAnswers / totalAnswered) * 100);
     const questionsWrong = totalAnswered - correctAnswers;
-  
+
     console.log('Result JSON:', JSON.stringify(result, null, 2));
     console.log('Total Percentage:', scorePercentage + '%');
     console.log('Questions Answered Rightly:', correctAnswers);
     console.log('Questions Answered Wrongly:', questionsWrong);
+    return result;
   };
 
   const callEmailService = async () => {
     try {
       const response = await fetch('http://localhost:5000/');
       if (response.ok) {
-        const data = await response.json(); // Parse the response body as JSON
+        const data = await response.json();
         console.log('Email service request succeeded. Data received:', data);
       } else {
         console.error('Email service request failed.');
@@ -126,12 +147,10 @@ const TestComponent = () => {
       console.error('An error occurred while calling the email service:', error);
     }
   };
-  
-  
-  
 
   return (
-    <div className="container mb-5 ">
+    <div className="container mb-5">
+      <h4 className='pt-2'>Hello <span className='fw-bold'>{user.displayName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
       <h1 className="mt-4">Online Test</h1>
       <form onSubmit={handleSubmit}>
         {renderPassFailMessage()}
@@ -148,7 +167,7 @@ const TestComponent = () => {
                 </p>
               )}
             </div>
-            <ul className="list-group ">
+            <ul className="list-group">
               {question.choices.map((choice, choiceIndex) => (
                 <li
                   key={choiceIndex}

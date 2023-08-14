@@ -84,6 +84,8 @@ async function sendEmail(token, emailDetails) {
 // @route   POST /api/mail
 // @access  Public
 const sendMail = asyncHandler(async (req, res) => {
+  console.log("payload:")
+  console.log(req.body)
   try {
     const accessToken = await requestToken();
     const emailDetails = {

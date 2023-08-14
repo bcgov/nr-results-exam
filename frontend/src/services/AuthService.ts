@@ -88,7 +88,9 @@ function parseToken(authToken: CognitoUserSession): FamLoginUser {
   const decodedIdToken = authToken.getIdToken().decodePayload();
   const decodedAccessToken = authToken.getAccessToken().decodePayload();
   const famLoginUser = {
-      username: decodedIdToken['custom:idp_username'],
+      userName: decodedIdToken['custom:idp_username'],
+      displayName: decodedIdToken['custom:idp_display_name'],
+      email: decodedIdToken['email'],
       idpProvider: decodedIdToken['identities']['providerName'],
       roles: decodedAccessToken['cognito:groups'],
       authToken: authToken,
