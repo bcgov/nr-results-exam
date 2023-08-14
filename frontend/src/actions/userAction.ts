@@ -14,7 +14,7 @@ export const getUserDetails = () => async (dispatch: any) => {
 
     dispatch({
       type: USER_DETAILS_SUCCESS,
-      payload: { user: user, isLoggedIn: data },
+      payload: { userInfo: user, isLoggedIn: data },
     });
   } catch (error) {
     dispatch({

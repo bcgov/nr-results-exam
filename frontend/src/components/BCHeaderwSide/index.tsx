@@ -225,7 +225,10 @@ const BCHeaderwSide = () => {
               title="My Profile"
               closeFn={closeMyProfilePanel}
             />
-            <Button kind='secondary' onClick={()=>console.log('Hi Jazz')} >Log Out</Button>
+            <div className="m-3">
+            <div className="h5">Hello User</div>
+            <Button kind='secondary' onClick={()=>console.log('Hi Jazz')}>Log Out</Button>
+            </div>
           </HeaderPanel>
           <SideNav isChildOfHeader expanded={isSideNavExpanded} aria-label="Side menu" className="bcheaderwside-sidenav">
             <SideNavItems>
