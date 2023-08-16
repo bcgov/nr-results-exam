@@ -4,10 +4,16 @@ import { Button } from "@carbon/react";
 import { Login } from '@carbon/icons-react';
 import { signIn } from "../../services/AuthService";
 import './Landing.scss';
-import LottieLoader from "../../components/LottieLoader";
-import silvaLottie from "../../assets/lotties/silva-logo-lottie-1.json"
+import { useLottie } from "lottie-react";
+import landingPageAnimation from "../../assets/lotties/silva-logo-lottie-1.json";
 
 const Landing: React.FC = () => {
+  //define lottie options and loader
+  const options = {
+    animationData: landingPageAnimation,
+    loop: true
+  };
+  const { View } = useLottie(options);
 
     return (
       <>
@@ -49,6 +55,7 @@ const Landing: React.FC = () => {
             </div>
             <div className="col-lg-5">
               <div className="lottie-container">
+                {View}
               </div>
             </div>
           </div>
