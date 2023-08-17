@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import yaml from 'yaml';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
+import { InlineNotification } from "@carbon/react";
 
 interface Choice {
   option: string;
@@ -21,6 +22,7 @@ interface ComponentProps {
 const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
+  const [emailStatus, setEmailStatus] = useState<'success' | 'error' | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   useEffect(() => {
@@ -63,9 +65,13 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     setIsSubmitted(true);
     const results = await generateResultJson();
     const percentage = calculateScorePercentage()
-    await sendUserReport(user.displayName,user.email,percentage, testName);
-    await sendAdminReport(user.displayName, user.email,percentage, testName, results);
-    await callEmailService();
+    const userReportStatus = await sendUserReport(user.displayName, user.email, percentage, testName);
+    const adminReportStatus = await sendAdminReport(user.displayName, user.email, percentage, testName, results);
+    if (userReportStatus === 'success' && adminReportStatus === 'success') {
+      setEmailStatus('success');
+    } else {
+      setEmailStatus('error');
+    }
   };
 
   const getChoiceClassName = (questionIndex: number, choiceIndex: number): string => {
@@ -134,22 +140,43 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     return result;
   };
 
-  const callEmailService = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Email service request succeeded. Data received:', data);
-      } else {
-        console.error('Email service request failed.');
-      }
-    } catch (error) {
-      console.error('An error occurred while calling the email service:', error);
-    }
-  };
+  const emailNotification = <>
+  {/* ... your existing JSX */}
+  <div className="mt-3">
+        {emailStatus === 'success' ? (
+          <InlineNotification
+            iconDescription="describes the close button"
+            subtitle={
+              <span>Email report sent successfully to the admin, you are safe to close this browser window now.</span>
+            }
+            title={<span className="fw-bold">Success</span>}
+            kind="success"
+            lowContrast
+            className="w-100"
+          />
+        ) : emailStatus === 'error' ? (
+          <InlineNotification
+            iconDescription="describes the close button"
+            subtitle={
+              <span>
+                Failed to send the email report, please take a screenshot of the results and timestamp for your
+                reference.
+              </span>
+            }
+            title={<span className="fw-bold">Error</span>}
+            kind="error"
+            lowContrast
+            className="w-100"
+          />
+        ) : null}
+    </div>
+  </>
 
   return (
+    <>
+    {questions.length>0 ?
     <div className="container mb-5">
+      {emailNotification}
       <h4 className='pt-2'>Hello <span className='fw-bold'>{user.displayName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
       <h1 className="mt-4">Online Test</h1>
       <form onSubmit={handleSubmit}>
@@ -200,6 +227,11 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
         )}
       </form>
     </div>
+    :
+    <div className='container mb-5'>
+      <h4 className='pt-2'>Sorry failed to fetch the questions please try again.</h4>
+    </div>}
+    </>
   );
 };
 

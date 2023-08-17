@@ -17,6 +17,7 @@ import TestB from './screens/TestB';
 import PostLoginRoute from './routes/PostLoginRoute';
 import ProtectedRoute from './routes/ProtectedRoute';
 import TestC from './screens/TestC';
+import TestA from './screens/TestA';
 
 Amplify.configure(awsconfig);
 
@@ -28,6 +29,11 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={
           <PostLoginRoute signed={true}>
               <SideLayout pageContent={<Dashboard/>} />
+          </PostLoginRoute>
+        } />
+        <Route path="/testA" element={
+          <PostLoginRoute signed={true}>
+              <SideLayout pageContent={<TestA/>} />
           </PostLoginRoute>
         } />
         <Route path="/testB" element={

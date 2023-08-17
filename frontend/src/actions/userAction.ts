@@ -6,11 +6,11 @@ export const getUserDetails = () => async (dispatch: any) => {
     dispatch({
       type: USER_DETAILS_REQUEST,
     });
+    //first call the isCurrent and only after that extract the JSON
+    const data = await isCurrentAuthUser();
 
     const userJSON = localStorage.getItem(FAM_LOGIN_USER); // Retrieve the JSON string from local storage
     const user = userJSON ? JSON.parse(userJSON) : null; // Parse the JSON string to a JavaScript object
-
-    const data = await isCurrentAuthUser();
 
     dispatch({
       type: USER_DETAILS_SUCCESS,

@@ -38,8 +38,10 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     try {
       await axios.post('http://localhost:5000/api/mail', emailParams);
       console.log('User report email sent successfully');
+      return 'success';
     } catch (error) {
       console.error('Error sending user report:', error);
+      return 'error';
     }
   };
 
@@ -91,8 +93,10 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     try {
       await axios.post('http://localhost:5000/api/mail', emailParams);
       console.log('Admin report email sent successfully');
+      return 'success';
     } catch (error) {
       console.error('Error sending admin report:', error);
+      return 'error';
     }
   };
   
