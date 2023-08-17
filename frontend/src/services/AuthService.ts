@@ -34,7 +34,7 @@ export const isLoggedIn = () =>{
             | FamLoginUser
             | undefined
             | null)
-  console.log(stateInfo)
+  // console.log(stateInfo)
   // check if the user is logged in
   const loggedIn = !!stateInfo?.authToken; // TODO check if token expired later?
   return loggedIn;
@@ -45,7 +45,7 @@ export const handlePostLogin = async () => {
     const userData = await Auth.currentAuthenticatedUser();
     await refreshToken()
   } catch (error) {
-    console.log("Authentication Error:", error);
+    // console.log("Authentication Error:", error);
   }
 };
 
