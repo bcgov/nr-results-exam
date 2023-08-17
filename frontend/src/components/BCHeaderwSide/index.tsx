@@ -19,6 +19,7 @@ import * as Icons from '@carbon/icons-react';
 import './BCHeaderwSide.scss';
 
 import RightPanelTitle from '../RightPanelTitle';
+import { logout } from '../../services/AuthService';
 
 interface ListItem {
   name: string;
@@ -51,23 +52,6 @@ const listItems = [
         name: 'Test C',
         icon: 'Catalog',
         link: '/testC',
-        disabled: true
-      }
-    ]
-  },
-  {
-    name: 'Management',
-    items: [
-      {
-        name: 'Settings',
-        icon: 'Settings',
-        link: '#',
-        disabled: true
-      },
-      {
-        name: 'Notifications',
-        icon: 'Notification',
-        link: '#',
         disabled: true
       }
     ]
@@ -143,7 +127,7 @@ const BCHeaderwSide = () => {
           />
           <Link to="/" className="header-link" data-testid="header-name">
             BCGOV
-            <span className="header-full-name"> Quickstarter React Template </span>
+            <span className="header-full-name"> Results Exam </span>
           </Link>
           <HeaderGlobalBar>
            <HeaderGlobalAction
@@ -210,8 +194,8 @@ const BCHeaderwSide = () => {
                   })}
                 </div>
               ))}
-              <div className="support-section">
-                <SideNavLink renderIcon={Icons.Help}>Need help?</SideNavLink>
+              <div className="logout-section">
+                <SideNavLink className="cursor-pointer" renderIcon={Icons.Logout} onClick={()=>{logout()}}>Logout</SideNavLink>
               </div>
             </SideNavItems>
             <p className=''>{version}</p>

@@ -1,0 +1,168 @@
+- question: "What is the capital of France?"
+  choices:
+    - option: "Paris"
+      isCorrect: true
+    - option: "Berlin"
+      isCorrect: false
+    - option: "London"
+      isCorrect: false
+
+- question: "Who painted the Mona Lisa?"
+  choices:
+    - option: "Leonardo da Vinci"
+      isCorrect: true
+    - option: "Pablo Picasso"
+      isCorrect: false
+    - option: "Vincent van Gogh"
+      isCorrect: false
+
+- question: "True or False: The Great Wall of China is visible from space."
+  choices:
+    - option: "True"
+      isCorrect: false
+    - option: "False"
+      isCorrect: true
+
+- question: "Which planet is known as the 'Red Planet'?"
+  choices:
+    - option: "Mars"
+      isCorrect: true
+    - option: "Jupiter"
+      isCorrect: false
+    - option: "Saturn"
+      isCorrect: false
+
+- question: "True or False: Elephants are the largest land animals."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "Which country is famous for the Taj Mahal?"
+  choices:
+    - option: "India"
+      isCorrect: true
+    - option: "Egypt"
+      isCorrect: false
+    - option: "Japan"
+      isCorrect: false
+
+- question: "True or False: The Eiffel Tower is located in London."
+  choices:
+    - option: "True"
+      isCorrect: false
+    - option: "False"
+      isCorrect: true
+
+- question: "What is the largest ocean in the world?"
+  choices:
+    - option: "Pacific Ocean"
+      isCorrect: true
+    - option: "Atlantic Ocean"
+      isCorrect: false
+    - option: "Indian Ocean"
+      isCorrect: false
+
+- question: "True or False: The human body has 206 bones."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "What is the currency of Japan?"
+  choices:
+    - option: "Yen"
+      isCorrect: true
+    - option: "Dollar"
+      isCorrect: false
+    - option: "Euro"
+      isCorrect: false
+
+- question: "True or False: Penguins can fly."
+  choices:
+    - option: "True"
+      isCorrect: false
+    - option: "False"
+      isCorrect: true
+
+- question: "Which is the largest continent in the world?"
+  choices:
+    - option: "Asia"
+      isCorrect: true
+    - option: "Africa"
+      isCorrect: false
+    - option: "North America"
+      isCorrect: false
+
+- question: "True or False: Mount Everest is the tallest mountain in the world."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "What is the national bird of the United States?"
+  choices:
+    - option: "Bald Eagle"
+      isCorrect: true
+    - option: "Peacock"
+      isCorrect: false
+    - option: "Swan"
+      isCorrect: false
+
+- question: "True or False: The Nile River is the longest river in the world."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "What is the largest animal on Earth?"
+  choices:
+    - option: "Blue Whale"
+      isCorrect: true
+    - option: "Elephant"
+      isCorrect: false
+    - option: "Giraffe"
+      isCorrect: false
+
+- question: "True or False: The Statue of Liberty was a gift from France to the United States."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "Which instrument has black and white keys?"
+  choices:
+    - option: "Piano"
+      isCorrect: true
+    - option: "Violin"
+      isCorrect: false
+    - option: "Trumpet"
+      isCorrect: false
+
+- question: "True or False: Honey is made by bees."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
+
+- question: "Which country is known for the Great Barrier Reef?"
+  choices:
+    - option: "Brazil"
+      isCorrect: false
+    - option: "Australia"
+      isCorrect: true
+    - option: "Canada"
+      isCorrect: false
+
+- question: "True or False: The Sun is a star."
+  choices:
+    - option: "True"
+      isCorrect: true
+    - option: "False"
+      isCorrect: false
