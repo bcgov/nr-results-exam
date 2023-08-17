@@ -15,7 +15,7 @@ const TestB: React.FC = () => {
   const { theme, setTheme } = useThemePreference();
     return (
       <>
-        {user?<TestComponent user={user.userInfo} testName="Test B" questionFileName="questions.yaml"/>:<><div className="h4">Null</div></>}
+        {user?<TestComponent user={user.userInfo} testName="Test B" questionFileName="questions/questionsB.yaml"/>:<><div className="h4">Null</div></>}
       </>
     );
   };
