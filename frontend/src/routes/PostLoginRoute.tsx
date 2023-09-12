@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import { USER_DETAILS_REQUEST } from '../constants/userConstants';
 import { getUserDetails } from '../actions/userAction';
 import { Loading } from "@carbon/react";
 
@@ -37,7 +36,7 @@ const PostLoginRoute = ({ signed, children }: IProps): JSX.Element => {
       (() => {
         if(user?.isLoggedIn === true){
           console.log("User:", user);
-          return children;
+          return children;  
         }
         else if(user?.isLoggedIn === false){
           return <Navigate to={encodedUrl} replace />;

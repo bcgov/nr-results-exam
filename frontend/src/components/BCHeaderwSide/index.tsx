@@ -19,7 +19,8 @@ import * as Icons from '@carbon/icons-react';
 import './BCHeaderwSide.scss';
 
 import RightPanelTitle from '../RightPanelTitle';
-import { logout } from '../../services/AuthService';
+import ThemeToggle from '../ThemeToggle';
+import MyProfile from '../MyProfile';
 
 interface ListItem {
   name: string;
@@ -42,16 +43,21 @@ const listItems = [
         link: '/dashboard',
         disabled: false
       },
+    ]
+  },
+  {
+    name: 'Management',
+    items: [
       {
-        name: 'Test B',
-        icon: 'Catalog',
-        link: '/testB',
+        name: 'Settings',
+        icon: 'Settings',
+        link: '#',
         disabled: true
       },
       {
-        name: 'Test C',
-        icon: 'Catalog',
-        link: '/testC',
+        name: 'Notifications',
+        icon: 'Notification',
+        link: '#',
         disabled: true
       }
     ]
@@ -62,20 +68,15 @@ const BCHeaderwSide = () => {
   //can only be impored at component level
   const { theme, setTheme } = useThemePreference();
 
-  const version: string = `Version: ${process.env.REACT_APP_MAIN_VERSION}`;
-
   const [myProfile, setMyProfile] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<boolean>(false);
-  const [overlay, setOverlay] = useState<boolean>(false);
   const [goToURL, setGoToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
 
   const handleNotificationsPanel = useCallback((): void => {
     if (notifications) {
-      setOverlay(false);
       setNotifications(false);
     } else {
-      setOverlay(true);
       setNotifications(true);
     }
     setMyProfile(false);
@@ -83,22 +84,18 @@ const BCHeaderwSide = () => {
 
   const handleMyProfilePanel = useCallback((): void => {
     if (myProfile) {
-      setOverlay(false);
       setMyProfile(false);
     } else {
-      setOverlay(true);
       setMyProfile(true);
     }
     setNotifications(false);
   }, [myProfile]);
 
   const closeNotificationsPanel = useCallback((): void => {
-    setOverlay(false);
     setNotifications(false);
   }, []);
 
   const closeMyProfilePanel = useCallback((): void => {
-    setOverlay(false);
     setMyProfile(false);
   }, []);
 
@@ -109,7 +106,7 @@ const BCHeaderwSide = () => {
       setGoTo(false);
       navigate(goToURL);
     }
-  }, [goTo]);
+  }, [goTo, goToURL, navigate]);
 
   return (
     <HeaderContainer
@@ -127,17 +124,12 @@ const BCHeaderwSide = () => {
           />
           <Link to="/" className="header-link" data-testid="header-name">
             BCGOV
-            <span className="header-full-name"> Results Exam </span>
+            <span className="header-full-name"> Quickstarter React Template </span>
           </Link>
-          <HeaderGlobalBar>
-           <HeaderGlobalAction
-                  aria-label={theme==='g10'?'Switch to Dark Mode':'Switch to Light Mode'}
-                  tooltipAlignment="end"
-                  onClick = {()=>{toggleTheme(theme,setTheme)}}
-                  >
-                  {/* Must have a child component */}
-                  <>{theme === 'g10'?<Icons.Asleep size={20} />:<Icons.Light size={20} />}</>
-            </HeaderGlobalAction>
+          <HeaderGlobalBar className="align-items-center">
+            <div className="mx-2">
+              <ThemeToggle/>
+            </div>
             <HeaderGlobalAction
               aria-label="Notifications"
               data-testid="header-button__notifications"
@@ -167,10 +159,7 @@ const BCHeaderwSide = () => {
               title="My Profile"
               closeFn={closeMyProfilePanel}
             />
-            <div className="m-3">
-            <div className="h5">Hello User</div>
-            <Button kind='secondary' onClick={()=>console.log('Hi Jazz')}>Log Out</Button>
-            </div>
+            <MyProfile/>
           </HeaderPanel>
           <SideNav isChildOfHeader expanded={isSideNavExpanded} aria-label="Side menu" className="bcheaderwside-sidenav">
             <SideNavItems>
@@ -194,11 +183,10 @@ const BCHeaderwSide = () => {
                   })}
                 </div>
               ))}
-              <div className="logout-section">
-                <SideNavLink className="cursor-pointer" renderIcon={Icons.Logout} onClick={()=>{logout()}}>Logout</SideNavLink>
+              <div className="support-section">
+                <SideNavLink renderIcon={Icons.Help}>Need help?</SideNavLink>
               </div>
             </SideNavItems>
-            <p className=''>{version}</p>
           </SideNav>
         </Header>
       )}
