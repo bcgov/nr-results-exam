@@ -15,7 +15,7 @@ const Dashboard: React.FC = () => {
   const { theme, setTheme } = useThemePreference();
     return (
       <>
-        {user?<TestComponent user={user.userInfo} testName="Test A" questionFileName="questions/questionsA.yaml"/>:<><div className="h4">Null</div></>}
+        {user?<TestComponent user={user} testName="Test A" questionFileName="questions/questionsA.yaml"/>:<><div className="h4">Null</div></>}
       </>
     );
   };
