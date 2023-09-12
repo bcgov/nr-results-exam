@@ -7,7 +7,7 @@ const awsconfig = {
         domain: process.env.REACT_APP_AWS_DOMAIN,
         scope: ['openid'],
         redirectSignIn: "http://localhost:3000/dashboard",
-        redirectSignOut: "http://localhost:3000/",
+        redirectSignOut: "https://logontest7.gov.bc.ca/clp-cgi/logoff.cgi?retnow=1&returl=https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout?redirect_uri=http://localhost:3000/",
         responseType: 'code',
     },
     federationTarget: 'COGNITO_USER_POOLS',

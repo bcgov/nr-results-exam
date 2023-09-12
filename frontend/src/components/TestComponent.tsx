@@ -177,7 +177,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     {questions.length>0 ?
     <div className="container mb-5">
       {emailNotification}
-      <h4 className='pt-2'>Hello <span className='fw-bold'>{user.displayName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
+      <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName+" "+user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
       <h1 className="mt-4">Online Test</h1>
       <form onSubmit={handleSubmit}>
         {renderPassFailMessage()}
