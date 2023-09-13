@@ -1,5 +1,5 @@
 # Build
-FROM node:16.19.1-alpine3.17 AS build
+FROM node:alpine AS build
 
 # Copy and build
 WORKDIR /app
