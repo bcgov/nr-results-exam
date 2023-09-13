@@ -10,7 +10,7 @@ dotenv.config({
 const app = express();
 
 // Define the array of whitelisted IP addresses , the loopback will be allowed automatically
-const whitelist = ['192.168.1.89'];
+const whitelist = ['192.168.1.89', '172.17.0.1'];
 
 // Middleware to check if the request's IP is in the whitelist
 const ipWhitelistMiddleware = (req, res, next) => {
@@ -26,7 +26,7 @@ const ipWhitelistMiddleware = (req, res, next) => {
     next();
   } else {
     // If the IP is not in the whitelist, send a 403 Forbidden response
-    res.status(403).json({ error: 'Access denied.' });
+    res.status(403).json({ error: 'Access denied. IP address not whitelisted.' });
   }
 };
 
