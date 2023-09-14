@@ -20,3 +20,20 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+  backend:
+    container_name: backend
+    environment:
+      CHES_TOKEN_URL : https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
+      CHES_CLIENT_ID : 09C5071A-ACE9B6FACF6
+      CHES_CLIENT_SECRET : 9c82d5fc-1d34-4a0c-97f2-c0c756791c34
+    ports:
+      - "5000:5000"
+    restart: always
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    healthcheck:
+      test: [ "CMD-SHELL", "curl http://localhost:5000" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
