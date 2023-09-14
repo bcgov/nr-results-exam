@@ -5,6 +5,8 @@ x-common: &common
     REACT_APP_USER_POOLS_ID: ca-central-1_FxagSNQa7
     REACT_APP_USER_POOLS_WEB_CLIENT_ID: 43hjhdf5dvi17opb0jgucfpvm7
     REACT_APP_AWS_DOMAIN: test-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
+    REACT_APP_CHES_FROM_EMAIL : jaskiratsingh.grewal@gov.bc.ca
+    REACT_APP_CHES_ADMIN_EMAIL : jaski.grewal@gmail.com
     REACT_APP_ZONE: DEV
   healthcheck:
     test: [ "CMD-SHELL", "curl http://localhost:3000" ]
