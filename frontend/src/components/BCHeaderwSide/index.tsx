@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useThemePreference } from '../../utils/ThemePreference';
-import { toggleTheme } from '../../utils/ThemeFunction';
 import {
   HeaderContainer,
   Header,
@@ -12,8 +11,7 @@ import {
   HeaderPanel,
   SideNav,
   SideNavItems,
-  SideNavLink,
-  Button
+  SideNavLink
 } from '@carbon/react';
 import * as Icons from '@carbon/icons-react';
 import './BCHeaderwSide.scss';
@@ -41,6 +39,18 @@ const listItems = [
         name: 'Dashboard',
         icon: 'Dashboard',
         link: '/dashboard',
+        disabled: false
+      },
+      {
+        name: 'TestB',
+        icon: 'Dashboard',
+        link: '/testB',
+        disabled: false
+      },
+      {
+        name: 'TestC',
+        icon: 'Dashboard',
+        link: '/testC',
         disabled: false
       },
     ]
