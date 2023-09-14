@@ -29,23 +29,24 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     </html>
   `;
 
-  
-    const emailParams: any = {
-      fromEmail: 'jaskiratsingh.grewal@gov.bc.ca',
-      toEmails: [userEmail],
-      subject: `${testName} user attempt report : ${userName}`,
-      mailBody: emailBody,
-    };
-  
-    try {
-      await axios.post('http://localhost:5000/api/mail', emailParams);
-      console.log('User report email sent successfully');
-      return 'success';
-    } catch (error) {
-      console.error('Error sending user report:', error);
-      return 'error';
-    }
+  const fromEmail = env.REACT_APP_CHES_FROM_EMAIL;
+
+  const emailParams: any = {
+    fromEmail: fromEmail,
+    toEmails: [userEmail],
+    subject: `${testName} user attempt report : ${userName}`,
+    mailBody: emailBody,
   };
+  
+  try {
+    await axios.post('http://localhost:5000/api/mail', emailParams);
+    console.log('User report email sent successfully');
+    return 'success';
+  } catch (error) {
+    console.error('Error sending user report:', error);
+    return 'error';
+  }
+};
 
   export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: any[]) => {
     const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
@@ -84,9 +85,10 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
         </body>
       </html>
     `;
+
     const fromEmail = env.REACT_APP_CHES_FROM_EMAIL;
     const adminEmail = env.REACT_APP_CHES_ADMIN_EMAIL;
-    
+
     const emailParams: any = {
       fromEmail: fromEmail,
       toEmails: [adminEmail], // Admin's email address
