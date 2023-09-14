@@ -1,4 +1,6 @@
 import axios from "axios";
+import { env } from "../env";
+
 export const sendUserReport = async (userName: string, userEmail: string, percentage: number, testName: string) => {
     const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
     const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red';
@@ -31,7 +33,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     const emailParams: any = {
       fromEmail: 'jaskiratsingh.grewal@gov.bc.ca',
       toEmails: [userEmail],
-      subject: `${testName} attempt results : ${userName}`,
+      subject: `${testName} user attempt report : ${userName}`,
       mailBody: emailBody,
     };
   
@@ -82,10 +84,12 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
         </body>
       </html>
     `;
-  
+    const fromEmail = env.REACT_APP_CHES_FROM_EMAIL;
+    const adminEmail = env.REACT_APP_CHES_ADMIN_EMAIL;
+    
     const emailParams: any = {
-      fromEmail: 'jaskiratsingh.grewal@gov.bc.ca',
-      toEmails: ['jaskiratsingh.grewal@gov.bc.ca','jaski.grewal@gmail.com'], // Admin's email address
+      fromEmail: fromEmail,
+      toEmails: [adminEmail], // Admin's email address
       subject: `${testName} admin report : ${userName}`,
       mailBody: emailBody,
     };
