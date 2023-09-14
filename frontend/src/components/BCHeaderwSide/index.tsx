@@ -134,7 +134,7 @@ const BCHeaderwSide = () => {
           />
           <Link to="/" className="header-link" data-testid="header-name">
             BCGOV
-            <span className="header-full-name"> Quickstarter React Template </span>
+            <span className="header-full-name"> RESULTS EXAM </span>
           </Link>
           <HeaderGlobalBar className="align-items-center">
             <div className="mx-2">

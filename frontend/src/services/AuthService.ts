@@ -87,7 +87,7 @@ async function refreshToken (): Promise<FamLoginUser | undefined> {
 function parseToken(authToken: CognitoUserSession): FamLoginUser {
   const decodedIdToken = authToken.getIdToken().decodePayload();
   const decodedAccessToken = authToken.getAccessToken().decodePayload();
-  console.log(decodedIdToken)
+  //console.log(decodedIdToken)
   // Extract the first name and last name from the displayName and remove unwanted part
   const displayName = decodedIdToken['custom:idp_display_name'];
   const [lastName, firstName] = displayName.split(', ');
