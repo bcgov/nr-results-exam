@@ -29,8 +29,6 @@ async function requestToken() {
 
     // Extract the access_token and session_tag from the response
     const access_token = response.data.access_token;
-
-    // console.log("Access Token:", access_token);
     return access_token;
   } catch (error) {
     // Handle errors gracefully
@@ -84,8 +82,6 @@ async function sendEmail(token, emailDetails) {
 // @route   POST /api/mail
 // @access  Public
 const sendMail = asyncHandler(async (req, res) => {
-  console.log("payload:")
-  console.log(req.body)
   try {
     const accessToken = await requestToken();
     const emailDetails = {
