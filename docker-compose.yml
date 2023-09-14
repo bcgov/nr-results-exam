@@ -39,6 +39,7 @@ services:
       CHES_CLIENT_SECRET : 9c82d5fc-1d34-4a0c-97f2-c0c756791c34
     ports:
       - "5000:5000"
+    volumes: ["./backend:/app", "/app/node_modules"]
     restart: always
     build:
       context: ./backend
