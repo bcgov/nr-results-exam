@@ -145,10 +145,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
   <div className="mt-3">
         {emailStatus === 'success' ? (
           <InlineNotification
-            iconDescription="describes the close button"
-            subtitle={
-              <span>Email report sent successfully to the admin, you are safe to close this browser window now.</span>
-            }
+            subtitle="Email report sent successfully to the admin, you are safe to close this browser window now."
             title={<span className="fw-bold">Success</span>}
             kind="success"
             lowContrast
@@ -156,13 +153,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
           />
         ) : emailStatus === 'error' ? (
           <InlineNotification
-            iconDescription="describes the close button"
-            subtitle={
-              <span>
-                Failed to send the email report, please take a screenshot of the results and timestamp for your
-                reference.
-              </span>
-            }
+            subtitle="Failed to send the email report, please take a screenshot of the results and timestamp for your reference."
             title={<span className="fw-bold">Error</span>}
             kind="error"
             lowContrast
