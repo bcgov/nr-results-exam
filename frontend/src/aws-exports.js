@@ -1,8 +1,8 @@
 import { env } from './env';
 const awsconfig = {
     aws_cognito_region: 'ca-central-1',
-    aws_user_pools_id: env.REACT_APP_USER_POOLS_ID,
-    aws_user_pools_web_client_id: env.REACT_APP_USER_POOLS_WEB_CLIENT_ID,
+    aws_user_pools_id: env.VITE_USER_POOLS_ID,
+    aws_user_pools_web_client_id: env.VITE_USER_POOLS_WEB_CLIENT_ID,
     aws_mandatory_sign_in: 'enable',
     oauth: {
         domain: 'test-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com',
