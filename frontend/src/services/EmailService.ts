@@ -29,7 +29,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     </html>
   `;
 
-  const fromEmail = env.REACT_APP_CHES_FROM_EMAIL;
+  const fromEmail = env.VITE_CHES_FROM_EMAIL;
 
   const emailParams: any = {
     fromEmail: fromEmail,
@@ -86,8 +86,8 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
       </html>
     `;
 
-    const fromEmail = env.REACT_APP_CHES_FROM_EMAIL;
-    const adminEmail = env.REACT_APP_CHES_ADMIN_EMAIL;
+    const fromEmail = env.VITE_CHES_FROM_EMAIL;
+    const adminEmail = env.VITE_CHES_ADMIN_EMAIL;
 
     const emailParams: any = {
       fromEmail: fromEmail,
