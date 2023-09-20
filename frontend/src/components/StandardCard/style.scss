@@ -49,22 +49,16 @@ p.std-card-title {
   font-size: 0.875rem;
   margin-bottom: auto;
   color: var(--#{vars.$bcgov-prefix}-text-secondary);
-  display: -webkit-box;
-  max-width: 14.5rem;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .std-card-pictogram {
-  width: 9.75rem !important;
-  height: 9.75rem !important;
-  padding: 0rem !important;
-  margin-bottom: 1.25rem !important;
+  width: 8.75rem !important;
+  height: 8.75rem !important;
+  padding: 1rem !important;
   color: var(--#{vars.$bcgov-prefix}-focus);
   position: absolute;
   bottom: 0;
+  left: 0;
 }
 
 .#{vars.$bcgov-prefix}--overflow-menu.#{vars.$bcgov-prefix}--overflow-menu--open >svg {
