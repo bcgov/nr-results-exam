@@ -36,9 +36,15 @@ const listItems = [
     name: 'Main activities',
     items: [
       {
-        name: 'Dashboard',
-        icon: 'Dashboard',
+        name: 'Home',
+        icon: 'Home',
         link: '/dashboard',
+        disabled: false
+      },
+      {
+        name: 'TestA',
+        icon: 'Dashboard',
+        link: '/testA',
         disabled: false
       },
       {

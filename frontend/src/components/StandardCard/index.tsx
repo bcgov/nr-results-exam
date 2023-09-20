@@ -6,21 +6,17 @@ import { Tile, IconButton } from '@carbon/react';
 import * as Icons from '@carbon/icons-react';
 import * as Pictograms from '@carbon/pictograms-react';
 
-import './styles.scss';
+import './style.scss';
 
 interface StandardCardProps {
   header: string;
   description: string;
   url: string;
   image: string;
-  type: string;
-  isEmpty: boolean;
-  emptyTitle: string;
-  emptyDescription: string;
 }
 
 const StandardCard = ({
-  header, description, url, image, isEmpty
+  header, description, url, image
 }: StandardCardProps) => {
   const navigate = useNavigate();
   const Image = Pictograms[image];
@@ -32,15 +28,9 @@ const StandardCard = ({
           <div className="std-card-description">
             <p>{description}</p>
           </div>
+          
+          <Image className="std-card-pictogram" />
         </div>
-        {
-          !isEmpty
-          && (
-          <IconButton className="std-card-button" kind="ghost" label="Go" align="bottom" onClick={() => { navigate(`${url}`); }}>
-            <Icons.ArrowRight />
-          </IconButton>
-          )
-        }
       </div>
     </Tile>
   );
