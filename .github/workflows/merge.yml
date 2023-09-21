@@ -19,11 +19,8 @@ jobs:
       issues: write
     strategy:
       matrix:
-        name: [database, backend, frontend]
+        name: [backend, frontend]
         include:
-          - name: database
-            file: database/openshift.deploy.yml
-            overwrite: false
           - name: backend
             file: backend/openshift.deploy.yml
             parameters: -p PROMOTE_MIGRATION=${{ github.repository }}/migrations:test
@@ -119,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        name: [database, migrations, backend, frontend]
+        name: [backend, frontend]
     steps:
       - name: Keep last 50
         uses: actions/delete-package-versions@v4
@@ -136,11 +133,8 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        name: [database, backend, frontend]
+        name: [backend, frontend]
         include:
-          - name: database
-            file: database/openshift.deploy.yml
-            overwrite: false
           - name: backend
             file: backend/openshift.deploy.yml
             parameters: -p PROMOTE_MIGRATION=${{ github.repository }}/migrations:test
@@ -171,7 +165,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        component: [database, backend, frontend]
+        component: [backend, frontend]
     steps:
       - uses: shrink/actions-docker-registry-tag@v3
         with:
