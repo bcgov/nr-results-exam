@@ -46,13 +46,41 @@ parameters:
   - name: PROMOTE
     description: Image (namespace/name:tag) to promote/import
     value: bcgov/nr-results-exam/backend:test
-  - name: PROMOTE_MIGRATION
-    description: Image (namespace/name:tag) for migration to promote/import
-    value: bcgov/nr-results-exam/migrations:test
-  - name: COMPONENT_DB_MIGRATION
-    description: Component name for database migrations
-    value: migrations
+  - name: CHES_TOKEN_URL
+    value: "https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token"
+  - name: CHES_CLIENT_ID
+    value: "09C5071A-ACE9B6FACF6"
+  - name: CHES_CLIENT_SECRET
+    value: "9c82d5fc-1d34-4a0c-97f2-c0c756791c34"
 objects:
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-ingress
+      labels:
+        template: openshift-test
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      policyTypes:
+        - Ingress
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-same-namespace
+      labels:
+        template: network-security-policy
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - podSelector: {}
+      policyTypes:
+        - Ingress
   - apiVersion: v1
     kind: ImageStream
     metadata:
@@ -67,22 +95,6 @@ objects:
           from:
             kind: DockerImage
             name: "${REGISTRY}/${PROMOTE}"
-          referencePolicy:
-            type: Local
-  - apiVersion: v1
-    kind: ImageStream
-    metadata:
-      labels:
-        app: "${NAME}-${ZONE}"
-      name: "${NAME}-${ZONE}-${COMPONENT_DB_MIGRATION}"
-    spec:
-      lookupPolicy:
-        local: false
-      tags:
-        - name: "${IMAGE_TAG}"
-          from:
-            kind: DockerImage
-            name: "${REGISTRY}/${PROMOTE_MIGRATION}"
           referencePolicy:
             type: Local
   - apiVersion: v1
@@ -103,14 +115,6 @@ objects:
             from:
               kind: ImageStreamTag
               name: "${NAME}-${ZONE}-${COMPONENT}:${IMAGE_TAG}"
-        - type: ImageChange
-          imageChangeParams:
-            automatic: true
-            containerNames:
-              - "${NAME}-${COMPONENT_DB_MIGRATION}"
-            from:
-              kind: ImageStreamTag
-              name: "${NAME}-${ZONE}-${COMPONENT_DB_MIGRATION}:${IMAGE_TAG}"
       selector:
         deploymentconfig: "${NAME}-${ZONE}-${COMPONENT}"
       strategy:
@@ -126,23 +130,12 @@ objects:
               imagePullPolicy: Always
               name: "${NAME}"
               env:
-                - name: POSTGRES_HOST
-                  value: "${NAME}-${ZONE}-database"
-                - name: POSTGRES_DATABASE
-                  valueFrom:
-                    secretKeyRef:
-                      name: "${NAME}-${ZONE}-database"
-                      key: database-name
-                - name: POSTGRES_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: "${NAME}-${ZONE}-database"
-                      key: database-password
-                - name: POSTGRES_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: "${NAME}-${ZONE}-database"
-                      key: database-user
+                - name: CHES_CLIENT_ID
+                  value: ${CHES_CLIENT_ID}
+                - name: CHES_CLIENT_SECRET
+                  value: ${CHES_CLIENT_SECRET}
+                - name: CHES_TOKEN_URL
+                  value: ${CHES_TOKEN_URL}
               ports:
                 - containerPort: 3000
                   protocol: TCP
@@ -173,33 +166,6 @@ objects:
                 initialDelaySeconds: 60
                 periodSeconds: 30
                 timeoutSeconds: 5
-          initContainers:
-            - name: "${NAME}-${COMPONENT_DB_MIGRATION}"
-              image: "${NAME}-${ZONE}-${COMPONENT_DB_MIGRATION}:${IMAGE_TAG}"
-              env:
-                - name: FLYWAY_URL
-                  value: "jdbc:postgresql://${NAME}-${ZONE}-database:5432/${NAME}"
-                - name: FLYWAY_USER
-                  valueFrom:
-                    secretKeyRef:
-                      name: "${NAME}-${ZONE}-database"
-                      key: database-user
-                - name: FLYWAY_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: "${NAME}-${ZONE}-database"
-                      key: database-password
-                - name: FLYWAY_BASELINE_ON_MIGRATE
-                  value: "true"
-                - name: FLYWAY_DEFAULT_SCHEMA
-                  value: "USERS"
-              resources:
-                requests:
-                  cpu: "${CPU_REQUEST_INIT}"
-                  memory: "${MEMORY_REQUEST_INIT}"
-                limits:
-                  cpu: "${CPU_LIMIT_INIT}"
-                  memory: "${MEMORY_LIMIT_INIT}"
   - apiVersion: v1
     kind: Service
     metadata:

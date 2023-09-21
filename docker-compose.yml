@@ -16,23 +16,6 @@ x-common: &common
   restart: always
 
 services:
-  frontend:
-    container_name: frontend
-    entrypoint: sh -c "npm ci && npm run start"
-    image: node:20-bullseye
-    ports: ["3000:3000"]
-    volumes: ["./frontend:/app", "/app/node_modules"]
-    working_dir: "/app"
-    <<: *common
-
-  caddy:
-    container_name: caddy
-    profiles: ["caddy"]
-    build: ./frontend
-    ports: ["3005:3000"]
-    volumes: ["./frontend/Caddyfile:/etc/caddy/Caddyfile"]
-    <<: *common
-
   backend:
     container_name: backend
     environment:
@@ -51,3 +34,20 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
+
+  frontend:
+    container_name: frontend
+    entrypoint: sh -c "npm ci && npm run start"
+    image: node:20-bullseye
+    ports: ["3000:3000"]
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    working_dir: "/app"
+    <<: *common
+
+  caddy:
+    container_name: caddy
+    profiles: ["caddy"]
+    build: ./frontend
+    ports: ["3005:3000"]
+    volumes: ["./frontend/Caddyfile:/etc/caddy/Caddyfile"]
+    <<: *common
