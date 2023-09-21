@@ -74,11 +74,11 @@ jobs:
         dir: [backend, frontend]
         include:
           - dir: backend
-            sonar_projectKey: quickstart-openshift_backend
+            sonar_projectKey: nr-results-exam_backend
             token: SONAR_TOKEN_BACKEND
             triggers: ('backend/')
           - dir: frontend
-            sonar_projectKey: quickstart-openshift_frontend
+            sonar_projectKey: nr-results-exam_frontend
             token: SONAR_TOKEN_FRONTEND
             triggers: ('frontend/')
     steps:
