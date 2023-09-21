@@ -49,14 +49,8 @@ jobs:
       packages: write
     strategy:
       matrix:
-        package: [database, migrations, backend, frontend]
+        package: [backend, frontend]
         include:
-          - package: database
-            triggers: ('database/')
-          - package: migrations
-            build_context: ./backend/db
-            build_file: ./backend/db/Dockerfile
-            triggers: ('backend/db')
           - package: backend
             triggers: ('backend/')
           - package: frontend
@@ -80,24 +74,19 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        name: [database, backend, frontend]
+        name: [backend, frontend]
         include:
-          - name: database
-            file: database/openshift.deploy.yml
-            overwrite: false
-            triggers: ('database/' 'backend/' 'frontend/')
           - name: backend
             file: backend/openshift.deploy.yml
             overwrite: true
             parameters: -p MIN_REPLICAS=1 -p MAX_REPLICAS=2
-              -p PROMOTE_MIGRATION=${{ github.repository }}/migrations:${{ github.event.number }}
-            triggers: ('database/' 'backend/' 'frontend/')
+            triggers: ('backend/' 'frontend/')
             verification_path: /api
           - name: frontend
             file: frontend/openshift.deploy.yml
             overwrite: true
             parameters: -p MIN_REPLICAS=1 -p MAX_REPLICAS=2
-            triggers: ('database/' 'backend/' 'frontend/')
+            triggers: ('backend/' 'frontend/')
     steps:
       - uses: bcgov-nr/action-deployer-openshift@v1.4.0
         with:
