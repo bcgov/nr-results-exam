@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv =require('dotenv');
 const indexRoutes = require("./routes/indexRoutes");
 const mailRoutes = require("./routes/mailRoutes");
+const healthRoute = require('./routes/health');
 
 dotenv.config({
   path: './.env'
@@ -21,7 +22,7 @@ const ipWhitelistMiddleware = (req, res, next) => {
     clientIp = clientIp.substr(7);
   }
 
-  if (isLoopbackIp(clientIp) || (isValidIp(clientIp) && whitelist.includes(clientIp))) {
+  if (isLoopbackIp(clientIp) || (isValidIp(clientIp) && whitelist.includes(clientIp)) || isHealthCheck(req.url)) {
     // If the IP is the loopback address or in the whitelist, allow the request to proceed
     next();
   } else {
@@ -33,6 +34,11 @@ const ipWhitelistMiddleware = (req, res, next) => {
 // Helper function to check if an IP address is the loopback address
 function isLoopbackIp(ip) {
   return ip === '::1' || ip === '127.0.0.1' || ip === '::ffff:127.0.0.1';
+}
+
+// Helper function to let health checks through
+function isHealthCheck(path) {
+  return path === '/health';
 }
 
 // Helper function to validate if an IP address is valid
@@ -57,19 +63,8 @@ app.use(cors(corsOptions));
 app.use('/api/', indexRoutes);
 app.use('/api/mail', mailRoutes);
 
+app.use('/health', healthRoute);
+
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
 });
-
-
-// Health check w/o auth or whitelist required
-const healthLog = (req, res, next) => {
-  console.log(`Health check received from ${req.connection.remoteAddress}`);
-  next();
-};
-const health = express();
-health.use(healthLog);
-health.use('/', require('./routes/health'));
-health.listen(5001, () => {
-  console.log('Health check is available on port 5001');
-})
