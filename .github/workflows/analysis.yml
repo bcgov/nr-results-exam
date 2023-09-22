@@ -85,6 +85,9 @@ jobs:
       - uses: bcgov-nr/action-test-and-analyse@v1.1.0
         with:
           commands: |
+            whoami
+            pwd
+            ls -la
             npm ci
             npm run test
           dir: ${{ matrix.dir }}
@@ -97,4 +100,4 @@ jobs:
             -Dsonar.tests.inclusions=**/*spec.ts
             -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ secrets[matrix.token] }}
-          triggers: ${{ matrix.triggers }}
+          # triggers: ${{ matrix.triggers }}
