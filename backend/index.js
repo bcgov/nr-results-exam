@@ -60,3 +60,16 @@ app.use('/api/mail', mailRoutes);
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
 });
+
+
+// Health check w/o auth or whitelist required
+const healthLog = (req, res, next) => {
+  console.log(`Health check received from ${req.connection.remoteAddress}`);
+  next();
+};
+const health = express();
+health.use(healthLog);
+health.use('/', require('./routes/health'));
+health.listen(5001, () => {
+  console.log('Health check is available on port 5001');
+})
