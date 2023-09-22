@@ -85,8 +85,6 @@ jobs:
       - uses: bcgov-nr/action-test-and-analyse@v1.1.0
         with:
           commands: |
-            pwd
-            ls -la
             npm ci
             npm run test
           dir: ${{ matrix.dir }}
