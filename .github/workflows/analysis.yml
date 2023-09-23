@@ -74,19 +74,20 @@ jobs:
         dir: [backend, frontend]
         include:
           - dir: backend
-            sonar_projectKey: nr-results-exam_backend
-            token: SONAR_TOKEN_BACKEND
+            sonar_projectKey: nr-results-exam-backend
+            token: SONAR_BACKEND
             triggers: ('backend/')
           - dir: frontend
-            sonar_projectKey: nr-results-exam_frontend
-            token: SONAR_TOKEN_FRONTEND
+            sonar_projectKey: nr-results-exam-frontend
+            token: SONAR_FRONTEND
             triggers: ('frontend/')
     steps:
       - uses: bcgov-nr/action-test-and-analyse@v1.1.0
         with:
           commands: |
             npm ci
-            npm run test || true && echo "FIX AND REMOVE THIS FALSE PASS!"
+            npm run test:coverage || \
+              true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
           dir: ${{ matrix.dir }}
           node_version: "20"
           sonar_args: >
