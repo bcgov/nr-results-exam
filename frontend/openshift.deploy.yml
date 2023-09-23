@@ -113,26 +113,20 @@ objects:
               env:
                 - name: BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
+                - name: LOG_LEVEL
+                  value: "${LOG_LEVEL}"
                 - name: VITE_AWS_DOMAIN
                   value: "${VITE_AWS_DOMAIN}"
                 - name: VITE_CHES_FROM_EMAIL
                   value: "${VITE_CHES_FROM_EMAIL}"
                 - name: VITE_CHES_ADMIN_EMAIL
                   value: "${VITE_CHES_ADMIN_EMAIL}"
-                - name: VITE_USER_POOLS_ID
-                  value: "${VITE_USER_POOLS_ID}"
-                - name: VITE_USER_POOLS_WEB_CLIENT_ID
-                  value: "${VITE_USER_POOLS_WEB_CLIENT_ID}"
-                - name: VITE_ZONE
-                  value: "${ZONE}"
-                - name: LOG_LEVEL
-                  value: "${LOG_LEVEL}"
-                - name: VITE_USER_POOLS_ID
-                  value: "${VITE_USER_POOLS_ID}"
-                - name: VITE_USER_POOLS_WEB_CLIENT_ID
-                  value: "${VITE_USER_POOLS_WEB_CLIENT_ID}"
                 - name: VITE_REDIRECT_SIGN_OUT
                   value: "${VITE_REDIRECT_SIGN_OUT}"
+                - name: VITE_USER_POOLS_ID
+                  value: "${VITE_USER_POOLS_ID}"
+                - name: VITE_USER_POOLS_WEB_CLIENT_ID
+                  value: "${VITE_USER_POOLS_WEB_CLIENT_ID}"
                 - name: VITE_ZONE
                   value: "${ZONE}"
               ports:
