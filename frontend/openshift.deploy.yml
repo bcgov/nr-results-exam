@@ -1,5 +1,5 @@
 apiVersion: template.openshift.io/v1
-kind: Templateq
+kind: Template
 parameters:
   - name: NAME
     description: Module name
@@ -111,8 +111,8 @@ objects:
               imagePullPolicy: Always
               name: ${NAME}
               env:
--                - name: BACKEND_URL
--                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
+                - name: BACKEND_URL
+                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: VITE_AWS_DOMAIN
                   value: "${VITE_AWS_DOMAIN}"
                 - name: VITE_CHES_FROM_EMAIL
