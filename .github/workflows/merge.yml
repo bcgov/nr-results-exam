@@ -28,6 +28,9 @@ jobs:
           - name: frontend
             file: frontend/openshift.deploy.yml
             overwrite: true
+          parameters:
+            -p VITE_USER_POOLS_ID=${{ vars.VITE_USER_POOLS_ID }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov-nr/action-deployer-openshift@v1.4.0
         with:
@@ -37,8 +40,9 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
           parameters:
-            -p ZONE=test -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
-            -p NAME=${{ github.event.repository.name }} ${{ matrix.parameters }}
+            -p ZONE=test -p NAME=${{ github.event.repository.name }}
+            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
+            ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   deploys-prod:
@@ -57,6 +61,10 @@ jobs:
           - name: frontend
             file: frontend/openshift.deploy.yml
             overwrite: true
+          parameters:
+            -p VITE_USER_POOLS_ID=${{ vars.VITE_USER_POOLS_ID }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+            -p VITE_REDIRECT_SIGN_OUT="${{ vars.VITE_REDIRECT_SIGN_OUT }}"
     steps:
       - uses: bcgov-nr/action-deployer-openshift@v1.4.0
         with:
@@ -66,8 +74,9 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
           parameters:
-            -p ZONE=prod -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
-            -p NAME=${{ github.event.repository.name }} ${{ matrix.parameters }}
+            -p ZONE=prod -p NAME=${{ github.event.repository.name }}
+            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
+            ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   image-promotions:
