@@ -89,7 +89,7 @@ jobs:
               -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
             triggers: ('backend/' 'frontend/')
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v1.4.0
+      - uses: bcgov-nr/action-deployer-openshift@v2.0.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
