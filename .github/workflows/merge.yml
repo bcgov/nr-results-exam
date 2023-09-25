@@ -32,7 +32,7 @@ jobs:
               -p VITE_USER_POOLS_ID=${{ vars.VITE_USER_POOLS_ID }}
               -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v1.4.0
+      - uses: bcgov-nr/action-deployer-openshift@v2.0.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -66,7 +66,7 @@ jobs:
               -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
               -p VITE_REDIRECT_SIGN_OUT="${{ vars.VITE_REDIRECT_SIGN_OUT }}"
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v1.4.0
+      - uses: bcgov-nr/action-deployer-openshift@v2.0.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
