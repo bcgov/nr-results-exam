@@ -1,5 +1,6 @@
 import { Auth } from 'aws-amplify'
 import type { CognitoUserSession } from 'amazon-cognito-identity-js'
+import { env } from '../env'
 
 const FAM_LOGIN_USER = 'famLoginUser'
 
@@ -11,7 +12,7 @@ export interface FamLoginUser {
 }
 
 export const signIn = async (provider: string): Promise<any> => {
-  const appEnv = 'DEV'
+  const appEnv = env.VITE_ZONE ?? 'DEV'
 
   if (provider.localeCompare('idir') === 0) {
     Auth.federatedSignIn({
@@ -87,7 +88,7 @@ async function refreshToken (): Promise<FamLoginUser | undefined> {
 function parseToken(authToken: CognitoUserSession): FamLoginUser {
   const decodedIdToken = authToken.getIdToken().decodePayload();
   const decodedAccessToken = authToken.getAccessToken().decodePayload();
-  //console.log(decodedIdToken)
+  
   // Extract the first name and last name from the displayName and remove unwanted part
   const displayName = decodedIdToken['custom:idp_display_name'];
   const [lastName, firstName] = displayName.split(', ');
