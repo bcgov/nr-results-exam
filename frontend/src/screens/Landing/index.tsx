@@ -25,7 +25,7 @@ const Landing: React.FC = () => {
               {/* Welcome - Title and Subtitle */}
               <h1 data-testid="landing-title" className="landing-title">Welcome to RESULTS EXAM</h1>
               <h2 data-testid="landing-subtitle" className="landing-subtitle">
-                Plan, report and analyze your silviculture activities
+                Login to take a RESULTS exam
               </h2>
               {/* Button Group */}
               <div className="row gy-3">
