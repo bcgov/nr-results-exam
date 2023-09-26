@@ -7,7 +7,7 @@
     "@bcgov-nr/nr-theme": "^1.0.10",
     "@carbon/pictograms-react": "^11.49.0",
     "@carbon/react": "^1.27.0",
-    "@esbuild/linux-x64": "^0.19.0",
+    "@esbuild/linux-arm64": "^0.18.0",
     "@testing-library/jest-dom": "^6.1.2",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.0.0",
