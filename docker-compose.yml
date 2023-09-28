@@ -19,21 +19,21 @@ x-common: &common
 services:
   backend:
     container_name: backend
+    entrypoint: sh -c "sleep 300 && npm ci && npm run start"
     environment:
       CHES_TOKEN_URL : https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
       CHES_CLIENT_ID : 09C5071A-ACE9B6FACF6
       CHES_CLIENT_SECRET : 9c82d5fc-1d34-4a0c-97f2-c0c756791c34
-    ports: ["5000:5000"]
-    volumes: ["./backend:/app", "/app/node_modules"]
-    restart: always
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
     healthcheck:
-      test: [ "CMD-SHELL", "curl http://localhost:5000" ]
+      test: [ "CMD-SHELL", "curl http://localhost:5000/health" ]
       interval: 15s
       timeout: 5s
       retries: 5
+    image: node:20.7.0-bullseye-slim
+    ports: ["5000:5000"]
+    restart: always
+    volumes: ["./backend:/app", "/app/node_modules"]
+    working_dir: "/app"
 
   frontend:
     container_name: frontend
