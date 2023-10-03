@@ -3,11 +3,12 @@ version: '3.9'
 x-common: &common
   depends_on: ["backend"]
   environment:
-    VITE_USER_POOLS_ID: ca-central-1_FxagSNQa7
-    VITE_USER_POOLS_WEB_CLIENT_ID: 43hjhdf5dvi17opb0jgucfpvm7
-    VITE_AWS_DOMAIN: test-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
+    VITE_AWS_DOMAIN: prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
+    VITE_BACKEND_URL: http://backend:5000
     VITE_CHES_FROM_EMAIL : jaskiratsingh.grewal@gov.bc.ca
     VITE_CHES_ADMIN_EMAIL : jaski.grewal@gmail.com
+    VITE_USER_POOLS_ID: ca-central-1_FxagSNQa7
+    VITE_USER_POOLS_WEB_CLIENT_ID: 3g6n2ha1loi4kp1jhaq359vrvb
     VITE_ZONE: DEV
   healthcheck:
     test: [ "CMD-SHELL", "curl http://localhost:3000" ]
@@ -19,16 +20,17 @@ x-common: &common
 services:
   backend:
     container_name: backend
-    entrypoint: sh -c "sleep 300 && npm ci && npm run start"
+    entrypoint: sh -c "npm ci && npm run start"
     environment:
-      CHES_TOKEN_URL : https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
       CHES_CLIENT_ID : 09C5071A-ACE9B6FACF6
       CHES_CLIENT_SECRET : 9c82d5fc-1d34-4a0c-97f2-c0c756791c34
+      CHES_TOKEN_URL : https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
     healthcheck:
-      test: [ "CMD-SHELL", "curl http://localhost:5000/health" ]
+      test: timeout 10s bash -c 'true > /dev/tcp/127.0.0.1/5000'
       interval: 15s
-      timeout: 5s
       retries: 5
+      start_period: 10s
+      timeout: 5s
     image: node:20.8.0-bullseye-slim
     ports: ["5000:5000"]
     restart: always
