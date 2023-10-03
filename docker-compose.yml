@@ -11,10 +11,11 @@ x-common: &common
     VITE_USER_POOLS_WEB_CLIENT_ID: 3g6n2ha1loi4kp1jhaq359vrvb
     VITE_ZONE: DEV
   healthcheck:
-    test: [ "CMD-SHELL", "curl http://localhost:3000" ]
+    test: wget --no-verbose --spider http://localhost:3000
     interval: 15s
-    timeout: 5s
     retries: 5
+    timeout: 5s
+    start_period: 10s
   restart: always
 
 services:
