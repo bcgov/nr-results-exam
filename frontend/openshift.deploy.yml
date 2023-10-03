@@ -121,6 +121,8 @@ objects:
                   value: "${VITE_CHES_FROM_EMAIL}"
                 - name: VITE_CHES_ADMIN_EMAIL
                   value: "${VITE_CHES_ADMIN_EMAIL}"
+                - name: VITE_BACK_URL
+                  value: "${VITE_BACK_URL}"
                 - name: VITE_REDIRECT_SIGN_OUT
                   value: "${VITE_REDIRECT_SIGN_OUT}"
                 - name: VITE_USER_POOLS_ID
