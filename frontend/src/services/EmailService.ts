@@ -30,7 +30,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   `;
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL;
-  const backUrl = env.VITE_BACK_URL;
+  const backendUrl = env.VITE_BACKEND_URL;
 
   const emailParams: any = {
     fromEmail: fromEmail,
@@ -40,7 +40,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   };
   
   try {
-    await axios.post(`${backUrl}/api/mail`, emailParams);
+    await axios.post(`${backendUrl}/api/mail`, emailParams);
     console.log('User report email sent successfully');
     return 'success';
   } catch (error) {
@@ -89,7 +89,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 
     const fromEmail = env.VITE_CHES_FROM_EMAIL;
     const adminEmail = env.VITE_CHES_ADMIN_EMAIL;
-    const backUrl = env.VITE_BACK_URL;
+    const backendUrl = env.VITE_BACKEND_URL;
 
     const emailParams: any = {
       fromEmail: fromEmail,
@@ -99,7 +99,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     };
   
     try {
-      await axios.post(`${backUrl}/api/mail`, emailParams);
+      await axios.post(`${backendUrl}/api/mail`, emailParams);
       console.log('Admin report email sent successfully');
       return 'success';
     } catch (error) {
