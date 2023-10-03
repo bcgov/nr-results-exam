@@ -43,6 +43,10 @@
                                 "value": "jaski.grewal@gmail.com"
                             },
                             {
+                                "name": "VITE_BACK_URL",
+                                "value": "https://nr-results-exam-test-backend.apps.silver.devops.gov.bc.ca:443"
+                            },
+                            {
                                 "name": "VITE_USER_POOLS_ID",
                                 "value": "ca-central-1_t2HSZBHur"
                             },
