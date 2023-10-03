@@ -111,10 +111,10 @@ objects:
               imagePullPolicy: Always
               name: ${NAME}
               env:
-                - name: BACKEND_URL
-                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: LOG_LEVEL
                   value: "${LOG_LEVEL}"
+                - name: VITE_BACKEND_URL
+                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: VITE_AWS_DOMAIN
                   value: "${VITE_AWS_DOMAIN}"
                 - name: VITE_CHES_FROM_EMAIL
