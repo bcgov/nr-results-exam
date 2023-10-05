@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const dotenv =require('dotenv');
 const indexRoutes = require("./routes/indexRoutes");
 const mailRoutes = require("./routes/mailRoutes");
@@ -8,7 +9,11 @@ dotenv.config({
   path: './.env'
 })
 const app = express();
+
+// Configure CORS options
+const corsOptions = {origin: '*'};
 app.use(express.json());
+app.use(cors(corsOptions));
 
 app.use('/api/', indexRoutes);
 app.use('/api/mail', mailRoutes);
