@@ -50,7 +50,7 @@ parameters:
   - name: VITE_ZONE
     value: DEV
   - name: VITE_AWS_DOMAIN
-    value: "test-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com"
+    value: "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com"
   - name: VITE_CHES_FROM_EMAIL
     value: "jaskiratsingh.grewal@gov.bc.ca"
   - name: VITE_CHES_ADMIN_EMAIL

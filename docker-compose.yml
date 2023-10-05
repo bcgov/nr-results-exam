@@ -3,7 +3,6 @@ version: '3.9'
 x-common: &common
   depends_on: ["backend"]
   environment:
-    VITE_AWS_DOMAIN: prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
     VITE_BACKEND_URL: http://backend:5000
     VITE_CHES_FROM_EMAIL : jaskiratsingh.grewal@gov.bc.ca
     VITE_CHES_ADMIN_EMAIL : jaski.grewal@gmail.com
