@@ -9,11 +9,22 @@ dotenv.config({
   path: './.env'
 })
 const app = express();
-
-// Configure CORS options
-const corsOptions = {origin: ['http://loclahost:3000','https://4d73-154-20-152-157.ngrok-free.app/']};
 app.use(express.json());
+
+const whitelist = ['http://localhost:3000', 'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca/', 'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca/' ];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (origin && whitelist.some(domain => origin.startsWith(domain))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
 app.use(cors(corsOptions));
+
 
 app.use('/api/', indexRoutes);
 app.use('/api/mail', mailRoutes);
