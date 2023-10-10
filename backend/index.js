@@ -11,7 +11,7 @@ dotenv.config({
 const app = express();
 
 // Configure CORS options
-const corsOptions = {origin: '*'};
+const corsOptions = {origin: ['http://loclahost:3000','https://4d73-154-20-152-157.ngrok-free.app/']};
 app.use(express.json());
 app.use(cors(corsOptions));
 
