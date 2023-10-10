@@ -39,6 +39,7 @@ services:
 
   frontend:
     container_name: frontend
+    profiles: [dev, frontend]
     entrypoint: sh -c "npm ci && npm run start"
     image: node:20-bullseye
     ports: ["3000:3000"]
@@ -48,8 +49,8 @@ services:
 
   caddy:
     container_name: caddy
-    profiles: ["caddy"]
+    profiles: [caddy]
     build: ./frontend
-    ports: ["3005:3000"]
+    ports: ["3000:3000"]
     volumes: ["./frontend/Caddyfile:/etc/caddy/Caddyfile"]
     <<: *common
