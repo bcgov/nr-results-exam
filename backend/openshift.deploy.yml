@@ -152,8 +152,8 @@ objects:
                   port: 5000
                   scheme: HTTP
                   httpHeaders:
-                      - name: Origin
-                        value: http://localhost:3000
+                    - name: Origin
+                      value: http://localhost:3000
                 initialDelaySeconds: 5
                 periodSeconds: 2
                 timeoutSeconds: 2
@@ -167,8 +167,8 @@ objects:
                   port: 5000
                   scheme: HTTP
                   httpHeaders:
-                      - name: Origin
-                        value: http://localhost:3000
+                    - name: Origin
+                      value: http://localhost:3000
                 initialDelaySeconds: 60
                 periodSeconds: 30
                 timeoutSeconds: 5

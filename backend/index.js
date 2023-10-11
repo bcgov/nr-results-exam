@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv =require('dotenv');
 const indexRoutes = require("./routes/indexRoutes");
 const mailRoutes = require("./routes/mailRoutes");
-const healthRoute = require('./routes/health');
+const healthRoute = require("./routes/health");
 
 dotenv.config({
   path: './.env'
@@ -23,13 +23,13 @@ const corsOptions = {
   }
 };
 
+// Let health check through before CORS
+app.use('/health', healthRoute);
+
+// CORS, routes
 app.use(cors(corsOptions));
-
-
 app.use('/api/', indexRoutes);
 app.use('/api/mail', mailRoutes);
-
-app.use('/health', healthRoute);
 
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
