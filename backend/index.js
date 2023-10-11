@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv =require('dotenv');
 const indexRoutes = require("./routes/indexRoutes");
 const mailRoutes = require("./routes/mailRoutes");
-const healthRoute = require("./routes/health");
+const healthRoutes = require("./routes/healthRoutes");
 
 dotenv.config({
   path: './.env'
@@ -24,7 +24,7 @@ const corsOptions = {
 };
 
 // Let health check through before CORS
-app.use('/health', healthRoute);
+app.use('/health', healthRoutes);
 
 // CORS, routes
 app.use(cors(corsOptions));
