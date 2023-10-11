@@ -3,7 +3,7 @@
     - option: "Paris"
       isCorrect: true
     - option: "Berlin"
-      isCorrect: false
+      isCorrect: true
     - option: "London"
       isCorrect: false
 
@@ -12,7 +12,7 @@
     - option: "Leonardo da Vinci"
       isCorrect: true
     - option: "Pablo Picasso"
-      isCorrect: false
+      isCorrect: true
     - option: "Vincent van Gogh"
       isCorrect: false
 
@@ -28,7 +28,7 @@
     - option: "Mars"
       isCorrect: true
     - option: "Jupiter"
-      isCorrect: false
+      isCorrect: true
     - option: "Saturn"
       isCorrect: false
 
@@ -44,7 +44,7 @@
     - option: "India"
       isCorrect: true
     - option: "Egypt"
-      isCorrect: false
+      isCorrect: true
     - option: "Japan"
       isCorrect: false
 
