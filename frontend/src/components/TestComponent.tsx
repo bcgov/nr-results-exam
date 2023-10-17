@@ -136,11 +136,6 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     }, 0);
     const scorePercentage = Math.round((correctAnswers / totalAnswered) * 100);
     const questionsWrong = totalAnswered - correctAnswers;
-
-    console.log('Result JSON:', JSON.stringify(result, null, 2));
-    console.log('Total Percentage:', scorePercentage + '%');
-    console.log('Questions Answered Rightly:', correctAnswers);
-    console.log('Questions Answered Wrongly:', questionsWrong);
     return result;
   };
 

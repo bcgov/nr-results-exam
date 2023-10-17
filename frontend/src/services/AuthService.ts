@@ -36,7 +36,6 @@ export const isLoggedIn = () => {
             | FamLoginUser
             | undefined
             | null)
-  console.log(stateInfo)
   // check if the user is logged in
   const loggedIn = !!stateInfo?.authToken // TODO check if token expired later?
   return loggedIn
@@ -62,7 +61,6 @@ export const handlePostLogin = async () => {
  */
 async function refreshToken (): Promise<FamLoginUser | undefined> {
   try {
-    console.log('Refreshing Token...')
     const currentAuthToken: CognitoUserSession = await Auth.currentSession()
     const famLoginUser = parseToken(currentAuthToken);
     await storeFamUser(famLoginUser);
@@ -88,8 +86,8 @@ async function refreshToken (): Promise<FamLoginUser | undefined> {
 function parseToken(authToken: CognitoUserSession): FamLoginUser {
   const decodedIdToken = authToken.getIdToken().decodePayload();
   const decodedAccessToken = authToken.getAccessToken().decodePayload();
-  console.log("User token decoded:")
-  console.log(decodedIdToken)
+  // console.log("User token decoded:")
+  // console.log(decodedIdToken)
   // Extract the first name and last name from the displayName and remove unwanted part
   const displayName = decodedIdToken['custom:idp_display_name'];
   const [lastName, firstName] = displayName.split(', ');
