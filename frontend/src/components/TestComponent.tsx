@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import yaml from 'yaml';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
 import { InlineNotification } from "@carbon/react";
+import { Loading } from "@carbon/react";
 
 interface Choice {
   option: string;
@@ -24,6 +25,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [emailStatus, setEmailStatus] = useState<'success' | 'error' | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
@@ -39,7 +41,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
       const response = await fetch(`/${questionFileName}`);
       const data = await response.text();
       const parsedQuestions: Question[] = yaml.parse(data);
-      const randomQuestions = getRandomQuestions(parsedQuestions, 5);
+      const randomQuestions = getRandomQuestions(parsedQuestions, 10);
       setQuestions(randomQuestions);
     } catch (error) {
       console.error('Error fetching questions:', error);
@@ -63,6 +65,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
       return;
     }
     setIsSubmitted(true);
+    setIsLoading(true);
     const results = await generateResultJson();
     const percentage = calculateScorePercentage()
     const userReportStatus = await sendUserReport(user.displayName, user.email, percentage, testName);
@@ -72,6 +75,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     } else {
       setEmailStatus('error');
     }
+    setIsLoading(false);
   };
 
   const getChoiceClassName = (questionIndex: number, choiceIndex: number): string => {
@@ -165,63 +169,67 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
 
   return (
     <>
-    {questions.length>0 ?
-    <div className="container mb-5">
-      {emailNotification}
-      <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName+" "+user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
-      <h1 className="mt-4">Online Test</h1>
-      <form onSubmit={handleSubmit}>
-        {renderPassFailMessage()}
-        {questions.map((question, index) => (
-          <div key={index} className="mt-4">
-            <h3>{`Question ${index + 1}`}</h3>
-            <div className="d-flex flex-row">
-              <p>{question.question}</p>
-              {isSubmitted && userAnswers[index] !== undefined && (
-                <p className="fw-bold mx-2">
-                  {userAnswers[index] === questions[index].choices.findIndex((choice) => choice.isCorrect)
-                    ? '(Your answer is right!)'
-                    : '(Your answer is wrong!)'}
-                </p>
-              )}
+      {!loading?
+      <>
+      {questions.length>0 ?
+      <div className="container mb-5">
+        {emailNotification}
+        <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName+" "+user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
+        <h1 className="mt-4">Online Test</h1>
+        <form onSubmit={handleSubmit}>
+          {renderPassFailMessage()}
+          {questions.map((question, index) => (
+            <div key={index} className="mt-5 unselectable">
+              <h3>{`Question ${index + 1}`}</h3>
+              <div className="d-flex flex-row">
+                <p className='pb-2 pt-3'>{question.question}</p>
+                {isSubmitted && userAnswers[index] !== undefined && (
+                  <p className="fw-bold mx-2 pb-2 pt-3">
+                    {userAnswers[index] === questions[index].choices.findIndex((choice) => choice.isCorrect)
+                      ? '(Your answer is right!)'
+                      : '(Your answer is wrong!)'}
+                  </p>
+                )}
+              </div>
+              <ul className="list-group">
+                {question.choices.map((choice, choiceIndex) => (
+                  <li
+                    key={choiceIndex}
+                    className={`list-group-item ${getChoiceClassName(index, choiceIndex)}`}
+                  >
+                    <label>
+                      <input
+                        type="radio"
+                        name={`question_${index}`}
+                        value={choiceIndex}
+                        onChange={() => handleAnswer(index, choiceIndex)}
+                        checked={isRadioChecked(index, choiceIndex)}
+                        disabled={isSubmitted}
+                        className="form-check-input me-2"
+                        required
+                      />
+                      <span className={userAnswers[index] === choiceIndex ? 'fw-bold' : ''}>
+                        {choice.option}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="list-group">
-              {question.choices.map((choice, choiceIndex) => (
-                <li
-                  key={choiceIndex}
-                  className={`list-group-item ${getChoiceClassName(index, choiceIndex)}`}
-                >
-                  <label>
-                    <input
-                      type="radio"
-                      name={`question_${index}`}
-                      value={choiceIndex}
-                      onChange={() => handleAnswer(index, choiceIndex)}
-                      checked={isRadioChecked(index, choiceIndex)}
-                      disabled={isSubmitted}
-                      className="form-check-input me-2"
-                      required
-                    />
-                    <span className={userAnswers[index] === choiceIndex ? 'fw-bold' : ''}>
-                      {choice.option}
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-        {!isSubmitted && (
-          <button className="btn btn-primary mt-4" type="submit">
-            Submit
-          </button>
-        )}
-      </form>
-    </div>
-    :
-    <div className='container mb-5'>
-      <h4 className='pt-2'>Sorry failed to fetch the questions please try again.</h4>
-    </div>}
+          ))}
+          {!isSubmitted && (
+            <button className="btn btn-primary mt-4" type="submit">
+              Submit
+            </button>
+          )}
+        </form>
+      </div>
+      :
+      <div className='container mb-5'>
+        <h4 className='pt-2'>Sorry failed to fetch the questions please try again.</h4>
+      </div>}
+      </>
+      :<Loading className={'some-class'} withOverlay={true} />}
     </>
   );
 };

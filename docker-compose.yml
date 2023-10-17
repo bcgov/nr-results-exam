@@ -4,7 +4,7 @@ x-common: &common
   depends_on: ["backend"]
   environment:
     VITE_BACKEND_URL: http://backend:5000
-    VITE_CHES_FROM_EMAIL : jaskiratsingh.grewal@gov.bc.ca
+    VITE_CHES_FROM_EMAIL : resultsaccess@gov.bc.ca
     VITE_CHES_ADMIN_EMAIL : jaski.grewal@gmail.com
     VITE_USER_POOLS_ID: ca-central-1_FxagSNQa7
     VITE_USER_POOLS_WEB_CLIENT_ID: 3g6n2ha1loi4kp1jhaq359vrvb
