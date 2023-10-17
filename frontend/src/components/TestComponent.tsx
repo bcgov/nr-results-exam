@@ -15,8 +15,8 @@ interface Question {
 
 interface ComponentProps {
   user: any;
-  testName:string;
-  questionFileName:string;
+  testName: string;
+  questionFileName: string;
 }
 
 const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
@@ -30,7 +30,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
   }, []);
 
   const getRandomQuestions = (questions: Question[], count: number): Question[] => {
-    const shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+    const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
     return shuffledQuestions.slice(0, count);
   };
 
@@ -63,8 +63,10 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
       return;
     }
     setIsSubmitted(true);
-    const results = await generateResultJson();
-    const percentage = calculateScorePercentage()
+    const results = generateResultJson();
+    console.log("Admin results:")
+    console.log(results)
+    const percentage = calculateScorePercentage();
     const userReportStatus = await sendUserReport(user.displayName, user.email, percentage, testName);
     const adminReportStatus = await sendAdminReport(user.displayName, user.email, percentage, testName, results);
     if (userReportStatus === 'success' && adminReportStatus === 'success') {
@@ -90,11 +92,13 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     const totalQuestions = questions.length;
     const totalAnswered = userAnswers.filter((answer) => answer !== undefined).length;
     const correctAnswers = userAnswers.reduce((count, answer, index) => {
-      const isCorrect = questions[index].choices[answer]?.isCorrect;
+      const isCorrect = userAnswers[index] !== undefined && questions[index].choices[answer]?.isCorrect;
       return count + (isCorrect ? 1 : 0);
     }, 0);
+  
     return Math.round((correctAnswers / totalAnswered) * 100);
   };
+  
 
   const isPassing = (): boolean => {
     const scorePercentage = calculateScorePercentage();
@@ -117,113 +121,144 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     return userAnswers[questionIndex] === choiceIndex;
   };
 
-  const generateResultJson = async () => {
-    const result = questions.map((question, index) => ({
-      question: question.question,
-      answer: question.choices[question.choices.findIndex((choice) => choice.isCorrect)].option,
-      userAnswered: question.choices[userAnswers[index]].option,
-      isCorrect: userAnswers[index] === question.choices.findIndex((choice) => choice.isCorrect),
-    }));
+  const generateResultJson = () => {
+    const result = questions.map((question, index) => {
+      const userAnswered = question.choices[userAnswers[index]].option;
+      const answer = getCorrectAnswers(index); // Change property name to "answer"
+      const isCorrect = checkIfAnswerIsCorrect(index, userAnswers[index]);
+      return { question: question.question, userAnswered, answer, isCorrect }; // Rename property
+    });
+  
     const totalQuestions = questions.length;
     const totalAnswered = userAnswers.filter((answer) => answer !== undefined).length;
     const correctAnswers = userAnswers.reduce((count, answer, index) => {
-      const isCorrect = questions[index].choices[answer]?.isCorrect;
+      const isCorrect = checkIfAnswerIsCorrect(index, answer);
       return count + (isCorrect ? 1 : 0);
     }, 0);
     const scorePercentage = Math.round((correctAnswers / totalAnswered) * 100);
     const questionsWrong = totalAnswered - correctAnswers;
-
-    console.log('Result JSON:', JSON.stringify(result, null, 2));
+  
+    console.log('Result JSON:');
+    console.log(result);
     console.log('Total Percentage:', scorePercentage + '%');
     console.log('Questions Answered Rightly:', correctAnswers);
     console.log('Questions Answered Wrongly:', questionsWrong);
     return result;
   };
+  
+  const getCorrectAnswers = (questionIndex: number): string => {
+    const choices = questions[questionIndex].choices;
+    const correctAnswers = choices
+      .filter((choice) => choice.isCorrect)
+      .map((choice) => choice.option)
+      .join(' or ');
+    return correctAnswers;
+  };
+  
+  
+
+  const checkIfAnswerIsCorrect = (questionIndex: number, selectedChoiceIndex: number): boolean => {
+    const choices = questions[questionIndex].choices;
+    // Check if the selected choice is correct
+    if (choices[selectedChoiceIndex].isCorrect) {
+      return true;
+    } else {
+      // Check if there is at least one other correct choice selected
+      for (let i = 0; i < choices.length; i++) {
+        if (i !== selectedChoiceIndex && choices[i].isCorrect && userAnswers[questionIndex] === i) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
 
   const emailNotification = <>
-  {/* ... your existing JSX */}
-  <div className="mt-3">
-        {emailStatus === 'success' ? (
-          <InlineNotification
-            subtitle="Email report sent successfully to the admin, you are safe to close this browser window now."
-            title={<span className="fw-bold">Success</span>}
-            kind="success"
-            lowContrast
-            className="w-100"
-          />
-        ) : emailStatus === 'error' ? (
-          <InlineNotification
-            subtitle="Failed to send the email report, please take a screenshot of the results and timestamp for your reference."
-            title={<span className="fw-bold">Error</span>}
-            kind="error"
-            lowContrast
-            className="w-100"
-          />
-        ) : null}
+    {/* ... your existing JSX */}
+    <div className="mt-3">
+      {emailStatus === 'success' ? (
+        <InlineNotification
+          subtitle="Email report sent successfully to the admin, you are safe to close this browser window now."
+          title={<span className="fw-bold">Success</span>}
+          kind="success"
+          lowContrast
+          className="w-100"
+        />
+      ) : emailStatus === 'error' ? (
+        <InlineNotification
+          subtitle="Failed to send the email report, please take a screenshot of the results and timestamp for your reference."
+          title={<span className="fw-bold">Error</span>}
+          kind="error"
+          lowContrast
+          className="w-100"
+        />
+      ) : null}
     </div>
   </>
 
-  return (
-    <>
-    {questions.length>0 ?
-    <div className="container mb-5">
-      {emailNotification}
-      <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName+" "+user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
-      <h1 className="mt-4">Online Test</h1>
-      <form onSubmit={handleSubmit}>
-        {renderPassFailMessage()}
-        {questions.map((question, index) => (
-          <div key={index} className="mt-4">
-            <h3>{`Question ${index + 1}`}</h3>
-            <div className="d-flex flex-row">
-              <p>{question.question}</p>
-              {isSubmitted && userAnswers[index] !== undefined && (
-                <p className="fw-bold mx-2">
-                  {userAnswers[index] === questions[index].choices.findIndex((choice) => choice.isCorrect)
-                    ? '(Your answer is right!)'
-                    : '(Your answer is wrong!)'}
-                </p>
-              )}
+return (
+  <>
+    {questions.length > 0 ? (
+      <div className="container mb-5">
+        {emailNotification}
+        <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName + " " + user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
+        <h1 className="mt-4">Online Test</h1>
+        <form onSubmit={handleSubmit}>
+          {renderPassFailMessage()}
+          {questions.map((question, index) => (
+            <div key={index} className="mt-4">
+              <h3>{`Question ${index + 1}`}</h3>
+              <div className="d-flex flex-row">
+                <p>{question.question}</p>
+                {isSubmitted && userAnswers[index] !== undefined && (
+                  <p className="fw-bold mx-2">
+                    {checkIfAnswerIsCorrect(index, userAnswers[index])
+                      ? '(Your answer is right!)'
+                      : '(Your answer is wrong!)'}
+                  </p>
+                )}
+              </div>
+              <ul className="list-group">
+                {question.choices.map((choice, choiceIndex) => (
+                  <li
+                    key={choiceIndex}
+                    className={`list-group-item ${getChoiceClassName(index, choiceIndex)}`}
+                  >
+                    <label>
+                      <input
+                        type="radio"
+                        name={`question_${index}`}
+                        value={choiceIndex}
+                        onChange={() => handleAnswer(index, choiceIndex)}
+                        checked={isRadioChecked(index, choiceIndex)}
+                        disabled={isSubmitted}
+                        className="form-check-input me-2"
+                        required
+                      />
+                      <span className={userAnswers[index] === choiceIndex ? 'fw-bold' : ''}>
+                        {choice.option}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="list-group">
-              {question.choices.map((choice, choiceIndex) => (
-                <li
-                  key={choiceIndex}
-                  className={`list-group-item ${getChoiceClassName(index, choiceIndex)}`}
-                >
-                  <label>
-                    <input
-                      type="radio"
-                      name={`question_${index}`}
-                      value={choiceIndex}
-                      onChange={() => handleAnswer(index, choiceIndex)}
-                      checked={isRadioChecked(index, choiceIndex)}
-                      disabled={isSubmitted}
-                      className="form-check-input me-2"
-                      required
-                    />
-                    <span className={userAnswers[index] === choiceIndex ? 'fw-bold' : ''}>
-                      {choice.option}
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-        {!isSubmitted && (
-          <button className="btn btn-primary mt-4" type="submit">
-            Submit
-          </button>
-        )}
-      </form>
-    </div>
-    :
-    <div className='container mb-5'>
-      <h4 className='pt-2'>Sorry failed to fetch the questions please try again.</h4>
-    </div>}
-    </>
-  );
+          ))}
+          {!isSubmitted && (
+            <button className="btn btn-primary mt-4" type="submit">
+              Submit
+            </button>
+          )}
+        </form>
+      </div>
+    ) : (
+      <div className='container mb-5'>
+        <h4 className='pt-2'>Sorry, failed to fetch the questions, please try again.</h4>
+      </div>
+    )}
+  </>
+);
+
 };
 
 export default TestComponent;
