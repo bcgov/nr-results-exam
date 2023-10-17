@@ -60,23 +60,6 @@ const listItems = [
         disabled: false
       },
     ]
-  },
-  {
-    name: 'Management',
-    items: [
-      {
-        name: 'Settings',
-        icon: 'Settings',
-        link: '#',
-        disabled: true
-      },
-      {
-        name: 'Notifications',
-        icon: 'Notification',
-        link: '#',
-        disabled: true
-      }
-    ]
   }
 ];
 
@@ -146,14 +129,7 @@ const BCHeaderwSide = () => {
             <div className="mx-2">
               <ThemeToggle/>
             </div>
-            <HeaderGlobalAction
-              aria-label="Notifications"
-              data-testid="header-button__notifications"
-              onClick={handleNotificationsPanel}
-              isActive={notifications}
-            >
-              <Icons.Notification size={20} />
-            </HeaderGlobalAction>
+            
             <HeaderGlobalAction
               aria-label="User Settings"
               tooltipAlignment="end"
@@ -164,12 +140,6 @@ const BCHeaderwSide = () => {
               <Icons.UserAvatar size={20} />
             </HeaderGlobalAction>
           </HeaderGlobalBar>
-          <HeaderPanel aria-label="Notifications Tab" expanded={notifications} className="notifications-panel">
-            <RightPanelTitle
-              title="Notifications"
-              closeFn={closeNotificationsPanel}
-            />
-          </HeaderPanel>
           <HeaderPanel aria-label="User Profile Tab" expanded={myProfile} className="notifications-panel">
             <RightPanelTitle
               title="My Profile"
@@ -199,9 +169,6 @@ const BCHeaderwSide = () => {
                   })}
                 </div>
               ))}
-              <div className="support-section">
-                <SideNavLink renderIcon={Icons.Help}>Need help?</SideNavLink>
-              </div>
             </SideNavItems>
           </SideNav>
         </Header>
