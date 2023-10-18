@@ -40,7 +40,6 @@ parameters:
     value: "info"
   - name: VITE_USER_POOLS_WEB_CLIENT_ID
     value: 1uhcp67qtfl3jra6b595e9f6jn
-  - name: VITE_REDIRECT_SIGN_OUT
   - name: VITE_ZONE
     value: DEV
 objects:
@@ -99,8 +98,6 @@ objects:
                   value: "${LOG_LEVEL}"
                 - name: VITE_BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
-                - name: VITE_REDIRECT_SIGN_OUT
-                  value: "${VITE_REDIRECT_SIGN_OUT}"
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
                   value: "${VITE_USER_POOLS_WEB_CLIENT_ID}"
                 - name: VITE_ZONE
