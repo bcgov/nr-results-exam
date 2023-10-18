@@ -1,168 +1,387 @@
-- question: "What is the capital of France?"
+- question: "What is the name of the current document that provides guidance on legal silviculture reporting for Major Licensees?"
   choices:
-    - option: "Paris"
+    - option: "RESULTS Information Submission Specification for Licensees"
       isCorrect: true
-    - option: "Berlin"
+    - option: "Silviculture Information Submission Guide"
       isCorrect: false
-    - option: "London"
+    - option: "Silviculture Submission Policy"
+      isCorrect: false
+    - option: "RESULTS Information Submission Specification for Government Funded activities"
       isCorrect: false
 
-- question: "Who painted the Mona Lisa?"
+- question: "What is used to authorize the requirement for the silviculture reporting for major licensees?"
   choices:
-    - option: "Leonardo da Vinci"
+    - option: "Forest Planning and Practices Regulation (FPPR) s.86(6)"
       isCorrect: true
-    - option: "Pablo Picasso"
+    - option: "Form and Manner for Reporting specified by Chief Forester (FPPR s.1)"
       isCorrect: false
-    - option: "Vincent van Gogh"
+    - option: "Both"
       isCorrect: false
 
-- question: "True or False: The Great Wall of China is visible from space."
+- question: "What is required to create and update a licensee’s records in RESULTS?"
   choices:
-    - option: "True"
+    - option: "Business BCeID account"
       isCorrect: false
-    - option: "False"
+    - option: "Authorization by licensee to act on their behalf"
+      isCorrect: false
+    - option: "Both"
       isCorrect: true
 
-- question: "Which planet is known as the 'Red Planet'?"
+- question: "Here is a list of the reporting components. A- Opening definition, B - Disturbance Activity, C - Silviculture Activity, D - Forest Cover, E -  Regeneration Declaration, F - Attachments. Which ones must be reported upon harvest completion?"
   choices:
-    - option: "Mars"
-      isCorrect: true
-    - option: "Jupiter"
+    - option: "1: Opening Definition, Disturbance Activity, Regen Declaration"
       isCorrect: false
-    - option: "Saturn"
+    - option: "2: Disturbance Activity, Silviculture Activity, Forest Cover"
+      isCorrect: false
+    - option: "3: Opening Definition, Silviculture Activity, Attachments"
+      isCorrect: false
+    - option: "4: Forest Cover, Disturbance Activity, Opening Definition"
+      isCorrect: true
+    - option: "5: Opening Definition, Regeneration Declaration, Attachments"
+      isCorrect: false
+    - option: "6: All of Reporting components"
       isCorrect: false
 
-- question: "True or False: Elephants are the largest land animals."
+- question: "Before or on the regeneration due date, what reporting is mandatory?"
   choices:
-    - option: "True"
+    - option: "Silviculture Activity"
+      isCorrect: false
+    - option: "Forest Cover"
       isCorrect: true
-    - option: "False"
+    - option: "Regeneration Declaration"
+      isCorrect: false
+    - option: "Attachments"
+      isCorrect: false
+    - option: "Free Growing Declaration"
       isCorrect: false
 
-- question: "Which country is famous for the Taj Mahal?"
+- question: "Before or on the free growing due date, what reporting is mandatory?"
   choices:
-    - option: "India"
-      isCorrect: true
-    - option: "Egypt"
+    - option: "Silviculture Activity, Regeneration Declaration, attachments."
       isCorrect: false
-    - option: "Japan"
+    - option: "Forest Cover, Free Growing Declaration"
+      isCorrect: true
+    - option: "Regeneration Declaration, Forest Cover"
+      isCorrect: false
+    - option: "Regeneration Declarations, Forest Cover,  Attachments"
+      isCorrect: false
+    - option: "Free Growing Declaration, Attachments"
       isCorrect: false
 
-- question: "True or False: The Eiffel Tower is located in London."
+- question: "What method can be used to report a new tenured opening in RESULTS?"
   choices:
-    - option: "True"
+    - option: "Online"
       isCorrect: false
-    - option: "False"
+    - option: "ESF"
       isCorrect: true
-
-- question: "What is the largest ocean in the world?"
-  choices:
-    - option: "Pacific Ocean"
-      isCorrect: true
-    - option: "Atlantic Ocean"
-      isCorrect: false
-    - option: "Indian Ocean"
+    - option: "Both"
       isCorrect: false
 
-- question: "True or False: The human body has 206 bones."
+- question: "If a submission is accepted, is it deemed legally correct?"
   choices:
-    - option: "True"
-      isCorrect: true
-    - option: "False"
+    - option: "Yes, the data is deemed legally correct"
       isCorrect: false
-
-- question: "What is the currency of Japan?"
-  choices:
-    - option: "Yen"
-      isCorrect: true
-    - option: "Dollar"
-      isCorrect: false
-    - option: "Euro"
-      isCorrect: false
-
-- question: "True or False: Penguins can fly."
-  choices:
-    - option: "True"
-      isCorrect: false
-    - option: "False"
+    - option: "No, only basic codes, basic quality checks and data inter-dependencies are verified but data may still not be correct."
       isCorrect: true
 
-- question: "Which is the largest continent in the world?"
+- question: "In order to submit a new opening for a tenured opening, the cutblock must be in what FTA cutblock status?"
   choices:
-    - option: "Asia"
-      isCorrect: true
-    - option: "Africa"
+    - option: "HX-Cancelled"
       isCorrect: false
-    - option: "North America"
+    - option: "HB-Approved for Harvesting"
+      isCorrect: true
+    - option: "PP-Proposed"
+      isCorrect: false
+    - option: "SP – SP only, no application received"
       isCorrect: false
 
-- question: "True or False: Mount Everest is the tallest mountain in the world."
+- question: "RESULTS allows for multi-tenure cutblock owned by multiple clients assigned to opening."
   choices:
-    - option: "True"
+    - option: "TRUE"
+      isCorrect: false
+    - option: "FALSE"
       isCorrect: true
-    - option: "False"
+
+- question: "There must be one and only one cutblock that must be set as the prime licence for an opening."
+  choices:
+    - option: "TRUE"
+      isCorrect: true
+    - option: "FALSE"
       isCorrect: false
 
-- question: "What is the national bird of the United States?"
+- question: "New tenured openings must have at least one SU provided but spatial is not required."
   choices:
-    - option: "Bald Eagle"
-      isCorrect: true
-    - option: "Peacock"
+    - option: "TRUE"
       isCorrect: false
-    - option: "Swan"
+    - option: "FALSE"
+      isCorrect: true
+
+- question: "Tenure Key is the same as the Tenure Section."
+  choices:
+    - option: "TRUE"
+      isCorrect: false
+    - option: "FALSE"
+      isCorrect: true
+
+- question: "ESF submissions for new tenured openings must have mandatory opening and Standards Units with spatial and Forest Cover with Spatial."
+  choices:
+    - option: "TRUE"
+      isCorrect: true
+    - option: "FALSE"
       isCorrect: false
 
-- question: "True or False: The Nile River is the longest river in the world."
+- question: "Submission to RESULTS via ESF can be done:"
   choices:
-    - option: "True"
+    - option: "Only by single opening"
+      isCorrect: false
+    - option: "By multiple openings"
+      isCorrect: false
+    - option: "Both"
       isCorrect: true
-    - option: "False"
+
+- question: "What is NOT one of the potential purposes of an Opening Definition ESF Submission?"
+  choices:
+    - option: "Create new openings"
+      isCorrect: false
+    - option: "Update existing openings"
+      isCorrect: false
+    - option: "Update forest cover"
+      isCorrect: true
+    - option: "Make standards unit modifications to existing openings"
       isCorrect: false
 
-- question: "What is the largest animal on Earth?"
+- question: "What is the ESF Action Code to submit a new opening?"
   choices:
-    - option: "Blue Whale"
+    - option: "I-Insert"
       isCorrect: true
-    - option: "Elephant"
+    - option: "U-Update"
       isCorrect: false
-    - option: "Giraffe"
+    - option: "N-New"
       isCorrect: false
 
-- question: "True or False: The Statue of Liberty was a gift from France to the United States."
+- question: "Which of the following is not a valid opening key?"
   choices:
-    - option: "True"
+    - option: "Timbermark+Cutblock"
+      isCorrect: false
+    - option: "Mapsheet+Opening Number"
+      isCorrect: false
+    - option: "Opening ID"
+      isCorrect: false
+    - option: "Licence+Timbermark+Cutblock"
       isCorrect: true
-    - option: "False"
+
+- question: "In a multi-tenure opening, disturbance reporting may be reported as:"
+  choices:
+    - option: "Can be reported as one disturbance for the entire opening"
+      isCorrect: false
+    - option: "Must be reported as a separate disturbance for each tenure/cutblock"
+      isCorrect: true
+    - option: "Both"
       isCorrect: false
 
-- question: "Which instrument has black and white keys?"
+- question: "When there is more than one silvicultural system utilized in harvesting the same opening (excluding roads)…"
   choices:
-    - option: "Piano"
-      isCorrect: true
-    - option: "Violin"
+    - option: "Reporting must be generalized to the most dominant silviculture system"
       isCorrect: false
-    - option: "Trumpet"
+    - option: "Reporting must be provided to represent each area represented by the different silvicultural systems"
+      isCorrect: true
+    - option: "Both methods are acceptable"
       isCorrect: false
 
-- question: "True or False: Honey is made by bees."
+- question: "When reporting a planting activity, which of the following is mandatory?"
   choices:
-    - option: "True"
+    - option: "Planted tree species"
+      isCorrect: false
+    - option: "Seedlot or Veglot"
+      isCorrect: false
+    - option: "Number of Trees Planted"
+      isCorrect: false
+    - option: "Excess of Transfer Limit, if planted trees have exceeded the limit"
+      isCorrect: false
+    - option: "All of the above"
       isCorrect: true
-    - option: "False"
+
+- question: "What ESF Action Code is used to create a new disturbance or silviculture activity?"
+  choices:
+    - option: "I-Insert"
+      isCorrect: true
+    - option: "U-Update"
+      isCorrect: false
+    - option: "N-New"
       isCorrect: false
 
-- question: "Which country is known for the Great Barrier Reef?"
+- question: "Which of the following fields are NOT mandatory for a licensee funded completed silviculture activity ESF submission?"
   choices:
-    - option: "Brazil"
+    - option: "activityBase"
       isCorrect: false
-    - option: "Australia"
+    - option: "netAreaTreated"
+      isCorrect: false
+    - option: "Licensee ID"
       isCorrect: true
-    - option: "Canada"
+    - option: "actionCode"
+      isCorrect: false
+    - option: "fundSource"
       isCorrect: false
 
-- question: "True or False: The Sun is a star."
+- question: "What ESF schema field dictates whether a reported silviculture is an actual completed activity?"
   choices:
-    - option: "True"
-      isCorrect: true
-    - option: "False"
+    - option: "rst:activityDate true"
       isCorrect: false
+    - option: "rst:actualDateIndicator false"
+      isCorrect: false
+    - option: "rst:actualDateIndicator true"
+      isCorrect: true
+
+- question: "Forest Cover cannot be submitted for an opening unless what other report requirement is met?"
+  choices:
+    - option: "A Milestone Report exists"
+      isCorrect: false
+    - option: "A Disturbance Report exists"
+      isCorrect: true
+    - option: "A Silviculture Activity Report exists"
+      isCorrect: false
+
+- question: "How do you determine if an SU is part of a silviculture prescription or a site plan?"
+  choices:
+    - option: "A silviculture prescription has no map while a site plan has a map"
+      isCorrect: false
+    - option: "A silviculture prescription has no Standards Regime ID while a Site Plan can utilize a Standards Regime ID"
+      isCorrect: true
+    - option: "A silviculture prescription has no minimum preferred targets while a site plan has minimum preferred targets"
+      isCorrect: false
+
+- question: "What SU modification functions are not available to a silviculture prescription?"
+  choices:
+    - option: "Corrections"
+      isCorrect: false
+    - option: "Amendment (Major, Requiring Approvals)"
+      isCorrect: false
+    - option: "Approved Variation"
+      isCorrect: true
+    - option: "Minor Amendment"
+      isCorrect: false
+
+- question: "If the Standards Units of an opening have been reported to RESULTS as SU A, SU B, and SU C then you submit an amendment through ESF (Action Code = “A”) containing SU B and SU D – what is the outcome?"
+  choices:
+    - option: "Opening will be comprised of SU [A], SU[B], SU[C], SU [D]"
+      isCorrect: false
+    - option: "Opening will be comprised of SU [B] SU[D], and SU [A] SU [C] will be deleted"
+      isCorrect: true
+    - option: "None of the above"
+      isCorrect: false
+
+- question: "When is Standards Unit spatial optional?"
+  choices:
+    - option: "Creation of a new forest tenured opening"
+      isCorrect: false
+    - option: "When submitting a SU Modification that is adding or deleting SUs"
+      isCorrect: false
+    - option: "Minor amendment"
+      isCorrect: true
+
+- question: "What Standard Unit modification(s) require Ministry approval within RESULTS?"
+  choices:
+    - option: "Approved Variation"
+      isCorrect: false
+    - option: "Silviculture Prescription Amendment (Major)"
+      isCorrect: true
+    - option: "Site Plan Amendment"
+      isCorrect: false
+    - option: "Correction"
+      isCorrect: false
+    - option: "FPPR s.197"
+      isCorrect: false
+
+- question: "Which of the following statements is not true for a harvesting unit managed under an FDP or FSP?"
+  choices:
+    - option: "Any standards ID may be assigned to SU"
+      isCorrect: true
+    - option: "Any approved standards ID may be assigned if it is approved for use in the client's FDP or FSP."
+      isCorrect: false
+    - option: "A Ministry defaults Standard ID may be assigned to an SU if it is approved for use in the client’s FDP or FSP."
+      isCorrect: false
+
+- question: "What does the RESULTS’s Regeneration Obligation Indicator mean?"
+  choices:
+    - option: "A Standards Unit is not required"
+      isCorrect: false
+    - option: "The Standards Unit has no regeneration obligations."
+      isCorrect: false
+    - option: "No milestone declaration is required"
+      isCorrect: false
+    - option: "The area is managed under FPPR 44(4) where there is no regeneration obligation since the area is stocked immediately after harvesting."
+      isCorrect: true
+
+- question: "When a licensee completes a survey on a portion of a tenured opening that requires a forest cover update, what portion of the opening needs to be included in the forest cover submission?"
+  choices:
+    - option: "Only the portion surveyed"
+      isCorrect: false
+    - option: "The entire opening"
+      isCorrect: true
+
+- question: "What are the circumstances to use an Approved Variation?"
+  choices:
+    - option: "Standards Unit must be a site plan under an FSP."
+      isCorrect: false
+    - option: "The stocking standard/standards regime contains details on specific circumstances where the variation can apply to."
+      isCorrect: false
+    - option: "Standards Unit matches the site conditions requiring the approved variation."
+      isCorrect: false
+    - option: "All of the above"
+      isCorrect: true
+
+- question: "Forest Cover submissions require an SU linkage in a forest cover polygon. In which of the following situations is this not true?"
+  choices:
+    - option: "Non-Productive (NP) area"
+      isCorrect: true
+    - option: "Not Satisfactorily Restocked (NSR) area"
+      isCorrect: false
+    - option: "Harvested Immature (IMM) area"
+      isCorrect: false
+    - option: "A harvested Mature (MAT) area with dispersed retention"
+      isCorrect: false
+
+- question: "For FRPA/FSP major licensee and BCTS openings, 'reporting period', means the 12-month period beginning on _______ of the immediately preceding calendar year. What date should be in the above statement?"
+  choices:
+    - option: "January 1"
+      isCorrect: false
+    - option: "April 1"
+      isCorrect: true
+    - option: "June 1"
+      isCorrect: false
+    - option: "December 31"
+      isCorrect: false
+
+- question: "The first disturbance _______ date is used to set the milestone due dates for SUs with regeneration and free growing obligations. What word should be in the above statement?"
+  choices:
+    - option: "start"
+      isCorrect: true
+    - option: "completion"
+      isCorrect: false
+
+- question: "For an s.108 Application, upon approval, the regeneration and free growing due dates will be reset based on the catastrophic disturbance date."
+  choices:
+    - option: "TRUE"
+      isCorrect: false
+    - option: "FALSE"
+      isCorrect: true
+
+- question: "An FSP Stocking Standard can be submitted into RESULTS for approval."
+  choices:
+    - option: "TRUE"
+      isCorrect: false
+    - option: "FALSE"
+      isCorrect: true
+
+- question: "For FRPA/FSP openings, an update of the forest cover inventory is required for each area in which during the reporting period (Select which ones apply):"
+  choices:
+    - option: "the requirements for the regeneration date have been met,"
+      isCorrect: false
+    - option: "the requirements for the regeneration date have not been met but the regeneration date has passed,"
+      isCorrect: false
+    - option: "a free-growing stand has been declared under section 97 or 97.1 of this regulation or the requirements of section 46.11 (2) (b) of this regulation have been met,"
+      isCorrect: false
+    - option: "a free-growing stand has not been established, but the free-growing date has passed,"
+      isCorrect: false
+    - option: "All of the above"
+      isCorrect: true
