@@ -1,8 +1,13 @@
 import { env } from './env';
 
 const ZONE = env.VITE_ZONE.toLocaleLowerCase();
-const retUrl = window.location.origin;
+const redirectUri = window.location.origin;
 const logoutDomain = `https://logon${ZONE === "prod"?'':'test'}7.gov.bc.ca`;
+const retUrl = `https://${ZONE === "prod" ? "loginproxy" : "test.loginproxy"}.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout`;
+const redirectSignOut =
+  env.VITE_REDIRECT_SIGN_OUT && env.VITE_REDIRECT_SIGN_OUT.trim() !== ""
+    ? env.VITE_REDIRECT_SIGN_OUT
+    : `${logoutDomain}/clp-cgi/logoff.cgi?retnow=1&returl=${retUrl}?redirect_uri=${redirectUri}/`;
 
 const awsconfig = {
     aws_cognito_region: env.VITE_COGNITO_REGION || "ca-central-1",
@@ -13,7 +18,7 @@ const awsconfig = {
         domain: env.VITE_AWS_DOMAIN || "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com",
         scope: ['openid'],
         redirectSignIn: `${window.location.origin}/dashboard`,
-        redirectSignOut: env.VITE_REDIRECT_SIGN_OUT || `${logoutDomain}/clp-cgi/logoff.cgi?retnow=1&returl=https://${ZONE}.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout?redirect_uri=${retUrl}/`,
+        redirectSignOut: redirectSignOut,
         responseType: 'code',
     },
     federationTarget: 'COGNITO_USER_POOLS',
