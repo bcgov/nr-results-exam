@@ -46,17 +46,13 @@ parameters:
     required: true
   - name: VITE_REDIRECT_SIGN_OUT
     description: React envar
-    value: "43hjhdf5dvi17opb0jgucfpvm7"
+    value: ""
   - name: VITE_ZONE
     value: DEV
   - name: VITE_AWS_DOMAIN
     value: "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com"
   - name: VITE_CHES_FROM_EMAIL
-    value: "jaskiratsingh.grewal@gov.bc.ca"
-  - name: VITE_CHES_ADMIN_EMAIL
-    value: "jaski.grewal@gmail.com"
-  - name: VITE_CHES_FROM_EMAIL
-    value: "jaskiratsingh.grewal@gov.bc.ca"
+    value: "resultsaccess@gov.bc.ca"
   - name: VITE_CHES_ADMIN_EMAIL
     value: "jaski.grewal@gmail.com"
 objects:
