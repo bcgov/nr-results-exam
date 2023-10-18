@@ -38,23 +38,11 @@ parameters:
   - name: LOG_LEVEL
     description: Caddy logging level DEBUG, INFO, WARN, ERROR, PANIC, and FATAL (https://github.com/caddyserver/caddy/blob/master/logging.go)
     value: "info"
-  - name: VITE_USER_POOLS_ID
-    description: React envar
-    value: "ca-central-1_FxagSNQa7"
   - name: VITE_USER_POOLS_WEB_CLIENT_ID
-    description: React envar
-    required: true
+    value: 1uhcp67qtfl3jra6b595e9f6jn
   - name: VITE_REDIRECT_SIGN_OUT
-    description: React envar
-    value: ""
   - name: VITE_ZONE
     value: DEV
-  - name: VITE_AWS_DOMAIN
-    value: "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com"
-  - name: VITE_CHES_FROM_EMAIL
-    value: "resultsaccess@gov.bc.ca"
-  - name: VITE_CHES_ADMIN_EMAIL
-    value: "jaski.grewal@gmail.com"
 objects:
   - apiVersion: v1
     kind: ImageStream
@@ -111,16 +99,8 @@ objects:
                   value: "${LOG_LEVEL}"
                 - name: VITE_BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
-                - name: VITE_AWS_DOMAIN
-                  value: "${VITE_AWS_DOMAIN}"
-                - name: VITE_CHES_FROM_EMAIL
-                  value: "${VITE_CHES_FROM_EMAIL}"
-                - name: VITE_CHES_ADMIN_EMAIL
-                  value: "${VITE_CHES_ADMIN_EMAIL}"
                 - name: VITE_REDIRECT_SIGN_OUT
                   value: "${VITE_REDIRECT_SIGN_OUT}"
-                - name: VITE_USER_POOLS_ID
-                  value: "${VITE_USER_POOLS_ID}"
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
                   value: "${VITE_USER_POOLS_WEB_CLIENT_ID}"
                 - name: VITE_ZONE
