@@ -60,8 +60,6 @@ jobs:
           - name: frontend
             file: frontend/openshift.deploy.yml
             overwrite: true
-            parameters:
-              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov-nr/action-deployer-openshift@v2.0.0
         with:
