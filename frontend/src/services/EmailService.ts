@@ -88,7 +88,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     `;
 
     const fromEmail = env.VITE_CHES_FROM_EMAIL || "resultsaccess@gov.bc.ca";
-    const adminEmail = env.VITE_CHES_ADMIN_EMAIL || "jaski.grewal@gmail.com";
+    const adminEmail = env.VITE_CHES_ADMIN_EMAIL || "resultsaccess@gmail.com";
     const backendUrl = env.VITE_BACKEND_URL;
 
     const emailParams: any = {
