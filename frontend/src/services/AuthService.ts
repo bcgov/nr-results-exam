@@ -86,12 +86,23 @@ async function refreshToken (): Promise<FamLoginUser | undefined> {
 function parseToken(authToken: CognitoUserSession): FamLoginUser {
   const decodedIdToken = authToken.getIdToken().decodePayload();
   const decodedAccessToken = authToken.getAccessToken().decodePayload();
-  // console.log("User token decoded:")
-  // console.log(decodedIdToken)
+  console.log("User token decoded:")
+  console.log(decodedIdToken)
   // Extract the first name and last name from the displayName and remove unwanted part
   const displayName = decodedIdToken['custom:idp_display_name'];
-  const [lastName, firstName] = displayName.split(', ');
-  const sanitizedFirstName = firstName.split(' ')[0].trim(); // Remove unwanted part
+  const hasComma = displayName.includes(',');
+
+  let [lastName, firstName] = hasComma
+    ? displayName.split(', ')
+    : displayName.split(' ');
+
+  if (!hasComma) {
+    // In case of "First Last" format, swap first and last names
+    [lastName, firstName] = [firstName, lastName];
+  }
+
+  const sanitizedFirstName = hasComma ? firstName.split(' ')[0].trim() : firstName;
+
   const famLoginUser = {
     userName: decodedIdToken['custom:idp_username'],
     displayName,
