@@ -23,6 +23,8 @@ const awsconfig = {
         responseType: 'code',
     },
     federationTarget: 'COGNITO_USER_POOLS',
+    questionsKey: env.VITE_QUESTIONS_API_KEY || "jazz",
 };
+
 
 export default awsconfig;
