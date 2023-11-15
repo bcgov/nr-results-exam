@@ -8,7 +8,7 @@ const TestA: React.FC = () => {
   const { user } = userDetails
     return (
       <>
-        {user?<TestComponent user={user} testName="Test A" questionFileName="questions/questionsA.yaml"/>:<><div className="h4">Null</div></>}
+        {user?<TestComponent user={user} testName="Test A" questionFileName="A"/>:<><div className="h4">Null</div></>}
       </>
     );
   };
