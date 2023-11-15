@@ -44,10 +44,8 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
           'Accept': 'application/json', // Adjust content type if needed
         }
       });
-      console.log(response)
   
       const data = await response.json();
-      console.log(data)
   
       // Assuming getRandomQuestions function remains the same
       const randomQuestions = getRandomQuestions(data, 10);
