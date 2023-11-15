@@ -4,8 +4,6 @@ import {
 import { Amplify } from 'aws-amplify';
 import awsconfig from './aws-exports';
 
-import questionsConfig from './questions-config';
-console.log(questionsConfig);
 
 import { isLoggedIn } from './services/AuthService';
 

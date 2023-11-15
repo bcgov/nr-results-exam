@@ -3,6 +3,7 @@ import { env } from '../env';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
 import { InlineNotification } from "@carbon/react";
 import { Loading } from "@carbon/react";
+import questionsConfig from '../questions-config';
 
 interface Choice {
   option: string;
@@ -40,7 +41,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     try {
       const response = await fetch(`https://results-ques.netlify.app/api?file=${questionFileName}`, {
         headers: {
-          'x-api-key' : env.VITE_QUESTIONS_API_KEY,
+          'x-api-key' : questionsConfig.apiKey,
           'Accept': 'application/json', // Adjust content type if needed
         }
       });
