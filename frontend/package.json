@@ -68,5 +68,10 @@
     "sass-loader": "^13.2.2",
     "typescript": "^5.2.2",
     "vitest": "^0.34.3"
+  },
+  "overrides": {
+    "@testing-library/jest-dom": {
+      "@adobe/css-tools@<4.3.2": "^4.3.2"
+    }
   }
 }
