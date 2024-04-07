@@ -33,13 +33,13 @@
     "yaml": "^2.3.2"
   },
   "scripts": {
-    "start": "vite --host",
     "build": "tsc && vite build",
-    "serve": "vite preview",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage --watch=false",
     "lint": "eslint src --ext .ts",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "serve": "vite preview",
+    "start": "vite --host",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage --watch=false"
   },
   "browserslist": {
     "production": [

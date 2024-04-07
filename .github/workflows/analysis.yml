@@ -90,6 +90,8 @@ jobs:
         with:
           commands: |
             npm ci
+            npm run lint || \
+              true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
             npm run test:coverage || \
               true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
           dir: ${{ matrix.dir }}
