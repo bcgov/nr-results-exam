@@ -15,7 +15,7 @@ export interface FamLoginUser {
 }
 const FAM_LOGIN_USER = 'famLoginUser'
 
-const userInfoFromStorage = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER)!) as
+const userInfoFromStorage = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER)) as
 | FamLoginUser
 | undefined
 | null)

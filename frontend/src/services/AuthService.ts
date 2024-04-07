@@ -32,7 +32,7 @@ export const signIn = async (provider: string): Promise<any> => {
 export const isLoggedIn = () => {
   // this will convert the locally stored string to FamLoginUser interface type
   // TODO add this to state once redux store is configured
-  const stateInfo = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER)!) as
+  const stateInfo = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER)) as
             | FamLoginUser
             | undefined
             | null)
