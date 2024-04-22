@@ -32,7 +32,7 @@ export const signIn = async (provider: string): Promise<any> => {
 export const isLoggedIn = () => {
   // this will convert the locally stored string to FamLoginUser interface type
   // TODO add this to state once redux store is configured
-  const stateInfo = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER) as string) as
+  const stateInfo = (JSON.parse(localStorage.getItem(FAM_LOGIN_USER)!) as
             | FamLoginUser
             | undefined
             | null)
@@ -62,10 +62,9 @@ export const handlePostLogin = async () => {
 async function refreshToken (): Promise<FamLoginUser | undefined> {
   try {
     const currentAuthToken: CognitoUserSession = await Auth.currentSession()
-    const famLoginUser = parseToken(currentAuthToken);
-    await storeFamUser(famLoginUser);
-    return famLoginUser;
-
+    const famLoginUser = parseToken(currentAuthToken)
+    await storeFamUser(famLoginUser)
+    return famLoginUser
   } catch (error) {
     console.error(
       'Problem refreshing token or token is invalidated:',
@@ -83,41 +82,40 @@ async function refreshToken (): Promise<FamLoginUser | undefined> {
 * Which isn't what we really want to display. The display username is "custom:idp_username" from token.
 */
 
-function parseToken(authToken: CognitoUserSession): FamLoginUser {
-  const decodedIdToken = authToken.getIdToken().decodePayload();
-  const decodedAccessToken = authToken.getAccessToken().decodePayload();
+function parseToken (authToken: CognitoUserSession): FamLoginUser {
+  const decodedIdToken = authToken.getIdToken().decodePayload()
+  const decodedAccessToken = authToken.getAccessToken().decodePayload()
   // Extract the first name and last name from the displayName and remove unwanted part
-  const displayName = decodedIdToken['custom:idp_display_name'];
-  const hasComma = displayName.includes(',');
+  const displayName = decodedIdToken['custom:idp_display_name']
+  const hasComma = displayName.includes(',')
 
   let [lastName, firstName] = hasComma
     ? displayName.split(', ')
-    : displayName.split(' ');
+    : displayName.split(' ')
 
   if (!hasComma) {
     // In case of "First Last" format, swap first and last names
-    [lastName, firstName] = [firstName, lastName];
+    [lastName, firstName] = [firstName, lastName]
   }
 
-  const sanitizedFirstName = hasComma ? firstName.split(' ')[0].trim() : firstName;
+  const sanitizedFirstName = hasComma ? firstName.split(' ')[0].trim() : firstName
 
   const famLoginUser = {
     userName: decodedIdToken['custom:idp_username'],
     displayName,
-    email: decodedIdToken['email'],
-    idpProvider: decodedIdToken['identities']['providerName'],
+    email: decodedIdToken.email,
+    idpProvider: decodedIdToken.identities.providerName,
     roles: decodedAccessToken['cognito:groups'],
-    authToken: authToken,
+    authToken,
     firstName: sanitizedFirstName,
-    lastName,  // Add lastName field
-  };
+    lastName // Add lastName field
+  }
 
-  return famLoginUser;
+  return famLoginUser
 }
 
-
-function removeFamUser() {
-  storeFamUser(undefined);
+function removeFamUser () {
+  storeFamUser(undefined)
 
   // clean up local storage for selected application
 }
