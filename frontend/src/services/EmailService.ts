@@ -1,11 +1,11 @@
-import axios from "axios";
-import { env } from "../env";
+import axios from 'axios'
+import { env } from '../env'
 
 export const sendUserReport = async (userName: string, userEmail: string, percentage: number, testName: string) => {
-    const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
-    const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red';
-  
-    const emailBody = `
+  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
+  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
+
+  const emailBody = `
     <html>
       <head>
         <style>
@@ -27,33 +27,33 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
         </div>
       </body>
     </html>
-  `;
+  `
 
-  const fromEmail = env.VITE_CHES_FROM_EMAIL || "resultsaccess@gov.bc.ca";
-  const backendUrl = env.VITE_BACKEND_URL;
+  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
+  const backendUrl = env.VITE_BACKEND_URL
 
   const emailParams: any = {
-    fromEmail: fromEmail,
+    fromEmail,
     toEmails: [userEmail],
     subject: `${testName} user attempt report : ${userName}`,
-    mailBody: emailBody,
-  };
-  
-  try {
-    await axios.post(`${backendUrl}/api/mail`, emailParams);
-    console.log('User report email sent successfully');
-    return 'success';
-  } catch (error) {
-    console.error('Error sending user report:', error);
-    return 'error';
+    mailBody: emailBody
   }
-};
 
-  export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: any[]) => {
-    const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
-    const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red';
-  
-    const emailBody = `
+  try {
+    await axios.post(`${backendUrl}/api/mail`, emailParams)
+    console.log('User report email sent successfully')
+    return 'success'
+  } catch (error) {
+    console.error('Error sending user report:', error)
+    return 'error'
+  }
+}
+
+export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: any[]) => {
+  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
+  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
+
+  const emailBody = `
       <html>
         <head>
           <style>
@@ -85,25 +85,25 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
           </div>
         </body>
       </html>
-    `;
+    `
 
-    const fromEmail = env.VITE_CHES_FROM_EMAIL || "resultsaccess@gov.bc.ca";
-    const adminEmail = env.VITE_CHES_ADMIN_EMAIL || "resultsaccess@gov.bc.ca";
-    const backendUrl = env.VITE_BACKEND_URL;
+  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
+  const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca'
+  const backendUrl = env.VITE_BACKEND_URL
 
-    const emailParams: any = {
-      fromEmail: fromEmail,
-      toEmails: [adminEmail], // Admin's email address
-      subject: `${testName} admin report : ${userName}`,
-      mailBody: emailBody,
-    };
-  
-    try {
-      await axios.post(`${backendUrl}/api/mail`, emailParams);
-      console.log('Admin report email sent successfully');
-      return 'success';
-    } catch (error) {
-      console.error('Error sending admin report:', error);
-      return 'error';
-    }
-  };
+  const emailParams: any = {
+    fromEmail,
+    toEmails: [adminEmail], // Admin's email address
+    subject: `${testName} admin report : ${userName}`,
+    mailBody: emailBody
+  }
+
+  try {
+    await axios.post(`${backendUrl}/api/mail`, emailParams)
+    console.log('Admin report email sent successfully')
+    return 'success'
+  } catch (error) {
+    console.error('Error sending admin report:', error)
+    return 'error'
+  }
+}
