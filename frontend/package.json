@@ -72,6 +72,9 @@
   "overrides": {
     "@testing-library/jest-dom": {
       "@adobe/css-tools@<4.3.2": "^4.3.2"
+    },
+    "vite": {
+      "vite": "^5.1.7"
     }
   }
 }
