@@ -1,0 +1,56 @@
+version: '3.9'
+
+x-common: &common
+  depends_on: ["backend"]
+  environment:
+    VITE_BACKEND_URL: http://backend:5000
+    VITE_ZONE: DEV
+  healthcheck:
+    test: wget --no-verbose --spider http://localhost:3000
+    interval: 15s
+    retries: 5
+    timeout: 5s
+    start_period: 10s
+  restart: always
+
+services:
+  backend:
+    container_name: backend
+    entrypoint: sh -c "npm ci && npm run start"
+    environment:
+      CHES_CLIENT_ID : ${CHES_CLIENT_ID}
+      CHES_CLIENT_SECRET : ${CHES_CLIENT_SECRET}
+      CHES_TOKEN_URL : ${CHES_TOKEN_URL}
+      S3_ENDPOINT : ${S3_ENDPOINT}
+      S3_ACCESSKEY : ${S3_ACCESSKEY}
+      S3_SECRETKEY : ${S3_SECRETKEY}
+      S3_BUCKETNAME : ${S3_BUCKETNAME}
+    healthcheck:
+      test: timeout 10s bash -c 'true > /dev/tcp/127.0.0.1/5000'
+      interval: 15s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
+    image: node:20.12.2-bullseye-slim
+    ports: ["5000:5000"]
+    restart: always
+    volumes: ["./backend:/app", "/app/node_modules"]
+    working_dir: "/app"
+
+  frontend:
+    container_name: frontend
+    profiles: [dev, frontend]
+    entrypoint: sh -c "npm ci && npm run start"
+    image: node:20-bullseye
+    ports: ["3000:3000"]
+    volumes: ["./frontend:/app", "/app/node_modules"]
+    working_dir: "/app"
+    <<: *common
+
+  caddy:
+    container_name: caddy
+    profiles: [caddy]
+    build: ./frontend
+    ports: ["3000:3000"]
+    volumes: ["./frontend/Caddyfile:/etc/caddy/Caddyfile"]
+    <<: *common
