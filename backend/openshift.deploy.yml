@@ -52,6 +52,14 @@ parameters:
     value: "09C5071A-ACE9B6FACF6"
   - name: CHES_CLIENT_SECRET
     value: "9c82d5fc-1d34-4a0c-97f2-c0c756791c34"
+  - name: S3_ENDPOINT
+    value: "nrs.objectstore.gov.bc.ca"
+  - name: S3_ACCESSKEY
+    value: "nr-fsa-tst"
+  - name: S3_SECRETKEY
+    value: "CmmmJQWDpBmQ2cGPuxLgneZxpOnhpNxgdeOjOqjj"
+  - name: S3_BUCKETNAME
+    value: "tivpth"
   - name: VITE_QUESTIONS_API_KEY
     description: Dummy param to satisfy workflow
 objects:
