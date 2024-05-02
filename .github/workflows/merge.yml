@@ -1,18 +1,33 @@
 name: Merge
 
 on:
-  workflow_run:
-    workflows: [PR Closed]
-    types: [completed]
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - '.github/graphics/**'
+      - '!.github/workflows/**'
 
 concurrency:
+  # Do not interrupt previous workflows
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
+  vars:
+    name: Variables
+    outputs: ${{ steps.pr.outputs.pr }}
+  runs-on: ubuntu-latest
+  steps:
+      # Get PR number for squash merges to main
+      - name: PR Number
+        id: pr
+        uses: bcgov-nr/action-get-pr@v0.0.1
+
   deploys-test:
     name: TEST Deploys
+    needs: [vars]
     environment: test
     runs-on: ubuntu-22.04
     permissions:
@@ -40,13 +55,13 @@ jobs:
           overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=test -p NAME=${{ github.event.repository.name }}
-            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
+            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ needs.vars.outputs.pr }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   deploys-prod:
     name: PROD Deploys
-    needs: [deploys-test]
+    needs: [vars, deploys-test]
     environment: prod
     runs-on: ubuntu-22.04
     strategy:
@@ -70,13 +85,13 @@ jobs:
           overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=prod -p NAME=${{ github.event.repository.name }}
-            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:test
+            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ needs.vars.outputs.pr }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   image-promotions:
     name: Promote images
-    needs: [deploys-prod]
+    needs: [vars, deploys-prod]
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -88,20 +103,5 @@ jobs:
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.component }}
-          target: test
+          target: ${{ needs.vars.outputs.pr }}
           tags: prod
-
-  ghcr-cleanup:
-    name: GHCR Cleanup
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        name: [backend, frontend]
-    steps:
-      - name: Keep last 50
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: "${{ github.event.repository.name }}/${{ matrix.name }}"
-          package-type: "container"
-          min-versions-to-keep: 50
-          ignore-versions: "^(prod|test)$"
