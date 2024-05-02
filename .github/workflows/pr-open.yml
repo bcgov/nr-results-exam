@@ -1,8 +1,8 @@
 name: PR
 
 on:
-  pull_request:
-  # workflow_dispatch:
+  # pull_request:
+  workflow_dispatch:
 
 concurrency:
   # Cancel in progress for PR open and close
@@ -33,48 +33,48 @@ jobs:
           tag_fallback: test
           triggers: ${{ matrix.triggers }}
 
-  # # https://github.com/bcgov-nr/action-deployer-openshift
-  # deploys:
-  #   name: Deploys
-  #   needs: [builds]
-  #   runs-on: ubuntu-22.04
-  #   strategy:
-  #     matrix:
-  #       name: [backend, frontend]
-  #       include:
-  #         - name: backend
-  #           file: backend/openshift.deploy.yml
-  #           overwrite: true
-  #           triggers: ('backend/' 'frontend/')
-  #           verification_path: /health
-  #         - name: frontend
-  #           file: frontend/openshift.deploy.yml
-  #           overwrite: true
-  #           parameters:
-  #             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-  #           triggers: ('backend/' 'frontend/')
-  #   steps:
-  #     - uses: bcgov-nr/action-deployer-openshift@v2.3.0
-  #       with:
-  #         file: ${{ matrix.file }}
-  #         oc_namespace: ${{ vars.OC_NAMESPACE }}
-  #         oc_server: ${{ vars.OC_SERVER }}
-  #         oc_token: ${{ secrets.OC_TOKEN }}
-  #         overwrite: ${{ matrix.overwrite }}
-  #         penetration_test: false
-  #         parameters:
-  #           -p ZONE=${{ github.event.number }} -p NAME=${{ github.event.repository.name }}
-  #           -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ github.event.number }}
-  #           -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
-  #           -p MIN_REPLICAS=1 -p MAX_REPLICAS=2 ${{ matrix.parameters }}
-  #         triggers: ${{ matrix.triggers }}
-  #         verification_path: ${{ matrix.verification_path }}
+  # https://github.com/bcgov-nr/action-deployer-openshift
+  deploys:
+    name: Deploys
+    needs: [builds]
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        name: [backend, frontend]
+        include:
+          - name: backend
+            file: backend/openshift.deploy.yml
+            overwrite: true
+            triggers: ('backend/' 'frontend/')
+            verification_path: /health
+          - name: frontend
+            file: frontend/openshift.deploy.yml
+            overwrite: true
+            parameters:
+              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+            triggers: ('backend/' 'frontend/')
+    steps:
+      - uses: bcgov-nr/action-deployer-openshift@v2.3.0
+        with:
+          file: ${{ matrix.file }}
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: ${{ matrix.overwrite }}
+          penetration_test: false
+          parameters:
+            -p ZONE=${{ github.event.number }} -p NAME=${{ github.event.repository.name }}
+            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ github.event.number }}
+            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
+            -p MIN_REPLICAS=1 -p MAX_REPLICAS=2 ${{ matrix.parameters }}
+          triggers: ${{ matrix.triggers }}
+          verification_path: ${{ matrix.verification_path }}
 
-  # results:
-  #   name: PR Results
-  #   if: always() && !failure()
-  #   # Include all needs that could have failures!
-  #   needs: [builds, deploys]
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - run: echo "Workflow completed successfully!"
+  results:
+    name: PR Results
+    if: always() && !failure()
+    # Include all needs that could have failures!
+    needs: [builds, deploys]
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Workflow completed successfully!"
