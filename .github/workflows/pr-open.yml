@@ -101,3 +101,12 @@ jobs:
             -p MIN_REPLICAS=1 -p MAX_REPLICAS=2 ${{ matrix.parameters }}
           triggers: ${{ matrix.triggers }}
           verification_path: ${{ matrix.verification_path }}
+
+  results:
+    name: PR Results
+    if: always() && !failure()
+    # Include all needs that could have failures!
+    needs: [builds, deploys]
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Workflow completed successfully!"
