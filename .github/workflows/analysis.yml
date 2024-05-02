@@ -103,3 +103,12 @@ jobs:
           #  -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
           sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
+
+  results:
+    name: Analysis Results
+    if: always() && !failure()
+    # Include all needs that could have failures!
+    needs: [codeql, trivy, tests]
+    runs-on: ubuntu-22.04
+    steps:
+      - run: echo "Workflow completed successfully!"
