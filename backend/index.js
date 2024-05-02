@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv =require('dotenv');
 const indexRoutes = require("./routes/indexRoutes");
+const questionRoutes = require("./routes/questionRoutes");
 const mailRoutes = require("./routes/mailRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 
@@ -32,6 +33,7 @@ app.use('/health', healthRoutes);
 app.use(cors(corsOptions));
 
 app.use('/api/', indexRoutes);
+app.use('/api/questions', questionRoutes);
 app.use('/api/mail', mailRoutes);
 
 app.listen(5000, () => {
