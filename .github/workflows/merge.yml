@@ -18,13 +18,15 @@ concurrency:
 jobs:
   vars:
     name: Variables
-    outputs: ${{ steps.pr.outputs.pr }}
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
     runs-on: ubuntu-latest
-  steps:
-    # Get PR number for squash merges to main
-    - name: PR Number
-      id: pr
-      uses: bcgov-nr/action-get-pr@v0.0.1
+    timeout-minutes: 1
+    steps:
+      # Get PR number for squash merges to main
+      - name: PR Number
+        id: pr
+        uses: bcgov-nr/action-get-pr@v0.0.1
 
   deploys-test:
     name: TEST Deploys
