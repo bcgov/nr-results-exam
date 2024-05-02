@@ -1,14 +1,18 @@
 name: Merge
 
 on:
-  workflow_run:
-    workflows: [PR Closed]
-    types: [completed]
-  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '.github/**'
+      - '.github/graphics/**'
+      - '!.github/workflows/**'
 
 concurrency:
+  # Do not interrupt previous workflows
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploys-test:
