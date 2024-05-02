@@ -135,3 +135,4 @@ test-report.xml
 .env.test.local
 .env.production.local
 .env
+**/.env
