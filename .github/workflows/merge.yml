@@ -105,18 +105,3 @@ jobs:
           repository: ${{ github.repository }}/${{ matrix.component }}
           target: ${{ needs.vars.outputs.pr }}
           tags: prod
-
-  ghcr-cleanup:
-    name: GHCR Cleanup
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        name: [backend, frontend]
-    steps:
-      - name: Keep last 50
-        uses: actions/delete-package-versions@v5
-        with:
-          package-name: "${{ github.event.repository.name }}/${{ matrix.name }}"
-          package-type: "container"
-          min-versions-to-keep: 50
-          ignore-versions: "^(prod|test)$"
