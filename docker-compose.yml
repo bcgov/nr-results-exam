@@ -21,7 +21,7 @@ services:
       CHES_CLIENT_ID: 09C5071A-ACE9B6FACF6
       CHES_TOKEN_URL: https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
       S3_ACCESSKEY: nr-fsa-tst
-      S3_BUCKETNAME: ${S3_BUCKETNAME}
+      S3_BUCKETNAME: tivpth
       S3_ENDPOINT: nrs.objectstore.gov.bc.ca
       S3_SECRETKEY: ${S3_SECRETKEY}
     healthcheck:

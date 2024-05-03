@@ -62,7 +62,7 @@ parameters:
     value: nrs.objectstore.gov.bc.ca
   - name: S3_BUCKETNAME
     description: Bucket name for S3
-    required: true
+    value: tivpth
   - name: S3_SECRETKEY
     description: Secret key for S3
     required: true
