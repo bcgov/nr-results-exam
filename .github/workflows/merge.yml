@@ -58,6 +58,7 @@ jobs:
           parameters:
             -p ZONE=test -p NAME=${{ github.event.repository.name }}
             -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ needs.vars.outputs.pr }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
@@ -88,6 +89,7 @@ jobs:
           parameters:
             -p ZONE=prod -p NAME=${{ github.event.repository.name }}
             -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ needs.vars.outputs.pr }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
