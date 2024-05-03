@@ -54,6 +54,12 @@ parameters:
     value: "9c82d5fc-1d34-4a0c-97f2-c0c756791c34"
   - name: VITE_QUESTIONS_API_KEY
     description: Dummy param to satisfy workflow
+  - name: S3_ACCESSKEY
+    description: Access key for S3
+    value: nr-fsa-tst
+  - name: S3_ENDPOINT
+    description: Endpoint for S3
+    value: nrs.objectstore.gov.bc.ca
 objects:
   - apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -138,6 +144,10 @@ objects:
                   value: ${CHES_CLIENT_SECRET}
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
+                - name: S3_ACCESSKEY
+                  value: ${S3_ACCESSKEY}
+                - name: S3_ENDPOINT
+                  value: ${S3_ENDPOINT}
               ports:
                 - containerPort: 5000
                   protocol: TCP
