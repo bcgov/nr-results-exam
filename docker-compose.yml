@@ -4,7 +4,7 @@ x-common: &common
   depends_on: ["backend"]
   environment:
     VITE_BACKEND_URL: http://backend:5000
-    VITE_ZONE: DEV
+    VITE_ZONE: PROD
   healthcheck:
     test: wget --no-verbose --spider http://localhost:3000
     interval: 15s
@@ -20,6 +20,8 @@ services:
     environment:
       CHES_CLIENT_ID : 09C5071A-ACE9B6FACF6
       CHES_TOKEN_URL : https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
+      S3_ACCESSKEY: nr-fsa-tst
+      S3_ENDPOINT : nrs.objectstore.gov.bc.ca
     healthcheck:
       test: timeout 10s bash -c 'true > /dev/tcp/127.0.0.1/5000'
       interval: 15s
