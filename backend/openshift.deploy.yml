@@ -60,6 +60,12 @@ parameters:
   - name: S3_ENDPOINT
     description: Endpoint for S3
     value: nrs.objectstore.gov.bc.ca
+  - name: S3_BUCKETNAME
+    description: Bucket name for S3
+    required: true
+  - name: S3_SECRETKEY
+    description: Secret key for S3
+    required: true
 objects:
   - apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -146,8 +152,12 @@ objects:
                   value: ${CHES_TOKEN_URL}
                 - name: S3_ACCESSKEY
                   value: ${S3_ACCESSKEY}
+                - name: S3_BUCKETNAME
+                  value: ${S3_BUCKETNAME}
                 - name: S3_ENDPOINT
                   value: ${S3_ENDPOINT}
+                - name: S3_SECRETKEY
+                  value: ${S3_SECRETKEY}
               ports:
                 - containerPort: 5000
                   protocol: TCP

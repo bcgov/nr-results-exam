@@ -42,6 +42,10 @@ parameters:
   - name: VITE_QUESTIONS_API_KEY
   - name: VITE_ZONE
     value: DEV
+  - name: S3_BUCKETNAME
+    description: Dummy param to satisfy workflow
+  - name: S3_SECRETKEY
+    description: Dummy param to satisfy workflow
 objects:
   - apiVersion: v1
     kind: ImageStream
