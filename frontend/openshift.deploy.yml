@@ -44,6 +44,10 @@ parameters:
     value: DEV
   - name: S3_SECRETKEY
     description: Dummy param to satisfy workflow
+  - name: RANDOM_EXPRESSION
+    description: Random expression to make sure deployments update
+    from: "[a-zA-Z0-9]{32}"
+    generate: expression
 objects:
   - apiVersion: v1
     kind: ImageStream
@@ -98,6 +102,8 @@ objects:
                   value: "${VITE_QUESTIONS_API_KEY}"
                 - name: VITE_ZONE
                   value: "${ZONE}"
+                - name: RANDOM_EXPRESSION
+                  value: ${RANDOM_EXPRESSION}
               ports:
                 - containerPort: 3000
                   protocol: TCP
