@@ -10,9 +10,6 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-### or prod
     required: true
-  - name: IMAGE_TAG
-    description: Image tag to use
-    value: latest
   - name: DOMAIN
     value: apps.silver.devops.gov.bc.ca
   - name: CPU_REQUEST
@@ -40,7 +37,7 @@ parameters:
   - name: REGISTRY
     description: Container registry to import from (internal is image-registry.openshift-image-registry.svc:5000)
     value: ghcr.io
-  - name: ORG_NAME
+  - name: ORG
     description: Organization name, e.g. bcgov
     value: bcgov
   - name: PROMOTE
@@ -99,22 +96,6 @@ objects:
             - podSelector: {}
       policyTypes:
         - Ingress
-  - apiVersion: v1
-    kind: ImageStream
-    metadata:
-      labels:
-        app: "${NAME}-${ZONE}"
-      name: "${NAME}-${ZONE}-${COMPONENT}"
-    spec:
-      lookupPolicy:
-        local: false
-      tags:
-        - name: "${IMAGE_TAG}"
-          from:
-            kind: DockerImage
-            name: "${REGISTRY}/${PROMOTE}"
-          referencePolicy:
-            type: Local
   - kind: Deployment
     apiVersion: apps/v1
     metadata:
@@ -135,7 +116,7 @@ objects:
             deployment: "${NAME}-${ZONE}-${COMPONENT}"
         spec:
           containers:
-            - image: "${NAME}-${ZONE}-${COMPONENT}:${IMAGE_TAG}"
+            - image: ${REGISTRY}/${ORG}/${NAME}/${COMPONENT}:${ZONE}
               imagePullPolicy: Always
               name: "${NAME}"
               env:
