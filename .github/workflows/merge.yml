@@ -31,7 +31,7 @@ jobs:
     name: TEST Deploys
     needs: [vars]
     environment: test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     strategy:
@@ -48,7 +48,7 @@ jobs:
             parameters:
               -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v2.3.0
+      - uses: bcgov-nr/action-deployer-openshift@v3.0.1
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -65,7 +65,7 @@ jobs:
     name: PROD Deploys
     needs: [vars, deploys-test]
     environment: prod
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         name: [backend, frontend]
@@ -78,7 +78,7 @@ jobs:
             file: frontend/openshift.deploy.yml
             overwrite: true
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v2.3.0
+      - uses: bcgov-nr/action-deployer-openshift@v3.0.1
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -94,7 +94,7 @@ jobs:
   image-promotions:
     name: Promote images
     needs: [vars, deploys-prod]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
