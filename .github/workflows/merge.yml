@@ -56,7 +56,7 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
           parameters:
-            -p ZONE=test
+            -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
@@ -86,7 +86,7 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
           parameters:
-            -p ZONE=prod
+            -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
