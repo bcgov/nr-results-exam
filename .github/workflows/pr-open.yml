@@ -12,7 +12,7 @@ jobs:
   # https://github.com/bcgov-nr/action-builder-ghcr
   builds:
     name: Builds
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
@@ -36,7 +36,7 @@ jobs:
   deploys:
     name: Deploys
     needs: [builds]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         name: [backend, frontend]
@@ -53,7 +53,7 @@ jobs:
               -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
             triggers: ('backend/' 'frontend/')
     steps:
-      - uses: bcgov-nr/action-deployer-openshift@v2.3.0
+      - uses: bcgov-nr/action-deployer-openshift@v3.0.1
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -74,6 +74,6 @@ jobs:
     if: always() && !failure()
     # Include all needs that could have failures!
     needs: [builds, deploys]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - run: echo "Workflow completed successfully!"
