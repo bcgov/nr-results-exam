@@ -1,7 +1,7 @@
 # Build static files
 # Node Bullseye has npm
 FROM node:20.14.0-bullseye-slim AS build
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy and build
 WORKDIR /app
@@ -12,7 +12,7 @@ RUN npm i --ignore-scripts --no-update-notifer --omit=dev
 # Deploy container
 # Distroless has node, but not npm
 FROM gcr.io/distroless/nodejs20-debian11:nonroot AS deploy
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy over app
 WORKDIR /app
