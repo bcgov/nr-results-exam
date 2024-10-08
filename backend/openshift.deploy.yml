@@ -40,9 +40,6 @@ parameters:
   - name: ORG
     description: Organization name, e.g. bcgov
     value: bcgov
-  - name: PROMOTE
-    description: Image (namespace/name:tag) to promote/import
-    value: bcgov/nr-results-exam/backend:test
   - name: CHES_TOKEN_URL
     value: "https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token"
   - name: CHES_CLIENT_ID

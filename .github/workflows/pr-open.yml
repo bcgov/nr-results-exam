@@ -63,7 +63,6 @@ jobs:
           penetration_test: false
           parameters:
             -p ZONE=${{ github.event.number }} -p NAME=${{ github.event.repository.name }}
-            -p PROMOTE=${{ github.repository }}/${{ matrix.name }}:${{ github.event.number }}
             -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
             -p MIN_REPLICAS=1 -p MAX_REPLICAS=2 ${{ matrix.parameters }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
