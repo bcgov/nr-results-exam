@@ -23,7 +23,7 @@ services:
       S3_ACCESSKEY: nr-fsa-tst
       S3_BUCKETNAME: tivpth
       S3_ENDPOINT: nrs.objectstore.gov.bc.ca
-      S3_SECRETKEY: ${S3_SECRETKEY}
+      S3_SECRETKEY: ${S3_SECRETKEY:?}
     healthcheck:
       test: timeout 10s bash -c 'true > /dev/tcp/127.0.0.1/5000'
       interval: 15s
@@ -38,7 +38,6 @@ services:
 
   frontend:
     container_name: frontend
-    profiles: [dev, frontend]
     entrypoint: sh -c "npm ci && npm run start"
     image: node:20-bullseye
     ports: ["3000:3000"]
