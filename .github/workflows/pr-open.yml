@@ -18,11 +18,6 @@ jobs:
     strategy:
       matrix:
         package: [backend, frontend]
-        include:
-          - package: backend
-            triggers: ('backend/')
-          - package: frontend
-            triggers: ('frontend/')
     steps:
       - uses: bcgov-nr/action-builder-ghcr@v2.2.0
         with:
@@ -30,7 +25,7 @@ jobs:
           package: ${{ matrix.package }}
           tag: ${{ github.event.number }}
           tag_fallback: test
-          triggers: ${{ matrix.triggers }}
+          triggers: ('${{ matrix.package }}/')
 
   # https://github.com/bcgov-nr/action-deployer-openshift
   deploys:
@@ -44,6 +39,8 @@ jobs:
           - name: backend
             file: backend/openshift.deploy.yml
             overwrite: true
+            parameters:
+              -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             triggers: ('backend/' 'frontend/')
             verification_path: /health
           - name: frontend
