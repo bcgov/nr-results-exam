@@ -48,7 +48,7 @@ parameters:
   - name: CHES_CLIENT_ID
     value: "09C5071A-ACE9B6FACF6"
   - name: CHES_CLIENT_SECRET
-    value: "9c82d5fc-1d34-4a0c-97f2-c0c756791c34"
+    required: true
   - name: VITE_QUESTIONS_API_KEY
     description: Dummy param to satisfy workflow
   - name: S3_ACCESSKEY
