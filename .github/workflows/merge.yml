@@ -41,8 +41,6 @@ jobs:
           - name: backend
             file: backend/openshift.deploy.yml
             overwrite: true
-            parameters:
-              -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             verification_path: /health
           - name: frontend
             file: frontend/openshift.deploy.yml
@@ -59,6 +57,7 @@ jobs:
           overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
@@ -75,8 +74,6 @@ jobs:
           - name: backend
             file: backend/openshift.deploy.yml
             overwrite: true
-            parameters:
-              -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             verification_path: /health
           - name: frontend
             file: frontend/openshift.deploy.yml
@@ -91,6 +88,7 @@ jobs:
           overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}

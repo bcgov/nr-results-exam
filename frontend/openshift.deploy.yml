@@ -44,6 +44,8 @@ parameters:
     value: DEV
   - name: S3_SECRETKEY
     description: Dummy param to satisfy workflow
+  - name: CHES_CLIENT_SECRET
+    description: Dummy param to satisfy workflow
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
