@@ -39,7 +39,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     return shuffledQuestions.slice(0, count);
   };
 
-  const fetchQuestions = async () => {
+  const estions = async () => {
     try {
       const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`, {
         headers: {
