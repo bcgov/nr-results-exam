@@ -4,7 +4,7 @@
 [![Analysis](https://github.com/bcgov/nr-results-exam/actions/workflows/analysis.yml/badge.svg)](https://github.com/bcgov/nr-results-exam/actions/workflows/analysis.yml)
 
 
-<!-- ##### Frontend (JavaScript/TypeScript)
+##### Frontend (JavaScript/TypeScript)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-frontend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-frontend)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-frontend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-frontend)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-frontend)
@@ -24,7 +24,7 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-backend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-backend)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-backend)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-backend)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-backend) -->
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=nr-results-exam-backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=nr-results-exam-backend)
 
 # Natural Resources RESULTS Exam Web Application
 
@@ -68,19 +68,22 @@ test and deploy.
 
 # Getting started
 
-Once you have cloned this repository, you can get the app running by typing
-`npm install` and then `npm run start` from the project root directory. Then
-head to http://localhost:3000.
+We will be using docker to run our application locally.
 
-Be aware of the required environment variables:
+Assumptions:
+* You have docker installed.
+* you have docker compose installed.
+* You have cloned the repository.
+* You are wearing a fresh diaper.
 
-- REACT_APP_MAIN_VERSION
-- REACT_APP_COGNITO_REGION
-- REACT_APP_USER_POOLS_ID
-- REACT_APP_USER_POOLS_WEB_CLIENT_ID
-- REACT_APP_AWS_DOMAIN
+Step 1:\
+Add the following to and source your .bashrc (`. ~/.bashrc` is your source command)\
+export CHES_CLIENT_SECRET=\<ask developer for this secret\>\
+export S3_SECRETKEY=\<ask developer for this secret\>
 
-To run the unit tests all you need is `npm run test`.
+Step 2:\
+`cd nr-results-exam`\
+run `sudo -E docker compose up --build`\
 
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
