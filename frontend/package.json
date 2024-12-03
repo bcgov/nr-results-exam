@@ -70,9 +70,7 @@
     "vitest": "^1.6.0"
   },
   "overrides": {
-    "@testing-library/jest-dom": {
-      "@adobe/css-tools@<4.3.2": "^4.3.2"
-    },
+    "cross-spawn@<7.0.5": "7.0.5",
     "vite": {
       "vite": "^5.1.7"
     }
