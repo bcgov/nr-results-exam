@@ -19,7 +19,7 @@ jobs:
     name: Variables
     outputs:
       pr: ${{ steps.pr.outputs.pr }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
       # Get PR number for squash merges to main
