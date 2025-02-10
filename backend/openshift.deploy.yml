@@ -47,8 +47,6 @@ parameters:
     value: "https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token"
   - name: CHES_CLIENT_ID
     value: "09C5071A-ACE9B6FACF6"
-  - name: CHES_CLIENT_SECRET
-    required: true
   - name: VITE_QUESTIONS_API_KEY
     description: Dummy param to satisfy workflow
   - name: S3_ACCESSKEY
@@ -95,7 +93,10 @@ objects:
                 - name: CHES_CLIENT_ID
                   value: ${CHES_CLIENT_ID}
                 - name: CHES_CLIENT_SECRET
-                  value: ${CHES_CLIENT_SECRET}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}-${ZONE}-${COMPONENT}
+                      key: ches-client-secret
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
                 - name: S3_ACCESSKEY
