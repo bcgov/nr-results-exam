@@ -47,8 +47,6 @@ parameters:
     value: "https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token"
   - name: CHES_CLIENT_ID
     value: "09C5071A-ACE9B6FACF6"
-  - name: VITE_QUESTIONS_API_KEY
-    description: Dummy param to satisfy workflow
   - name: S3_ACCESSKEY
     description: Access key for S3
     value: nr-fsa-tst
