@@ -68,6 +68,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          parameters: -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
           verification_path: ${{ matrix.verification_path }}
 
   init-prod:
@@ -85,8 +86,6 @@ jobs:
             -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
 
   deploys-prod:
     name: Deploys (PROD)
@@ -109,9 +108,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters:
-            -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
-            ${{ matrix.parameters }}
+          parameters: -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
           verification_path: ${{ matrix.verification_path }}
 
   image-promotions:
