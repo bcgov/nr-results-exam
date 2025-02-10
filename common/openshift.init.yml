@@ -12,9 +12,9 @@ parameters:
   - name: S3_SECRETKEY
     required: true
   - name: VITE_QUESTIONS_API_KEY
-    required: true
+    default: 'jazz'
   - name: VITE_USER_POOLS_WEB_CLIENT_ID
-    required: true
+    default: '70a2am185rie10r78b0ugcs1mm'
 objects:
   - apiVersion: v1
     kind: Secret
