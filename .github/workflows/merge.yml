@@ -27,9 +27,27 @@ jobs:
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
 
+  init-test:
+    name: Init (TEST)
+    needs: vars
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-deployer-openshift@v3.0.1
+        with:
+          file: common/openshift.init.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          parameters:
+            -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
+
   deploys-test:
-    name: TEST Deploys
-    needs: [vars]
+    name: Deploys (TEST)
+    needs: [init]
     environment: test
     runs-on: ubuntu-24.04
     permissions:
@@ -40,15 +58,9 @@ jobs:
         include:
           - name: backend
             file: backend/openshift.deploy.yml
-            overwrite: true
-            parameters:
-              -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             verification_path: /health
           - name: frontend
             file: frontend/openshift.deploy.yml
-            overwrite: true
-            parameters:
-              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov/action-deployer-openshift@v3.0.1
         with:
@@ -56,16 +68,29 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: ${{ matrix.overwrite }}
-          parameters:
-            -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
-  deploys-prod:
-    name: PROD Deploys
+  init-prod:
+    name: Init (PROD)
     needs: [vars, deploys-test]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: bcgov/action-deployer-openshift@v3.0.1
+        with:
+          file: common/openshift.init.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          parameters:
+            -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
+
+  deploys-prod:
+    name: Deploys (PROD)
+    needs: [vars, init-prod]
     environment: prod
     runs-on: ubuntu-24.04
     strategy:
@@ -74,13 +99,9 @@ jobs:
         include:
           - name: backend
             file: backend/openshift.deploy.yml
-            overwrite: true
-            parameters:
-              -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             verification_path: /health
           - name: frontend
             file: frontend/openshift.deploy.yml
-            overwrite: true
     steps:
       - uses: bcgov/action-deployer-openshift@v3.0.1
         with:
@@ -88,10 +109,8 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: ${{ matrix.overwrite }}
           parameters:
             -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
