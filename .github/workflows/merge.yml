@@ -47,7 +47,7 @@ jobs:
 
   deploys-test:
     name: Deploys (TEST)
-    needs: [init]
+    needs: [init-test]
     environment: test
     runs-on: ubuntu-24.04
     permissions:
