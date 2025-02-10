@@ -47,7 +47,7 @@ jobs:
 
   deploys-test:
     name: Deploys (TEST)
-    needs: [init-test]
+    needs: [vars, init-test]
     environment: test
     runs-on: ubuntu-24.04
     permissions:
@@ -57,14 +57,11 @@ jobs:
         name: [backend, frontend]
         include:
           - name: backend
-            file: backend/openshift.deploy.yml
             verification_path: /health
-          - name: frontend
-            file: frontend/openshift.deploy.yml
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
-          file: ${{ matrix.file }}
+          file: ${{ matrix.file }}/openshift.deploy
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
@@ -95,16 +92,10 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
-        include:
-          - name: backend
-            file: backend/openshift.deploy.yml
-            verification_path: /health
-          - name: frontend
-            file: frontend/openshift.deploy.yml
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
-          file: ${{ matrix.file }}
+          file: ${{ matrix.file }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}

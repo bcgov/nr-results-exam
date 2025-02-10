@@ -18,19 +18,14 @@ jobs:
     strategy:
       matrix:
         package: [backend, frontend]
-        include:
-          - package: backend
-            triggers: ('backend/')
-          - package: frontend
-            triggers: ('frontend/')
     steps:
       - uses: bcgov/action-builder-ghcr@v2.3.0
         with:
           keep_versions: 50
           package: ${{ matrix.package }}
           tag: ${{ github.event.number }}
-          tag_fallback: test
-          triggers: ${{ matrix.triggers }}
+          tag_fallback: latest
+          triggers: ('${{ matrix.triggers }}/')
 
   # https://github.com/bcgov/action-deployer-openshift
   init:
@@ -60,19 +55,15 @@ jobs:
         name: [backend, frontend]
         include:
           - name: backend
-            file: backend/openshift.deploy.yml
             verification_path: /health
-          - name: frontend
-            file: frontend/openshift.deploy.yml
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
-          file: ${{ matrix.file }}
+          file: ${{ matrix.file }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: ${{ matrix.overwrite }}
-          penetration_test: false
           parameters: -p ZONE=${{ github.event.number }} -p TAG=${{ github.event.number }}
           triggers: ('backend/' 'common/' 'frontend/')
           verification_path: ${{ matrix.verification_path }}
