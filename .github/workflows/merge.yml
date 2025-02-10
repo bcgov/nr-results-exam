@@ -32,7 +32,7 @@ jobs:
     needs: vars
     runs-on: ubuntu-24.04
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.0.1
+      - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -62,7 +62,7 @@ jobs:
           - name: frontend
             file: frontend/openshift.deploy.yml
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.0.1
+      - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -75,7 +75,7 @@ jobs:
     needs: [vars, deploys-test]
     runs-on: ubuntu-24.04
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.0.1
+      - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -103,7 +103,7 @@ jobs:
           - name: frontend
             file: frontend/openshift.deploy.yml
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.0.1
+      - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
           file: ${{ matrix.file }}
           oc_namespace: ${{ vars.OC_NAMESPACE }}
