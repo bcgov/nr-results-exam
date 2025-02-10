@@ -47,10 +47,6 @@ parameters:
     value: "https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token"
   - name: CHES_CLIENT_ID
     value: "09C5071A-ACE9B6FACF6"
-  - name: CHES_CLIENT_SECRET
-    required: true
-  - name: VITE_QUESTIONS_API_KEY
-    description: Dummy param to satisfy workflow
   - name: S3_ACCESSKEY
     description: Access key for S3
     value: nr-fsa-tst
@@ -60,42 +56,11 @@ parameters:
   - name: S3_BUCKETNAME
     description: Bucket name for S3
     value: tivpth
-  - name: S3_SECRETKEY
-    description: Secret key for S3
-    required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
     generate: expression
 objects:
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: allow-from-openshift-ingress
-      labels:
-        template: openshift-test
-    spec:
-      podSelector: {}
-      ingress:
-        - from:
-            - namespaceSelector:
-                matchLabels:
-                  network.openshift.io/policy-group: ingress
-      policyTypes:
-        - Ingress
-  - apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata:
-      name: allow-same-namespace
-      labels:
-        template: network-security-policy
-    spec:
-      podSelector: {}
-      ingress:
-        - from:
-            - podSelector: {}
-      policyTypes:
-        - Ingress
   - kind: Deployment
     apiVersion: apps/v1
     metadata:
@@ -123,7 +88,10 @@ objects:
                 - name: CHES_CLIENT_ID
                   value: ${CHES_CLIENT_ID}
                 - name: CHES_CLIENT_SECRET
-                  value: ${CHES_CLIENT_SECRET}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}-${ZONE}-${COMPONENT}
+                      key: ches-client-secret
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
                 - name: S3_ACCESSKEY
@@ -133,7 +101,10 @@ objects:
                 - name: S3_ENDPOINT
                   value: ${S3_ENDPOINT}
                 - name: S3_SECRETKEY
-                  value: ${S3_SECRETKEY}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}-${ZONE}-${COMPONENT}
+                      key: s3-secretkey
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:

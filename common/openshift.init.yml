@@ -1,0 +1,59 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+parameters:
+  - name: REPO
+    description: Repository name
+    value: nr-results-exam
+  - name: ZONE
+    description: Deployment zone, e.g. pr-### or prod
+    required: true
+  - name: CHES_CLIENT_SECRET
+    required: true
+  - name: S3_SECRETKEY
+    required: true
+  - name: VITE_QUESTIONS_API_KEY
+    required: true
+  - name: VITE_USER_POOLS_WEB_CLIENT_ID
+    required: true
+objects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${REPO}-${ZONE}-backend
+      labels:
+        app: ${REPO}-${ZONE}
+    stringData:
+      ches-client-secret: ${CHE_CLIENT_SECRET}
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${REPO}-${ZONE}-frontend
+      labels:
+        app: ${REPO}-${ZONE}
+    stringData:
+      s3-secretkey: ${S3_SECRETKEY}
+      vite-questions-api-key: ${VITE_QUESTIONS_API_KEY}
+      vite-user-pools-web-client-id: ${VITE_USER_POOLS_WEB_CLIENT_ID}
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-ingress
+      labels:
+        template: openshift-test
+    spec:
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      policyTypes:
+        - Ingress
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-same-namespace
+      labels:
+        template: nr-spar-backend-network-security-policy
+    spec:
+      policyTypes:
+        - Ingress
