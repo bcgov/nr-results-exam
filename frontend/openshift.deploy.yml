@@ -41,8 +41,6 @@ parameters:
   - name: VITE_QUESTIONS_API_KEY
   - name: VITE_ZONE
     value: DEV
-  - name: S3_SECRETKEY
-    description: Dummy param to satisfy workflow
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"

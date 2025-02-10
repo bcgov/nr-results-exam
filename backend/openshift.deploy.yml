@@ -58,9 +58,6 @@ parameters:
   - name: S3_BUCKETNAME
     description: Bucket name for S3
     value: tivpth
-  - name: S3_SECRETKEY
-    description: Secret key for S3
-    required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
@@ -106,7 +103,10 @@ objects:
                 - name: S3_ENDPOINT
                   value: ${S3_ENDPOINT}
                 - name: S3_SECRETKEY
-                  value: ${S3_SECRETKEY}
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}-${ZONE}-${COMPONENT}
+                      key: s3-secretkey
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:
