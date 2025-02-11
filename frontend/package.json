@@ -68,11 +68,5 @@
     "sass-loader": "^14.2.1",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
-  },
-  "overrides": {
-    "cross-spawn@<7.0.5": "7.0.5",
-    "vite": {
-      "vite": "^5.1.7"
-    }
   }
 }
