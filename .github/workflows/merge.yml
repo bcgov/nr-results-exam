@@ -30,6 +30,7 @@ jobs:
   init-test:
     name: Init (TEST)
     needs: vars
+    environment: test
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
@@ -73,6 +74,7 @@ jobs:
   init-prod:
     name: Init (PROD)
     needs: [vars, deploys-test]
+    environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
