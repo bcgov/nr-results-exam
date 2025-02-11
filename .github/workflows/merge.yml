@@ -92,6 +92,9 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
+        include:
+          - name: backend
+            verification_path: /health
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
