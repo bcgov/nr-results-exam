@@ -1,6 +1,6 @@
 # Build static files
 # Node Bullseye has npm
-FROM node:20.18.1-bullseye-slim AS build
+FROM node:20.18.3-bullseye-slim AS build
 ENV NODE_ENV=production
 
 # Copy and build
