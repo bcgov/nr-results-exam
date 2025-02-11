@@ -18,6 +18,7 @@ jobs:
     strategy:
       matrix:
         package: [backend, frontend]
+    timeout-minutes: 10
     steps:
       - uses: bcgov/action-builder-ghcr@v2.3.0
         with:
@@ -31,6 +32,7 @@ jobs:
   init:
     name: Init
     runs-on: ubuntu-24.04
+    timeout-minutes: 1
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
@@ -50,6 +52,7 @@ jobs:
     name: Deploys
     needs: [builds, init]
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     strategy:
       matrix:
         name: [backend, frontend]
