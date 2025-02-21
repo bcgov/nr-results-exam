@@ -106,9 +106,17 @@ jobs:
 
   results:
     name: Analysis Results
-    if: always() && !failure()
+    if: always()
     # Include all needs that could have failures!
     needs: [codeql, trivy, tests]
     runs-on: ubuntu-24.04
     steps:
-      - run: echo "Workflow completed successfully!"
+      - run: |
+          # View results
+          echo "needs.*.result: ${{ toJson(needs.*.result) }}"
+
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: |
+          # Job failure found
+          echo "At least one job has failed"
+          exit 1
