@@ -90,12 +90,11 @@ jobs:
         with:
           commands: |
             npm ci
-            npm run test:coverage || \
-              true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
+            npm run test:coverage
           dir: ${{ matrix.dir }}
           node_version: "20"
           sonar_args: >
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
+            -Dsonar.exclusions=**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=${{ matrix.sonar_projectKey }}
             ${{ matrix.sonar_args }}
