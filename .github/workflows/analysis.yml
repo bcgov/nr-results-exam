@@ -93,7 +93,7 @@ jobs:
             npm run test:coverage || \
               true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
           dir: ${{ matrix.dir }}
-          node_version: "20"
+          node_version: "22"
           sonar_args: >
             -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
             -Dsonar.organization=bcgov-sonarcloud
