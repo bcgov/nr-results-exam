@@ -1,33 +1,27 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthProvider';
 
-interface IProps {
-  signed: boolean;
-  children: JSX.Element;
+interface ProtectedRouteProps {
+  requireAuth?: boolean;
+  requiredRoles?: string[];
+  redirectTo?: string;
 }
 
-const ProtectedRoute = ({ signed, children }: IProps): JSX.Element => {
-  const userDetails = useSelector((state:any) => state.userDetails)
-  const { error, user } = userDetails
-  const { pathname } = window.location;
-  const encodedUrl = encodeURI(`/?page=${pathname}`);
-  return (
-    error? (
-      <div className="h1">Error</div>
-    ):(
-      (() => {
-        if(user?.isLoggedIn){
-          return children;  
-        }
-        else if(user?.isLoggedIn === false){
-          return <Navigate to={encodedUrl} replace />;
-        }
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  requiredRoles = [],
+  redirectTo = '/'
+}) => {
+  const { isLoggedIn, userRoles, logout } = useAuth();
 
-        return <>Sorry </>
-      })()
-    )
-  );
+  // 1. If authentication is required and the user is not logged in, redirect to login
+  if (!isLoggedIn) {
+    logout();
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // 3. If all checks pass, render child routes
+  return <Outlet />;
 };
 
-export default ProtectedRoute ;
+export default ProtectedRoute;

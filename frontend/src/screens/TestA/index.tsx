@@ -1,11 +1,10 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import TestComponent from "../../components/TestComponent";
+import { useAuth } from "../../contexts/AuthProvider";
 
 
 const TestA: React.FC = () => {
-  const userDetails = useSelector((state:any) => state.userDetails)
-  const { user } = userDetails
+  const { user } = useAuth();
     return (
       <>
         {user?<TestComponent user={user} testName="Test A" questionFileName="A"/>:<><div className="h4">Null</div></>}
