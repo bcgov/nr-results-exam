@@ -95,12 +95,14 @@ jobs:
           dir: ${{ matrix.dir }}
           node_version: "22"
           sonar_args: >
-            -Dsonar.exclusions=**/coverage/**,**/node_modules/**,**/*spec.ts
+            -Dsonar.exclusions=src/__test__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=${{ matrix.sonar_projectKey }}
             ${{ matrix.sonar_args }}
-            -Dsonar.tests.inclusions=**/*spec.ts
-            -Dsonar.javascript.lcov.reportPaths=./coverage/lcov.info
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.typescript.tsconfigPaths=tsconfig.json
+            -Dsonar.tests=src/__test__/
+            -Dsonar.project.monorepo.enabled=true
           sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
 

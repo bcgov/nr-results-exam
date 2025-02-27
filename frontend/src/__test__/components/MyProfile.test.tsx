@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
 import { ThemePreference } from '../../utils/ThemePreference';
 import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom/vitest';
 
 const renderComponent = () => {
   render(
@@ -42,13 +43,13 @@ describe('MyProfile', () => {
     );
 
     it('should show "Loading user details" when the user info is not set initially', () => {
-        (useAuth as jest.Mock).mockReturnValue({ user: null }); // Mock user as null (loading state)
+      (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({ user: null }); // Mock user as null (loading state)
         renderComponent();
         expect(screen.getByText('Loading user details')).toBeInTheDocument();
       });
     
       it('should display user details when user is available', () => {
-        (useAuth as jest.Mock).mockReturnValue({
+        (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
           user: {
             firstName: 'John',
             lastName: 'Doe',

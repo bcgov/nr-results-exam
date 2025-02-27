@@ -18,7 +18,7 @@ const ThemeToggle = () => {
   };
 
   return (
-    <div className={`theme-toggle ${isToggled ? 'on' : 'off'}`} onClick={handleToggle}>
+    <div className={`theme-toggle ${isToggled ? 'on' : 'off'}`} data-testid="theme-toggle" onClick={handleToggle}>
       <div className="circle">
         {isToggled ? <AsleepFilled className="icon" /> : <LightFilled className="icon" />}
       </div>

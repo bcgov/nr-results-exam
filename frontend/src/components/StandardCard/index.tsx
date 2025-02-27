@@ -29,7 +29,7 @@ const StandardCard = ({
             <p>{description}</p>
           </div>
           
-          <Image className="std-card-pictogram" />
+          <Image className="std-card-pictogram" data-testid="std-card-pictogram" />
         </div>
       </div>
     </Tile>
