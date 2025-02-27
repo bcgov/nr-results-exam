@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import {
   SideNavLink
 } from '@carbon/react';
@@ -12,12 +11,14 @@ import AvatarImage from '../AvatarImage';
 import { useThemePreference } from '../../utils/ThemePreference';
 
 import './MyProfile.scss';
-import { logout } from '../../services/AuthService';
+import { useAuth } from '../../contexts/AuthProvider';
+import { Loading } from '@carbon/react';
 
 const MyProfile = () => {
+  const {user, logout} = useAuth();
   const { theme, setTheme } = useThemePreference();
-  const userData = {firstName:'Catherine', lastName:"Meng", idirUsername:"Jasgrewal", email:"jazz@test.com"};
-  const userDetails = useSelector((state:any) => state.userDetails)
+  console.log("Current userDetails from context"+ user)
+  console.log(user)
   const [goToURL, setGoToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
 
@@ -42,15 +43,15 @@ const MyProfile = () => {
   }, [goTo]);
 
   return (
-    <>
+    user?(<>
       <div className="user-info-section">
         <div className="user-image">
-          <AvatarImage userName={`${userDetails.user.firstName} ${userDetails.user.lastName}`} size="large" />
+          <AvatarImage userName={`${user.firstName} ${user.lastName}`} size="large" />
         </div>
         <div className="user-data">
-          <p className="user-name">{`${userDetails.user.firstName} ${userDetails.user.lastName}`}</p>
-          <p>{`IDIR: ${userDetails.user.userName}`}</p>
-          <p>{`Email:${userDetails.user.email}`}</p>
+          <p className="user-name">{`${user.firstName} ${user.lastName}`}</p>
+          <p>{`IDIR: ${user.userName}`}</p>
+          <p>{`Email:${user.email}`}</p>
 
         </div>
       </div>
@@ -73,7 +74,9 @@ const MyProfile = () => {
           </SideNavLink>
         </ul>
       </nav>
-    </>
+    </>):(
+      <Loading description="Loading user details" withOverlay={true} />
+    )
   );
 };
 

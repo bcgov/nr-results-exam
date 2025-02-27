@@ -2,12 +2,13 @@ import React from "react";
 import BCGovLogo from "../../components/BCGovLogo";
 import { Button } from "@carbon/react";
 import { Login } from '@carbon/icons-react';
-import { signIn } from "../../services/AuthService";
+import { useAuth } from "../../contexts/AuthProvider";
 import './Landing.scss';
 import { useLottie } from "lottie-react";
 import landingPageAnimation from "../../assets/lotties/silva-logo-lottie-1.json";
 
 const Landing: React.FC = () => {
+  const { login } = useAuth();
   //define lottie options and loader
   const options = {
     animationData: landingPageAnimation,
@@ -31,7 +32,7 @@ const Landing: React.FC = () => {
               <div className="row gy-3">
                 <div className="col-xl-5 col-lg-6">
                   <Button
-                    onClick={()=>signIn('idir')}
+                    onClick={()=>login('idir')}
                     renderIcon={Login}
                     data-testid="landing-button__idir"
                     className="btn-landing"
@@ -42,7 +43,7 @@ const Landing: React.FC = () => {
                 <div className="col-xl-5 col-lg-6 ">
                   <Button
                     kind="tertiary"
-                    onClick={() => {signIn('bceid')}}
+                    onClick={() => {login('bceid')}}
                     renderIcon={Login}
                     data-testid="landing-button__bceid"
                     className="btn-landing"

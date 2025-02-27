@@ -33,7 +33,7 @@ const BCHeader: React.FC = () => {
         <HeaderContainer
           render={({ isSideNavExpanded, onClickSideNavExpand }: any) => (
             <Header aria-label="React TS Carbon Quickstart"
-            className="spar-header"
+            className="results-exam-header"
             data-testid="header">
               <SkipToContent />
               <HeaderMenuButton
