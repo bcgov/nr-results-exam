@@ -8,8 +8,6 @@ import {
 import './custom.scss';
 
 import Landing from "./screens/Landing";
-import Help from "./screens/Help";
-import Reports from './screens/Reports';
 import TopLayout from './layouts/TopLayout';
 import SideLayout from './layouts/SideLayout';
 import Dashboard from './screens/Dashboard';
@@ -41,7 +39,6 @@ const privateRoutes: RouteObject[] = [
       { path: "/testA", element: <SideLayout pageContent={<TestA />} /> },
       { path: "/testB", element: <SideLayout pageContent={<TestB />} /> },
       { path: "/testC", element: <SideLayout pageContent={<TestC />} /> },
-      { path: "/reports", element: <SideLayout pageContent={<Reports />} /> },
     ],
   },
   // catch all route for unmatched routes
