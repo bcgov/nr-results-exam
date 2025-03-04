@@ -1,9 +1,8 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import BCHeaderwSide from '../../components/BCHeaderwSide';
-import '@testing-library/jest-dom';
 import { AuthProvider } from '../../contexts/AuthProvider';
 import { ThemePreference } from '../../utils/ThemePreference';
 

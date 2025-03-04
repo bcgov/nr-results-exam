@@ -1,6 +1,6 @@
 import React from "react";
 import ThemeToggle from "../../components/ThemeToggle";
-import {describe, expect, it, vi} from "vitest";
+import {describe, expect, it, vi, beforeAll} from "vitest";
 import {fireEvent, render, screen} from "@testing-library/react";
 import { ThemePreference } from "../../utils/ThemePreference";
 

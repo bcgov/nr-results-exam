@@ -1,7 +1,7 @@
 import React from 'react';
 import MyProfile from '../../components/MyProfile';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
 import { ThemePreference } from '../../utils/ThemePreference';
 import { BrowserRouter } from 'react-router-dom';
