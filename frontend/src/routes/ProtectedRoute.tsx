@@ -12,7 +12,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRoles = [],
   redirectTo = '/'
 }) => {
-  const { isLoggedIn, userRoles, logout } = useAuth();
+  const { isLoggedIn, logout } = useAuth();
 
   // 1. If authentication is required and the user is not logged in, redirect to login
   if (!isLoggedIn) {
