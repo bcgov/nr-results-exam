@@ -10,9 +10,20 @@ export interface Choice {
   }
   
   export const getRandomQuestions = (questions: Question[], count: number): Question[] => {
-    const shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+    const shuffledQuestions = [...questions];
+    
+    // Fisher-Yates shuffle with crypto.getRandomValues
+    for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+        const randomValues = new Uint32Array(1);
+        crypto.getRandomValues(randomValues);
+        const j = randomValues[0] % (i + 1);
+
+        [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+    }
+
     return shuffledQuestions.slice(0, count);
-  };
+};
+
   
   export const calculateScorePercentage = (questions: Question[], userAnswers: number[]): number => {
     const totalAnswered = userAnswers.filter((answer) => answer !== undefined).length;
