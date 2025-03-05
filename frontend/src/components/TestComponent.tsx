@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { env } from '../env';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
-import { InlineNotification, Loading } from "@carbon/react";
+import { Loading } from "@carbon/react";
 import {
   getRandomQuestions,
   calculateScorePercentage,
@@ -35,8 +35,8 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
       const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`);
       const data = await response.json();
       setQuestions(getRandomQuestions(data, 10));
-    } catch (error) {
-      console.error('Error fetching questions:', error);
+    } catch (errorFetch) {
+      console.error('Error fetching questions:', errorFetch);
       setError(true);
     }
   };

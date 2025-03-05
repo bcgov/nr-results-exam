@@ -1,6 +1,5 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useThemePreference } from '../../utils/ThemePreference';
 import {
   HeaderContainer,
   Header,
@@ -64,22 +63,11 @@ const listItems = [
 ];
 
 const BCHeaderwSide = () => {
-  //can only be impored at component level
-  const { theme, setTheme } = useThemePreference();
-
   const [myProfile, setMyProfile] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<boolean>(false);
   const [goToURL, setGoToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
 
-  const handleNotificationsPanel = useCallback((): void => {
-    if (notifications) {
-      setNotifications(false);
-    } else {
-      setNotifications(true);
-    }
-    setMyProfile(false);
-  }, [notifications]);
 
   const handleMyProfilePanel = useCallback((): void => {
     if (myProfile) {
@@ -89,10 +77,6 @@ const BCHeaderwSide = () => {
     }
     setNotifications(false);
   }, [myProfile]);
-
-  const closeNotificationsPanel = useCallback((): void => {
-    setNotifications(false);
-  }, []);
 
   const closeMyProfilePanel = useCallback((): void => {
     setMyProfile(false);
