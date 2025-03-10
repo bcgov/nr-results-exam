@@ -60,7 +60,7 @@ jobs:
           - name: backend
             verification_path: /health
           - name: frontend
-            parameters: -p MOD_ZONE=$(( github.event.number % 50))
+            parameters: -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
