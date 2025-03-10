@@ -59,6 +59,8 @@ jobs:
         include:
           - name: backend
             verification_path: /health
+          - name: frontend
+            parameters: -p MOD_ZONE=$(( github.event.number % 50))
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
@@ -66,7 +68,10 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=${{ github.event.number }} -p TAG=${{ github.event.number }}
+          parameters:
+            -p ZONE=${{ github.event.number }}
+            -p TAG=${{ github.event.number }}
+            ${{ matrix.parameters }}
           triggers: ('backend/' 'common/' 'frontend/')
           verification_path: ${{ matrix.verification_path }}
 

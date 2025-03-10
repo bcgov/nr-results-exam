@@ -61,6 +61,8 @@ jobs:
         include:
           - name: backend
             verification_path: /health
+          - name: frontend
+            parameters: -p MOD_ZONE=test
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
@@ -68,7 +70,10 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=test -p TAG=${{ needs.vars.outputs.pr }}
+          parameters:
+            -p ZONE=test
+            -p TAG=${{ needs.vars.outputs.pr }}
+            ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   init-prod:
@@ -101,6 +106,8 @@ jobs:
         include:
           - name: backend
             verification_path: /health
+          - name: frontend
+            parameters: -p MOD_ZONE=prod
     steps:
       - uses: bcgov/action-deployer-openshift@v3.1.0
         with:
@@ -108,7 +115,10 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=prod -p TAG=${{ needs.vars.outputs.pr }}
+          parameters:
+            -p ZONE=prod
+            -p TAG=${{ needs.vars.outputs.pr }}
+            ${{ matrix.parameters }}
           verification_path: ${{ matrix.verification_path }}
 
   image-promotions:

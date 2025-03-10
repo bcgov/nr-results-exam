@@ -8,7 +8,10 @@ parameters:
     description: Component name
     value: frontend
   - name: ZONE
-    description: Deployment zone, e.g. pr-### or prod
+    description: Deployment zone, e.g. pr-###, test or prod
+    required: true
+  - name: MOD_ZONE
+    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
@@ -141,7 +144,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${NAME}-${ZONE}-${COMPONENT}.${DOMAIN}"
+      host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
       port:
         targetPort: 3000-tcp
       to:
