@@ -8,7 +8,10 @@ parameters:
     description: Component name
     value: frontend
   - name: ZONE
-    description: Deployment zone, e.g. pr-### or prod
+    description: Deployment zone, e.g. pr-###, test or prod
+    required: true
+  - name: MOD_ZONE
+    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
@@ -38,6 +41,9 @@ parameters:
   - name: LOG_LEVEL
     description: Caddy logging level DEBUG, INFO, WARN, ERROR, PANIC, and FATAL (https://github.com/caddyserver/caddy/blob/master/logging.go)
     value: "info"
+  - name: VITE_AWS_DOMAIN
+    description: FAM on AWS domain
+    value: https://prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
   - name: VITE_ZONE
     value: DEV
   - name: RANDOM_EXPRESSION
@@ -74,6 +80,8 @@ objects:
               env:
                 - name: LOG_LEVEL
                   value: "${LOG_LEVEL}"
+                - name: VITE_AWS_DOMAIN
+                  value: ${VITE_AWS_DOMAIN}
                 - name: VITE_BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
@@ -141,7 +149,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${NAME}-${ZONE}-${COMPONENT}.${DOMAIN}"
+      host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
       port:
         targetPort: 3000-tcp
       to:
