@@ -8,6 +8,9 @@ concurrency:
   group: ${{ github.workflow }}-edit-${{ github.event.number }}
   cancel-in-progress: true
 
+env:
+  mod_tag: $(( ${{ github.event.number }} % 50 ))
+
 jobs:
   validate:
     name: Validate PR
@@ -15,8 +18,8 @@ jobs:
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v0.8.3
     with:
       markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-$((${{ github.event.number }} % 50))-frontend.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://${{ github.event.repository.name }}-${{ github.event.number }}-frontend.apps.silver.devops.gov.bc.ca/api)
+        - [Frontend](https://${{ github.event.repository.name }}-${{ env.mod_tag }}-frontend.apps.silver.devops.gov.bc.ca)
+        - [Backend](https://${{ github.event.repository.name }}-${{ env.mod_tag }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
   results:
     name: Validate Results
