@@ -8,18 +8,26 @@ concurrency:
   group: ${{ github.workflow }}-edit-${{ github.event.number }}
   cancel-in-progress: true
 
-env:
-  mod_tag: $(( ${{ github.event.number }} % 50 ))
-
 jobs:
+  fam-route:
+    name: Get Route Tag for FAM in PRs
+    outputs:
+      fam-route: ${{ steps.fam-route.outputs.fam-route }}
+    runs-on: ubuntu-24.04
+    steps:
+      - id: fam-route
+        run: echo "fam-route=$(( ${{ github.event.number }} % 50 ))" >> $GITHUB_OUTPUT
+
   validate:
     name: Validate PR
-    if: (! github.event.pull_request.draft)
+    needs: [fam-route]
+    permissions:
+      pull-requests: write
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v0.8.3
     with:
       markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-${{ env.mod_tag }}-frontend.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://${{ github.event.repository.name }}-${{ env.mod_tag }}-frontend.apps.silver.devops.gov.bc.ca/api)
+        - [Frontend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.fam-route }}-frontend.apps.silver.devops.gov.bc.ca)
+        - [Backend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.fam-route }}-frontend.apps.silver.devops.gov.bc.ca/api)
 
   results:
     name: Validate Results
