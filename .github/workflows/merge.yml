@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.1.0
+      - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -64,7 +64,7 @@ jobs:
           - name: frontend
             parameters: -p MOD_ZONE=test
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.1.0
+      - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.1.0
+      - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -109,7 +109,7 @@ jobs:
           - name: frontend
             parameters: -p MOD_ZONE=prod
     steps:
-      - uses: bcgov/action-deployer-openshift@v3.1.0
+      - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
