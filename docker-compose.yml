@@ -3,7 +3,7 @@ version: '3.9'
 x-common: &common
   depends_on: ["backend"]
   environment:
-    VITE_BACKEND_URL: http://backend:5000
+    VITE_BACKEND_URL: http://localhost:5000
     VITE_ZONE: PROD
   healthcheck:
     test: wget --no-verbose --spider http://localhost:3000
@@ -19,6 +19,7 @@ services:
     entrypoint: sh -c "npm ci && npm run start"
     environment:
       CHES_CLIENT_ID: 09C5071A-ACE9B6FACF6
+      CHES_CLIENT_SECRET: ${CHES_CLIENT_SECRET}
       CHES_TOKEN_URL: https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token
       S3_ACCESSKEY: nr-fsa-tst
       S3_BUCKETNAME: tivpth
