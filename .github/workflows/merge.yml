@@ -44,7 +44,6 @@ jobs:
             -p ZONE=test
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   deploys-test:
     name: Deploys (TEST)
@@ -61,7 +60,9 @@ jobs:
           - name: backend
             verification_path: /health
           - name: frontend
-            parameters: -p MOD_ZONE=test
+            parameters:
+              -p MOD_ZONE=test
+              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -106,7 +107,9 @@ jobs:
           - name: backend
             verification_path: /health
           - name: frontend
-            parameters: -p MOD_ZONE=prod
+            parameters:
+              -p MOD_ZONE=prod
+              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
