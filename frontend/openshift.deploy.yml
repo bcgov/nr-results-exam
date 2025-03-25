@@ -89,11 +89,11 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: vite-user-pools-web-client-id
-                - name: VITE_QUESTIONS_API_KEY
+                - name: VITE_USER_POOLS_ID
                   valueFrom:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
-                      key: vite-questions-api-key
+                      key: vite-user-pools-id
                 - name: VITE_ZONE
                   value: "${ZONE}"
                 - name: RANDOM_EXPRESSION

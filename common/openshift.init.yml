@@ -11,8 +11,8 @@ parameters:
     required: true
   - name: S3_SECRETKEY
     required: true
-  - name: VITE_QUESTIONS_API_KEY
-    default: 'jazz'
+  - name: VITE_USER_POOLS_ID
+    default: 'ca-central-1_t2HSZBHur'
   - name: VITE_USER_POOLS_WEB_CLIENT_ID
     default: '70a2am185rie10r78b0ugcs1mm'
 objects:
@@ -32,7 +32,7 @@ objects:
       labels:
         app: ${REPO}-${ZONE}
     stringData:
-      vite-questions-api-key: ${VITE_QUESTIONS_API_KEY}
+      vite-user-pools-id: ${VITE_USER_POOLS_ID}
       vite-user-pools-web-client-id: ${VITE_USER_POOLS_WEB_CLIENT_ID}
   - apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
