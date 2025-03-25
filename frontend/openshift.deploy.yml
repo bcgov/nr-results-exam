@@ -44,6 +44,8 @@ parameters:
   - name: VITE_AWS_DOMAIN
     description: FAM on AWS domain
     value: https://prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
+  - name: VITE_USER_POOLS_ID
+    default: 'ca-central-1_t2HSZBHur'
   - name: VITE_ZONE
     value: DEV
   - name: RANDOM_EXPRESSION
@@ -90,10 +92,7 @@ objects:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: vite-user-pools-web-client-id
                 - name: VITE_USER_POOLS_ID
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}-${ZONE}-${COMPONENT}
-                      key: vite-user-pools-id
+                  value: ${VITE_USER_POOLS_ID}
                 - name: VITE_ZONE
                   value: "${ZONE}"
                 - name: RANDOM_EXPRESSION
