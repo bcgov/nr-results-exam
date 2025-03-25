@@ -44,8 +44,6 @@ jobs:
             -p ZONE=${{ github.event.number }}
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
           triggers: ('backend/' 'common/' 'frontend/')
 
   deploys:
@@ -60,7 +58,9 @@ jobs:
           - name: backend
             verification_path: /health
           - name: frontend
-            parameters: -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
+            parameters:
+              -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
+              -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
