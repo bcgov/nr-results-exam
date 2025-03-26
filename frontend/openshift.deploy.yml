@@ -46,8 +46,6 @@ parameters:
     value: https://prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
   - name: VITE_USER_POOLS_ID
     value: 'ca-central-1_t2HSZBHur'
-  - name: VITE_USER_POOLS_WEB_CLIENT_ID
-    required: true
   - name: VITE_ZONE
     value: DEV
   - name: RANDOM_EXPRESSION
@@ -93,7 +91,6 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-frontend
                       key: vite-user-pools-web-client-id
-                  value: ${VITE_USER_POOLS_WEB_CLIENT_ID}
                 - name: VITE_USER_POOLS_ID
                   value: ${VITE_USER_POOLS_ID}
                 - name: VITE_ZONE
