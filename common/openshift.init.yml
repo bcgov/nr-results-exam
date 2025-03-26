@@ -11,6 +11,8 @@ parameters:
     required: true
   - name: S3_SECRETKEY
     required: true
+  - name: VITE_USER_POOLS_WEB_CLIENT_ID
+    required: true
 objects:
   - apiVersion: v1
     kind: Secret
@@ -21,6 +23,14 @@ objects:
     stringData:
       ches-client-secret: ${CHE_CLIENT_SECRET}
       s3-secretkey: ${S3_SECRETKEY}
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${REPO}-${ZONE}-frontend
+      labels:
+        app: ${REPO}-${ZONE}
+    stringData:
+      vite-user-pools-web-client-id: ${VITE_USER_POOLS_WEB_CLIENT_ID}
   - apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
     metadata:

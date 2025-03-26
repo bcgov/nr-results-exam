@@ -89,6 +89,10 @@ objects:
                 - name: VITE_BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${NAME}-${ZONE}-frontend
+                      key: vite-user-pools-web-client-id
                   value: ${VITE_USER_POOLS_WEB_CLIENT_ID}
                 - name: VITE_USER_POOLS_ID
                   value: ${VITE_USER_POOLS_ID}
