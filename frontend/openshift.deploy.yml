@@ -91,7 +91,6 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-frontend
                       key: vite-user-pools-web-client-id
-                  value: ${VITE_USER_POOLS_WEB_CLIENT_ID}
                 - name: VITE_USER_POOLS_ID
                   value: ${VITE_USER_POOLS_ID}
                 - name: VITE_ZONE
