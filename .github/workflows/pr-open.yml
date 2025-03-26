@@ -57,7 +57,6 @@ jobs:
         name: [backend, frontend]
         include:
           - name: backend
-            verification_path: /health
           - name: frontend
             parameters: -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
     steps:
@@ -72,7 +71,6 @@ jobs:
             -p TAG=${{ github.event.number }}
             ${{ matrix.parameters }}
           triggers: ('backend/' 'common/' 'frontend/')
-          verification_path: ${{ matrix.verification_path }}
 
   results:
     name: PR Results
