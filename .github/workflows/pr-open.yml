@@ -40,6 +40,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=${{ github.event.number }}
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
@@ -66,6 +67,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
