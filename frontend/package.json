@@ -69,5 +69,8 @@
     "sass-loader": "^14.2.1",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
+  },
+  "overrides": {
+    "@babel/runtime@<7.20.10": "^7.20.10"
   }
 }
