@@ -57,10 +57,6 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
-        include:
-          - name: backend
-          - name: frontend
-            parameters: -p MOD_ZONE=test
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -68,10 +64,11 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
-            ${{ matrix.parameters }}
+            -p MOD_ZONE=test
 
   init-prod:
     name: Init (PROD)
@@ -86,6 +83,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
@@ -101,10 +99,6 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
-        include:
-          - name: backend
-          - name: frontend
-            parameters: -p MOD_ZONE=prod
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -115,7 +109,7 @@ jobs:
           parameters:
             -p ZONE=prod
             -p TAG=${{ needs.vars.outputs.pr }}
-            ${{ matrix.parameters }}
+            -p MOD_ZONE=prod
 
   image-promotions:
     name: Promote images
