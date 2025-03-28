@@ -18,7 +18,7 @@ const whitelist = [
   'http://localhost:3000',
   'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca',
   'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca',
-  'https://nr-results-exam-10-frontend.apps.silver.devops.gov.bc.ca'
+  'https://*.apps.silver.devops.gov.bc.ca'
 ];
 
 const corsOptions = {
