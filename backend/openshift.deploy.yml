@@ -105,6 +105,8 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
+                - name: FRONTEND_URL
+                  value: https://${NAME}-${ZONE}-frontend.${DOMAIN}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:
