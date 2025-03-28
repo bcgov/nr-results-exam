@@ -24,8 +24,8 @@
 		X-Content-Type-Options "nosniff"
 		Strict-Transport-Security "max-age=31536000"
 		Content-Security-Policy "base-uri 'self';
-			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
-			default-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			connect-src 'self' {$VITE_BACKEND_URL} https://*.apps.silver.devops.gov.bc.ca https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			default-src 'self' https://*.apps.silver.devops.gov.bc.ca https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			font-src 'self'; frame-src 'self' https://*.gov.bc.ca;
 			img-src 'self' http://www.w3.org/;
 			manifest-src 'self';
