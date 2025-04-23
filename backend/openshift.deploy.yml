@@ -97,6 +97,8 @@ objects:
                       key: ches-client-secret
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
+                - name: CHES_CLIENT_ID
+                  value: ${CHES_CLIENT_ID}
                 - name: S3_ACCESSKEY
                   value: ${S3_ACCESSKEY}
                 - name: S3_BUCKETNAME
