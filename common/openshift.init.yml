@@ -21,7 +21,7 @@ objects:
       labels:
         app: ${REPO}-${ZONE}
     stringData:
-      ches-client-secret: ${CHE_CLIENT_SECRET}
+      ches-client-secret: ${CHES_CLIENT_SECRET}
       s3-secretkey: ${S3_SECRETKEY}
   - apiVersion: v1
     kind: Secret
