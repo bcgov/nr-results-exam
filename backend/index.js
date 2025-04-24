@@ -14,18 +14,12 @@ app.use(express.json());
 // positioning the health route before defining strict CORS, and allow * for health
 app.use('/health',cors({origin:'*'}),healthRoutes);
 
-const frontendUrl = process.env.FRONTEND_URL;
-const whitelist = [
-  'http://localhost:3000',
-  'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca',
-  'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca',
-  frontendUrl
-];
+const whitelist = ['http://localhost:3000', 'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca', 'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca' ];
 
 const corsOptions = {
   origin: function (origin, callback) {
     if (origin && whitelist.some(domain => origin.startsWith(domain))) {
-      callback(null, origin);
+      callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
