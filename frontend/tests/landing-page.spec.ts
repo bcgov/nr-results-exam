@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { testConfig } from './test-config';
 
 test.describe('Landing Page', () => {
   test('should display landing page elements correctly', async ({ page }) => {
     // Navigate to the landing page
-    await page.goto('/');
+    await page.goto(testConfig.urls.landing);
 
     // Check if the main title is visible
     await expect(page.getByTestId('landing-title')).toBeVisible();
@@ -29,7 +30,7 @@ test.describe('Landing Page', () => {
   });
 
   test('should have clickable login buttons', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(testConfig.urls.landing);
 
     // Check that buttons are enabled and clickable
     const idirButton = page.getByTestId('landing-button__idir');
@@ -44,7 +45,7 @@ test.describe('Landing Page', () => {
   });
 
   test('should have proper page structure', async ({ page }) => {
-    await page.goto('/');
+    await page.goto(testConfig.urls.landing);
 
     // Check that the page has the expected Bootstrap grid structure
     await expect(page.locator('.container-fluid')).toBeVisible();
