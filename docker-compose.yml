@@ -39,7 +39,6 @@ services:
 
   frontend:
     container_name: frontend
-    profiles: [dev, frontend]
     entrypoint: sh -c "npm ci && npm run start"
     image: node:20-bullseye
     ports: ["3000:3000"]
