@@ -7,10 +7,12 @@ This directory contains end-to-end tests using Playwright for the RESULTS EXAM a
 ### Configuration Files
 - `test-config.ts` - Centralized configuration for URLs, credentials, and timeouts
 - `helpers/auth-helper.ts` - Reusable authentication helper functions
+- `helpers/test-a-helper.ts` - Reusable TestA functionality helper functions
 
 ### Test Files
 - `landing-page.spec.ts` - Tests for the landing page functionality
 - `auth-idir.spec.ts` - Tests for IDIR authentication flow
+- `test-a.spec.ts` - Tests for TestA exam functionality
 
 ## Configuration Variables
 
@@ -77,6 +79,19 @@ npm run test:e2e:ui
 ```bash
 npx playwright test landing-page.spec.ts
 npx playwright test auth-idir.spec.ts
+npx playwright test test-a.spec.ts
+```
+
+### Specific Test Cases
+```bash
+# Run only TestA complete flow test
+npx playwright test test-a.spec.ts -g "complete full TestA flow"
+
+# Run only authentication tests
+npx playwright test auth-idir.spec.ts
+
+# Run only page loading tests
+npx playwright test -g "loading"
 ```
 
 ### In Headed Mode (see browser)
@@ -96,6 +111,16 @@ npm run test:e2e:headed
 - ✅ Handle invalid credentials gracefully with proper error detection
 - ✅ Display specific error message format verification
 - ✅ Allow user to cancel login process
+
+### TestA Functionality Tests
+- ✅ Complete full TestA flow (navigation → questions → answers → results → email)
+- ✅ Navigate to TestA from dashboard and verify page loading
+- ✅ Load and verify correct number of questions (10 expected)
+- ✅ Answer all questions randomly using radio buttons
+- ✅ Submit test and verify results display
+- ✅ Verify email success toast functionality
+- ✅ Handle both pass and fail result scenarios
+- ✅ Validate page structure and elements
 
 ## Error Handling
 

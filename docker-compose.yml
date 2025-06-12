@@ -3,8 +3,10 @@ version: '3.9'
 x-common: &common
   depends_on: ["backend"]
   environment:
-    VITE_BACKEND_URL: http://backend:5000
-    VITE_ZONE: PROD
+    VITE_BACKEND_URL: http://localhost:5000
+    VITE_ZONE: DEV
+    VITE_USER_POOLS_ID: ca-central-1_t2HSZBHur
+    VITE_USER_POOLS_WEB_CLIENT_ID: 5b0dr9toqa1cgs6q28f2mdppbq
   healthcheck:
     test: wget --no-verbose --spider http://localhost:3000
     interval: 15s
