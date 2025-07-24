@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@0.32.0
         with:
           format: "sarif"
           output: "trivy-results.sarif"
@@ -86,7 +86,7 @@ jobs:
               -Dsonar.sources=src
             triggers: ('frontend/')
     steps:
-      - uses: bcgov/action-test-and-analyse@v1.2.1
+      - uses: bcgov/action-test-and-analyse@v1.3.0
         with:
           commands: |
             npm ci
