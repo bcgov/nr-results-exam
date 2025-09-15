@@ -10,6 +10,9 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-### or prod
     required: true
+  - name: MOD_ZONE
+    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
+    required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
@@ -94,6 +97,8 @@ objects:
                       key: ches-client-secret
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
+                - name: CHES_CLIENT_ID
+                  value: ${CHES_CLIENT_ID}
                 - name: S3_ACCESSKEY
                   value: ${S3_ACCESSKEY}
                 - name: S3_BUCKETNAME
@@ -105,6 +110,8 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
+                - name: FRONTEND_URL
+                  value: https://${NAME}-${MOD_ZONE}-frontend.${DOMAIN}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:

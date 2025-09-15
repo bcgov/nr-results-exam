@@ -45,7 +45,6 @@ jobs:
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-            -p VITE_QUESTIONS_API_KEY=${{ secrets.VITE_QUESTIONS_API_KEY }}
 
   deploys-test:
     name: Deploys (TEST)
@@ -58,11 +57,6 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
-        include:
-          - name: backend
-            verification_path: /health
-          - name: frontend
-            parameters: -p MOD_ZONE=test
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -70,11 +64,11 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
-            ${{ matrix.parameters }}
-          verification_path: ${{ matrix.verification_path }}
+            -p MOD_ZONE=test
 
   init-prod:
     name: Init (PROD)
@@ -89,10 +83,12 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
           parameters:
             -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   deploys-prod:
     name: Deploys (PROD)
@@ -103,11 +99,6 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
-        include:
-          - name: backend
-            verification_path: /health
-          - name: frontend
-            parameters: -p MOD_ZONE=prod
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -118,8 +109,7 @@ jobs:
           parameters:
             -p ZONE=prod
             -p TAG=${{ needs.vars.outputs.pr }}
-            ${{ matrix.parameters }}
-          verification_path: ${{ matrix.verification_path }}
+            -p MOD_ZONE=prod
 
   image-promotions:
     name: Promote images
