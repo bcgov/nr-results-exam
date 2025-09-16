@@ -86,7 +86,7 @@ jobs:
               -Dsonar.sources=src
             triggers: ('frontend/')
     steps:
-      - uses: bcgov/action-test-and-analyse@v1.3.1
+      - uses: bcgov/action-test-and-analyse@v1.4.0
         with:
           commands: |
             npm ci
