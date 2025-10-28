@@ -24,7 +24,7 @@ jobs:
         with:
           keep_versions: 50
           package: ${{ matrix.package }}
-          tag: ${{ github.event.number }}
+          tags: ${{ github.event.number }}
           tag_fallback: latest
           triggers: ('${{ matrix.triggers }}/')
 
@@ -41,8 +41,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: true
-          parameters:
-            -p ZONE=${{ github.event.number }}
+          parameters: -p ZONE=${{ github.event.number }}
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
@@ -64,8 +63,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: true
-          parameters:
-            -p ZONE=${{ github.event.number }}
+          parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
           triggers: ('backend/' 'common/' 'frontend/')
