@@ -71,6 +71,8 @@
     "vitest": "^1.6.0"
   },
   "overrides": {
-    "brace-expansion": "1.1.12"
+    "minimatch@3.x": {
+      "brace-expansion": "1.1.12"
+    }
   }
 }
