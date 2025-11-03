@@ -50,6 +50,15 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 }
 
 export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: any[]) => {
+  // Only send admin emails in PROD and TEST environments, not in PR (dev) environments
+  const zone = String(env.VITE_ZONE || '').toLowerCase()
+  const isProdOrTest = zone === 'prod' || zone === 'test'
+  
+  if (!isProdOrTest) {
+    console.log(`Admin report email skipped for environment: ${zone} (only sent in prod or test)`)
+    return 'success'
+  }
+
   const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
   const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
 

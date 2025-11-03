@@ -45,9 +45,9 @@ parameters:
     description: FAM on AWS domain
     value: https://prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
   - name: VITE_USER_POOLS_ID
-    value: 'ca-central-1_t2HSZBHur'
+    value: "ca-central-1_t2HSZBHur"
   - name: VITE_ZONE
-    value: DEV
+    value: PROD
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
