@@ -4,7 +4,6 @@ x-common: &common
   depends_on: ["backend"]
   environment:
     VITE_BACKEND_URL: http://localhost:5000
-    VITE_ZONE: DEV
   healthcheck:
     test: wget --no-verbose --spider http://localhost:3000
     interval: 15s
