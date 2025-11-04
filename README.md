@@ -82,6 +82,56 @@ Be aware of the required environment variables:
 
 To run the unit tests all you need is `npm run test`.
 
+## Docker Compose
+
+This project includes Docker Compose configuration for local development. Docker Compose runs both the backend and frontend services together.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
+- Environment variables set (see below)
+
+### Running with Docker Compose
+
+Start all services:
+```bash
+docker-compose up
+```
+
+Start specific services:
+```bash
+# Start only frontend
+docker-compose --profile frontend up frontend
+
+# Start with Caddy (production-like server)
+docker-compose --profile caddy up caddy
+```
+
+Stop services:
+```bash
+docker-compose down
+```
+
+### Required Environment Variables
+
+The following environment variables must be set before running Docker Compose:
+
+**Backend:**
+- `CHES_CLIENT_SECRET` - CHES email service client secret (obtain from team secrets/vault)
+- `S3_SECRETKEY` - S3 object storage secret key (obtain from team secrets/vault)
+
+**Frontend:**
+- `VITE_BACKEND_URL` - Set to `http://localhost:5000` by default in docker-compose.yml
+- `VITE_ZONE` - Optional, defaults to `DEV` if not set
+
+**Note:** Sensitive values (`CHES_CLIENT_SECRET`, `S3_SECRETKEY`) should be obtained from your team's secure secret management system (e.g., GitHub Secrets, Vault, or similar).
+
+### Available Services
+
+- **backend** - Node.js backend API (port 5000)
+- **frontend** - React development server (port 3000)
+- **caddy** - Production-like server with Caddy (port 3000)
+
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
 
