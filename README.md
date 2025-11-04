@@ -95,45 +95,45 @@ This project includes Docker Compose configuration for local development. Docker
 
 Start all services:
 ```bash
-docker-compose up
+docker compose up
 ```
 
 Start specific services:
 ```bash
 # Start only frontend
-docker-compose --profile frontend up frontend
+docker compose --profile frontend up frontend
 
 # Start with Caddy (production-like server)
-docker-compose --profile caddy up caddy
+docker compose --profile caddy up caddy
 ```
 
 Stop services:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### Required Environment Variables
 
-The following environment variables must be set before running Docker Compose. **These should be set as local environment variables and should NOT be committed to `docker-compose.yml`.**
+The following environment variables must be set before running Docker Compose. **These should be set as local environment variables and should NOT be committed to `docker compose.yml`.**
 
 **Backend:**
 - `CHES_CLIENT_SECRET` - CHES email service client secret (obtain from team secrets/vault)
 - `S3_SECRETKEY` - S3 object storage secret key (obtain from team secrets/vault)
 
 **Frontend:**
-- `VITE_BACKEND_URL` - Set to `http://localhost:5000` by default in docker-compose.yml
+- `VITE_BACKEND_URL` - Set to `http://localhost:5000` by default in docker compose.yml
 
 **Setting Environment Variables Locally:**
 
-Set these variables in your shell before running docker-compose:
+Set these variables in your shell before running docker compose:
 
 ```bash
 # Set environment variables
 export CHES_CLIENT_SECRET="your-secret-here"
 export S3_SECRETKEY="your-s3-secret-here"
 
-# Then run docker-compose
-docker-compose up
+# Then run docker compose
+docker compose up
 ```
 
 ### Available Services
