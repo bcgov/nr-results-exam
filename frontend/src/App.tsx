@@ -31,7 +31,7 @@ const privateRoutes: RouteObject[] = [
       { path: "/", element: <Navigate to="/dashboard" /> },
       {
         path: "/dashboard",
-        element: <SideLayout pageContent={<Dashboard />} />,
+        element: <SideLayout pageContent={<Dashboard />} />
       },
       { path: "/testA", element: <SideLayout pageContent={<TestA />} /> },
       { path: "/testB", element: <SideLayout pageContent={<TestB />} /> },
