@@ -122,7 +122,6 @@ The following environment variables must be set before running Docker Compose. *
 
 **Frontend:**
 - `VITE_BACKEND_URL` - Set to `http://localhost:5000` by default in docker-compose.yml
-- `VITE_ZONE` - Optional, defaults to `DEV` if not set
 
 **Setting Environment Variables Locally:**
 
