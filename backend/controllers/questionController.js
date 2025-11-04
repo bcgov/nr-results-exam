@@ -2,7 +2,7 @@ const Minio = require('minio');
 const dotenv =require('dotenv');
 dotenv.config({
   path: './.env'
-})
+});
 // Define the S3 credentials
 const endPoint = process.env.S3_ENDPOINT;
 const accessKey = process.env.S3_ACCESSKEY;
@@ -14,7 +14,7 @@ const minioClient = new Minio.Client({
   endPoint,
   useSSL: true,
   accessKey,
-  secretKey,
+  secretKey
 });
 
 // Controller function to read a file from S3 and return its contents

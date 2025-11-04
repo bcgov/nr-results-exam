@@ -1,14 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv =require('dotenv');
-const indexRoutes = require("./routes/indexRoutes");
-const questionRoutes = require("./routes/questionRoutes");
-const mailRoutes = require("./routes/mailRoutes");
-const healthRoutes = require("./routes/healthRoutes");
+const indexRoutes = require('./routes/indexRoutes');
+const questionRoutes = require('./routes/questionRoutes');
+const mailRoutes = require('./routes/mailRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
 dotenv.config({
   path: './.env'
-})
+});
 const app = express();
 app.use(express.json());
 // positioning the health route before defining strict CORS, and allow * for health
