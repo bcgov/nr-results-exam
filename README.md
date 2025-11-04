@@ -126,7 +126,7 @@ The following environment variables must be set before running Docker Compose. *
 
 **Setting Environment Variables Locally:**
 
-You can set these variables in your shell before running docker-compose:
+Set these variables in your shell before running docker-compose:
 
 ```bash
 # Set environment variables
@@ -135,14 +135,6 @@ export S3_SECRETKEY="your-s3-secret-here"
 
 # Then run docker-compose
 docker-compose up
-```
-
-Or use a `.env` file (which should be added to `.gitignore`):
-
-```bash
-# Create .env file in project root (do not commit this file)
-echo "CHES_CLIENT_SECRET=your-secret-here" >> .env
-echo "S3_SECRETKEY=your-s3-secret-here" >> .env
 ```
 
 **Note:** Sensitive values (`CHES_CLIENT_SECRET`, `S3_SECRETKEY`) should be obtained from your team's secure secret management system (e.g., GitHub Secrets, Vault, or similar). Never commit these values to version control.
