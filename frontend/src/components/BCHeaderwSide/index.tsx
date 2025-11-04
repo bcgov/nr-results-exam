@@ -57,14 +57,13 @@ const listItems = [
         icon: 'Dashboard',
         link: '/testC',
         disabled: false
-      },
+      }
     ]
   }
 ];
 
 const BCHeaderwSide = () => {
   const [myProfile, setMyProfile] = useState<boolean>(false);
-  const [notifications, setNotifications] = useState<boolean>(false);
   const [goToURL, setGoToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
 
@@ -75,7 +74,6 @@ const BCHeaderwSide = () => {
     } else {
       setMyProfile(true);
     }
-    setNotifications(false);
   }, [myProfile]);
 
   const closeMyProfilePanel = useCallback((): void => {

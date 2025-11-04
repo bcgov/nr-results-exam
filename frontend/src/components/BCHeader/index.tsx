@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useThemePreference } from "../../utils/ThemePreference";
 import { toggleTheme } from "../../utils/ThemeFunction";
 import {
@@ -14,9 +14,8 @@ import {
   HeaderMenuItem,
   SideNav,
   SideNavItems,
-  HeaderSideNavItems,
+  HeaderSideNavItems
 } from "@carbon/react";
-import { NavLink } from "react-router-dom";
 import * as Icons from "@carbon/icons-react";
 
 import "./BCHeader.scss";
