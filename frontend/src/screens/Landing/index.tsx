@@ -12,7 +12,7 @@ const Landing: React.FC = () => {
   //define lottie options and loader
   const options = {
     animationData: landingPageAnimation,
-    loop: true,
+    loop: true
   };
   const { View } = useLottie(options);
 

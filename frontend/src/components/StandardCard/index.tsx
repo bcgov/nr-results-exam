@@ -16,7 +16,7 @@ const StandardCard = ({
   header,
   description,
   url,
-  image,
+  image
 }: StandardCardProps) => {
   const navigate = useNavigate();
   const Image = Pictograms[image];
