@@ -92,7 +92,7 @@ describe('EmailService', () => {
       )
     })
 
-    it('should send admin report email in TEST environment', async () => {
+    it('should send admin report email in TEST environment to test taker', async () => {
       env.VITE_ZONE = 'test'
       mockedAxios.post.mockResolvedValueOnce({ data: 'success' })
 
@@ -106,6 +106,14 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'http://localhost:3000/api/mail',
+        expect.objectContaining({
+          fromEmail: 'test@gov.bc.ca',
+          toEmails: ['john@example.com'],
+          subject: 'Test A admin report : John Doe'
+        })
+      )
     })
 
     it('should NOT send admin report email in PR environment (numeric zone)', async () => {
@@ -179,6 +187,14 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'http://localhost:3000/api/mail',
+        expect.objectContaining({
+          fromEmail: 'test@gov.bc.ca',
+          toEmails: ['admin@gov.bc.ca'],
+          subject: 'Test A admin report : John Doe'
+        })
+      )
     })
 
     it('should handle case-insensitive environment names for TEST', async () => {
@@ -195,6 +211,14 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'http://localhost:3000/api/mail',
+        expect.objectContaining({
+          fromEmail: 'test@gov.bc.ca',
+          toEmails: ['john@example.com'],
+          subject: 'Test A admin report : John Doe'
+        })
+      )
     })
 
     it('should return error when email sending fails in PROD', async () => {
