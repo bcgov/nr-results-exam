@@ -136,8 +136,6 @@ export S3_SECRETKEY="your-s3-secret-here"
 docker-compose up
 ```
 
-**Note:** Sensitive values (`CHES_CLIENT_SECRET`, `S3_SECRETKEY`) should be obtained from your team's secure secret management system (e.g., GitHub Secrets, Vault, or similar). Never commit these values to version control.
-
 ### Available Services
 
 - **backend** - Node.js backend API (port 5000)
