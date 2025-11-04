@@ -100,9 +100,13 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca'
   const backendUrl = env.VITE_BACKEND_URL
 
+  // In TEST environment, send admin report to test taker's email
+  // In PROD environment, send to admin email address
+  const recipientEmail = zone === 'test' ? userEmail : adminEmail
+
   const emailParams: any = {
     fromEmail,
-    toEmails: [adminEmail], // Admin's email address
+    toEmails: [recipientEmail],
     subject: `${testName} admin report : ${userName}`,
     mailBody: emailBody
   }
