@@ -12,6 +12,8 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     strategy:
       matrix:
         package: [backend, frontend]
