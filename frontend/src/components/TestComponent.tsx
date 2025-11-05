@@ -64,8 +64,10 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
 
     const results = generateResultJson(questions, userAnswers);
     const percentage = calculateScorePercentage(questions, userAnswers);
-    const userReportStatus = await sendUserReport(user.displayName, user.email, percentage, testName);
-    const adminReportStatus = await sendAdminReport(user.displayName, user.email, percentage, testName, results);
+    const displayName = user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+    const userEmail = user.email || '';
+    const userReportStatus = await sendUserReport(displayName, userEmail, percentage, testName);
+    const adminReportStatus = await sendAdminReport(displayName, userEmail, percentage, testName, results);
 
     setEmailStatus(userReportStatus === 'success' && adminReportStatus === 'success' ? 'success' : 'error');
     setIsLoading(false);
