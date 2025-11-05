@@ -5,7 +5,7 @@ import "./RightPanelTitle.scss";
 
 interface RightPanelTitleProps {
   title: string;
-  closeFn: Function;
+  closeFn: () => void;
 }
 
 const RightPanelTitle = ({ title, closeFn }: RightPanelTitleProps) => (

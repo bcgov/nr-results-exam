@@ -20,6 +20,7 @@ interface ThemeProviderProps {
 }
 
 // Create the ThemeProvider component
+// eslint-disable-next-line react/prop-types
 const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState("dark");
 

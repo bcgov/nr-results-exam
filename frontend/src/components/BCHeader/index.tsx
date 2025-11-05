@@ -27,7 +27,7 @@ const BCHeader: React.FC = () => {
   return (
     <>
       <HeaderContainer
-        render={({ isSideNavExpanded, onClickSideNavExpand }: any) => (
+        render={({ isSideNavExpanded, onClickSideNavExpand }: { isSideNavExpanded: boolean; onClickSideNavExpand: () => void }) => (
           <Header
             aria-label="React TS Carbon Quickstart"
             className="results-exam-header"

@@ -9,7 +9,6 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  requiredRoles = [],
   redirectTo = '/'
 }) => {
   const { isLoggedIn, logout } = useAuth();

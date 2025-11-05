@@ -1,9 +1,9 @@
 import {
-  RouteObject,
   Navigate,
   createBrowserRouter,
   RouterProvider
 } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
 import './custom.scss';
 
 import Landing from "./screens/Landing";
