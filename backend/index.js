@@ -16,16 +16,20 @@ app.use('/health',cors({origin:'*'}),healthRoutes);
 
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
-  'http://localhost:3000',
-  'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca',
-  'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca',
-  frontendUrl
-];
+  'http://localhost:3000', // For local development
+  frontendUrl // Frontend URL from environment variable
+].filter(Boolean); // Remove any undefined values
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (origin && whitelist.some(domain => origin.startsWith(domain))) {
-      callback(null, origin);
+    // Allow requests with no origin (like mobile apps, curl, Postman, or server-to-server)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    // Check if origin exactly matches one of the whitelisted origins
+    if (whitelist.includes(origin)) {
+      callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
