@@ -2,6 +2,7 @@
   "name": "nr-results-exam-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@bcgov-nr/nr-theme": "^1.8.6",
     "@carbon/icons-react": "^11.70.0",
@@ -37,7 +38,7 @@
     "serve": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage --watch=false",
-    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint": "eslint src",
     "lint:fix": "npm run lint -- --fix"
   },
   "browserslist": {
