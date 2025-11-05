@@ -32,7 +32,8 @@ const ThemeToggle = () => {
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={isToggled ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      aria-label={isToggled ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={isToggled}
     >
       <div className="circle">
         {isToggled ? <AsleepFilled className="icon" /> : <LightFilled className="icon" />}
