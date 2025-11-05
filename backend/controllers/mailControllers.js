@@ -32,7 +32,10 @@ async function requestToken() {
     return access_token;
   } catch (error) {
     // Handle errors gracefully
-    console.error('Error fetching token:', error.message);
+    console.error('Error fetching token:', error.response?.data || error.message);
+    if (error.response) {
+      throw new Error(`Failed to fetch token: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    }
     throw new Error('Failed to fetch token');
   }
 }
@@ -72,7 +75,10 @@ async function sendEmail(token, emailDetails) {
     return response.data;
   } catch (error) {
     // Handle errors gracefully
-    console.error('Error sending email:', error.message);
+    console.error('Error sending email:', error.response?.data || error.message);
+    if (error.response) {
+      throw new Error(`Failed to send email: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    }
     throw new Error('Failed to send email');
   }
 }
@@ -83,6 +89,36 @@ async function sendEmail(token, emailDetails) {
 // @access  Public
 const sendMail = asyncHandler(async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.fromEmail) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Missing required field: fromEmail',
+        success: false
+      });
+    }
+    if (!req.body.toEmails || !Array.isArray(req.body.toEmails) || req.body.toEmails.length === 0) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Missing or invalid required field: toEmails (must be a non-empty array)',
+        success: false
+      });
+    }
+    if (!req.body.subject) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Missing required field: subject',
+        success: false
+      });
+    }
+    if (!req.body.mailBody) {
+      return res.status(400).json({
+        status: 400,
+        message: 'Missing required field: mailBody',
+        success: false
+      });
+    }
+
     const accessToken = await requestToken();
     const emailDetails = {
       from: req.body.fromEmail,
@@ -100,12 +136,13 @@ const sendMail = asyncHandler(async (req, res) => {
       emailSent: sentEmail
     });
   } catch (error) {
-    console.error('Error sending email:', error.message);
+    console.error('Error in sendMail controller:', error.message);
+    const errorMessage = error.message || 'Unknown error occurred';
     res.status(500).json({
       status: 500,
       message: 'Failed to send email',
       success: false,
-      error: error.message
+      error: errorMessage
     });
   }
 });
