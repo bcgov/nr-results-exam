@@ -17,8 +17,24 @@ const ThemeToggle = () => {
     // keep the logic opposite at the time of sending the toggle
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleToggle();
+    }
+  };
+
   return (
-    <div className={`theme-toggle ${isToggled ? 'on' : 'off'}`} data-testid="theme-toggle" onClick={handleToggle}>
+    <div 
+      className={`theme-toggle ${isToggled ? 'on' : 'off'}`} 
+      data-testid="theme-toggle" 
+      onClick={handleToggle}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-label={isToggled ? "Dark mode" : "Light mode"}
+      aria-pressed={isToggled}
+    >
       <div className="circle">
         {isToggled ? <AsleepFilled className="icon" /> : <LightFilled className="icon" />}
       </div>
