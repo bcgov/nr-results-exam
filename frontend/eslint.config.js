@@ -25,9 +25,7 @@ export default [
       },
       globals: {
         ...globals.browser,
-        ...globals.es2021,
-        React: 'readonly',
-        JSX: 'readonly'
+        ...globals.es2021
       }
     },
     plugins: {
