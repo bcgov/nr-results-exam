@@ -1,6 +1,13 @@
 import axios from 'axios'
 import { env } from '../env'
 
+interface EmailParams {
+  fromEmail: string;
+  toEmails: string[];
+  subject: string;
+  mailBody: string;
+}
+
 export const sendUserReport = async (userName: string, userEmail: string, percentage: number, testName: string) => {
   const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
   const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
@@ -31,13 +38,6 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
   const backendUrl = env.VITE_BACKEND_URL
-
-  interface EmailParams {
-    fromEmail: string;
-    toEmails: string[];
-    subject: string;
-    mailBody: string;
-  }
 
   const emailParams: EmailParams = {
     fromEmail,
@@ -117,13 +117,6 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   // In TEST environment, send admin report to test taker's email
   // In PROD environment, send to admin email address
   const recipientEmail = zone === 'test' ? userEmail : adminEmail
-
-  interface EmailParams {
-    fromEmail: string;
-    toEmails: string[];
-    subject: string;
-    mailBody: string;
-  }
 
   const emailParams: EmailParams = {
     fromEmail,
