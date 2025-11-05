@@ -10,9 +10,10 @@ import {
   Question
 } from '../utils/examCalculations';
 import EmailNotification from './EmailNotifications';
+import { FamLoginUser } from '../services/AuthService';
 
 interface ComponentProps {
-  user: any;
+  user: FamLoginUser;
   testName: string;
   questionFileName: string;
 }

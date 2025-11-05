@@ -1,4 +1,16 @@
-const ActivityHistoryItems: any = {
+interface ActivityStep {
+  step: number;
+  status: string;
+  description: string;
+  date: string;
+}
+
+interface ActivityHistoryItemsType {
+  id: number;
+  steps: ActivityStep[];
+}
+
+const ActivityHistoryItems: ActivityHistoryItemsType = {
   id: 12345,
   steps: [
     {

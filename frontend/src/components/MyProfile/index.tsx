@@ -18,7 +18,7 @@ const MyProfile = () => {
   const { theme, setTheme } = useThemePreference();
   console.log("Current userDetails from context"+ user)
   console.log(user)
-  const [goToURL, setGoToURL] = useState<string>('');
+  const [goToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
 
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ const MyProfile = () => {
       setGoTo(false);
       navigate(goToURL);
     }
-  }, [goTo]);
+  }, [goTo, goToURL, navigate]);
 
   return (
     user?(<>
