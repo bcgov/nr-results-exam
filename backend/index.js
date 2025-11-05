@@ -11,8 +11,6 @@ dotenv.config({
 });
 const app = express();
 app.use(express.json());
-// positioning the health route before defining strict CORS, and allow * for health
-app.use('/health',cors({origin:'*'}),healthRoutes);
 
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
