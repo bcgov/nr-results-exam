@@ -58,6 +58,7 @@ jobs:
     strategy:
       matrix:
         package: [backend, frontend]
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
