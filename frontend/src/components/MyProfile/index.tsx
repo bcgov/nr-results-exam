@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   SideNavLink
   , Loading } from '@carbon/react';
@@ -18,10 +16,6 @@ const MyProfile = () => {
   const { theme, setTheme } = useThemePreference();
   console.log("Current userDetails from context"+ user)
   console.log(user)
-  const [goToURL, setGoToURL] = useState<string>('');
-  const [goTo, setGoTo] = useState<boolean>(false);
-
-  const navigate = useNavigate();
 
   const changeTheme = () => {
     if (theme === 'g10') {
@@ -33,13 +27,6 @@ const MyProfile = () => {
       localStorage.setItem('mode', 'light');
     }
   };
-
-  useEffect(() => {
-    if (goTo) {
-      setGoTo(false);
-      navigate(goToURL);
-    }
-  }, [goTo]);
 
   return (
     user?(<>

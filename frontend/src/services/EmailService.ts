@@ -1,6 +1,13 @@
 import axios from 'axios'
 import { env } from '../env'
 
+interface EmailParams {
+  fromEmail: string;
+  toEmails: string[];
+  subject: string;
+  mailBody: string;
+}
+
 export const sendUserReport = async (userName: string, userEmail: string, percentage: number, testName: string) => {
   const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
   const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
@@ -32,7 +39,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
   const backendUrl = env.VITE_BACKEND_URL
 
-  const emailParams: any = {
+  const emailParams: EmailParams = {
     fromEmail,
     toEmails: [userEmail],
     subject: `${testName} user attempt report : ${userName}`,
@@ -49,7 +56,14 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   }
 }
 
-export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: any[]) => {
+interface ResultItem {
+  question: string;
+  userAnswered: string;
+  answer: string;
+  isCorrect: boolean;
+}
+
+export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: ResultItem[]) => {
   // Only send admin emails in PROD and TEST environments, not in PR (dev) environments
   const zone = String(env.VITE_ZONE || '').toLowerCase()
   const isProdOrTest = zone === 'prod' || zone === 'test'
@@ -104,7 +118,7 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   // In PROD environment, send to admin email address
   const recipientEmail = zone === 'test' ? userEmail : adminEmail
 
-  const emailParams: any = {
+  const emailParams: EmailParams = {
     fromEmail,
     toEmails: [recipientEmail],
     subject: `${testName} admin report : ${userName}`,

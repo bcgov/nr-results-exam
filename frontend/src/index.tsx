@@ -10,7 +10,10 @@ import { CookieStorage } from "aws-amplify/utils";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import amplifyconfig from "./amplifyconfiguration";
 import { AuthProvider } from "./contexts/AuthProvider";
-const container: any = document.getElementById("root");
+const container = document.getElementById("root");
+if (!container) {
+  throw new Error("Root element not found");
+}
 const root = createRoot(container);
 
 Amplify.configure(amplifyconfig);
