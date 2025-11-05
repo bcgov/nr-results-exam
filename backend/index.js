@@ -20,9 +20,9 @@ const whitelist = [
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman, or server-to-server)
+    // Deny requests with no origin to avoid bypassing CORS protection
     if (!origin) {
-      return callback(null, true);
+      return callback(new Error('CORS: Requests with no origin are not allowed'));
     }
     
     // Check if origin matches any whitelisted domain (by hostname)
