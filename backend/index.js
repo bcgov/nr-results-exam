@@ -32,9 +32,16 @@ const corsOptions = {
         try {
           const allowedUrl = new URL(allowed);
           // Match by hostname (and port if specified in whitelist)
+          // Always compare effective ports (explicit or default)
+          const getEffectivePort = (url) => {
+            if (url.port) return url.port;
+            if (url.protocol === 'http:') return '80';
+            if (url.protocol === 'https:') return '443';
+            return '';
+          };
           return (
             originUrl.hostname === allowedUrl.hostname &&
-            (allowedUrl.port ? originUrl.port === allowedUrl.port : true)
+            getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
           );
         } catch (e) {
           // If whitelist entry is not a valid URL, fallback to string comparison
