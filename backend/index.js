@@ -25,10 +25,28 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // Check if origin exactly matches one of the whitelisted origins
-    if (whitelist.includes(origin)) {
-      callback(null, true);
-    } else {
+    // Check if origin matches any whitelisted domain (by hostname)
+    try {
+      const originUrl = new URL(origin);
+      const isAllowed = whitelist.some((allowed) => {
+        try {
+          const allowedUrl = new URL(allowed);
+          // Match by hostname (and port if specified in whitelist)
+          return (
+            originUrl.hostname === allowedUrl.hostname &&
+            (allowedUrl.port ? originUrl.port === allowedUrl.port : true)
+          );
+        } catch (e) {
+          // If whitelist entry is not a valid URL, fallback to string comparison
+          return originUrl.hostname === allowed;
+        }
+      });
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    } catch (e) {
       callback(new Error('Not allowed by CORS'));
     }
   }
