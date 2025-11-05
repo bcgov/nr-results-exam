@@ -11,22 +11,60 @@ dotenv.config({
 });
 const app = express();
 app.use(express.json());
-// positioning the health route before defining strict CORS, and allow * for health
-app.use('/health',cors({origin:'*'}),healthRoutes);
 
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
-  'http://localhost:3000',
-  'https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca',
-  'https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca',
-  frontendUrl
-];
+  'http://localhost:3000', // For local development
+  frontendUrl // Frontend URL from environment variable
+].filter(Boolean); // Remove any undefined values
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (origin && whitelist.some(domain => origin.startsWith(domain))) {
-      callback(null, origin);
-    } else {
+    // Deny requests with no origin to avoid bypassing CORS protection
+    if (!origin) {
+      return callback(new Error('CORS: Requests with no origin are not allowed'));
+    }
+    
+    // Check if origin matches any whitelisted domain (by hostname)
+    try {
+      const originUrl = new URL(origin);
+      const isAllowed = whitelist.some((allowed) => {
+        try {
+          const allowedUrl = new URL(allowed);
+          // Match by hostname (and port if specified in whitelist)
+          // Always compare effective ports (explicit or default)
+          const getEffectivePort = (url) => {
+            if (url.port) return url.port;
+            if (url.protocol === 'http:') return '80';
+            if (url.protocol === 'https:') return '443';
+            return '';
+          };
+          return (
+            originUrl.hostname === allowedUrl.hostname &&
+            getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
+          );
+        } catch (e) {
+          // If whitelist entry is not a valid URL, fallback to string/host:port comparison
+          // Support 'hostname' or 'hostname:port' in whitelist
+          const [allowedHost, allowedPort] = allowed.split(':');
+          if (allowedPort) {
+            // Compare both hostname and port
+            return (
+              originUrl.hostname === allowedHost &&
+              originUrl.port === allowedPort
+            );
+          } else {
+            // Compare only hostname
+            return originUrl.hostname === allowedHost;
+          }
+        }
+      });
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    } catch (e) {
       callback(new Error('Not allowed by CORS'));
     }
   }
