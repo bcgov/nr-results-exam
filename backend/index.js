@@ -43,7 +43,7 @@ const corsOptions = {
             originUrl.hostname === allowedUrl.hostname &&
             getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
           );
-        } catch (e) {
+        } catch (_e) {
           // If whitelist entry is not a valid URL, fallback to string/host:port comparison
           // Support 'hostname' or 'hostname:port' in whitelist
           const [allowedHost, allowedPort] = allowed.split(':');
@@ -64,7 +64,7 @@ const corsOptions = {
       } else {
         callback(new Error('Not allowed by CORS'));
       }
-    } catch (e) {
+    } catch (_e) {
       callback(new Error('Not allowed by CORS'));
     }
   }
