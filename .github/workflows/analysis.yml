@@ -51,6 +51,27 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
+  lint:
+    name: Lint
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        dir: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ matrix.dir }}
+      - name: Run linting
+        run: npm run lint
+        working-directory: ${{ matrix.dir }}
+
   tests:
     name: Tests
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
@@ -110,7 +131,7 @@ jobs:
     name: Analysis Results
     if: always() && !failure()
     # Include all needs that could have failures!
-    needs: [codeql, trivy, tests]
+    needs: [codeql, trivy, lint, tests]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Workflow completed successfully!"
