@@ -55,6 +55,8 @@ jobs:
     name: Lint
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     strategy:
       matrix:
         dir: [backend, frontend]
