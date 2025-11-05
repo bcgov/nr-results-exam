@@ -44,8 +44,19 @@ const corsOptions = {
             getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
           );
         } catch (e) {
-          // If whitelist entry is not a valid URL, fallback to string comparison
-          return originUrl.hostname === allowed;
+          // If whitelist entry is not a valid URL, fallback to string/host:port comparison
+          // Support 'hostname' or 'hostname:port' in whitelist
+          const [allowedHost, allowedPort] = allowed.split(':');
+          if (allowedPort) {
+            // Compare both hostname and port
+            return (
+              originUrl.hostname === allowedHost &&
+              originUrl.port === allowedPort
+            );
+          } else {
+            // Compare only hostname
+            return originUrl.hostname === allowedHost;
+          }
         }
       });
       if (isAllowed) {
