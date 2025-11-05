@@ -90,8 +90,8 @@ jobs:
         with:
           commands: |
             npm ci
-            npm run test:coverage || \
-              true && echo -n "\nFIX AND REMOVE THIS FALSE PASS!\n"
+            npm run lint
+            npm run test:coverage
           dir: ${{ matrix.dir }}
           node_version: "22"
           sonar_args: >
