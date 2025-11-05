@@ -45,8 +45,9 @@ export default [
       ...reactPlugin.configs['jsx-runtime'].rules,
       ...jsdocPlugin.configs.recommended.rules,
       ...importPlugin.configs.recommended.rules,
-      ...jsxA11yPlugin.configs.recommended.rules,
-      
+      // For ESLint v9 flat config, use the flat config export if available; otherwise, specify rules manually.
+      ...(jsxA11yPlugin.configs['flat/recommended'] ? jsxA11yPlugin.configs['flat/recommended'].rules : {}),
+      // If the above is empty, manually specify jsx-a11y rules here for ESLint v9 compatibility.
       'indent': ['error', 2, { 'SwitchCase': 1 }],
       'react/require-default-props': 'off',
       'linebreak-style': 0,
