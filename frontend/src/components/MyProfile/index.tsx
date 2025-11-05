@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   SideNavLink
-} from '@carbon/react';
+  , Loading } from '@carbon/react';
 import * as Icons from '@carbon/icons-react';
 
 
@@ -12,7 +12,6 @@ import { useThemePreference } from '../../utils/ThemePreference';
 
 import './MyProfile.scss';
 import { useAuth } from '../../contexts/AuthProvider';
-import { Loading } from '@carbon/react';
 
 const MyProfile = () => {
   const {user, logout} = useAuth();
