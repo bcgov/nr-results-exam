@@ -8,9 +8,7 @@ import {
   SkipToContent,
   HeaderGlobalBar,
   HeaderGlobalAction,
-  HeaderMenuButton,
-  SideNav,
-  SideNavItems
+  HeaderMenuButton
 } from "@carbon/react";
 import * as Icons from "@carbon/icons-react";
 
@@ -89,25 +87,7 @@ const BCHeader: React.FC = () => {
                 <Icons.Switcher size={20} />
               </HeaderGlobalAction>
             </HeaderGlobalBar>
-            <SideNav
-              aria-label="Side navigation"
-              expanded={isSideNavExpanded}
-              isPersistent={false}
-            >
-              <SideNavItems>
-                {/* Navigation placeholder - remove when actual links are needed */}
-                {/* <HeaderSideNavItems>
-                  <HeaderMenuItem href="#">Link 1</HeaderMenuItem>
-                  <HeaderMenuItem href="#">Link 2</HeaderMenuItem>
-                  <HeaderMenuItem href="#">Link 3</HeaderMenuItem>
-                  <HeaderMenu aria-label="Link 4" menuLinkName="Link 4">
-                    <HeaderMenuItem href="#">Sub-link 1</HeaderMenuItem>
-                    <HeaderMenuItem href="#">Sub-link 2</HeaderMenuItem>
-                    <HeaderMenuItem href="#">Sub-link 3</HeaderMenuItem>
-                  </HeaderMenu>
-                </HeaderSideNavItems> */}
-              </SideNavItems>
-            </SideNav>
+            {/* SideNav removed until navigation items are defined */}
           </Header>
         )}
       />
