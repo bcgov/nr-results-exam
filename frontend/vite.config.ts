@@ -53,6 +53,12 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: './coverage',
         include: ['src/**/*'],
         exclude: [],
+        thresholds: {
+          statements: 70,
+          branches: 44,
+          functions: 70,
+          lines: 70
+        }
       }
     },
   };

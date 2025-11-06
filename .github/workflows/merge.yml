@@ -70,9 +70,30 @@ jobs:
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=test
 
+  smoke-test:
+    name: Smoke Tests (TEST)
+    needs: [vars, deploys-test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install smoke dependencies
+        working-directory: integration-tests
+        run: npm ci
+      - name: Verify deployed services
+        working-directory: integration-tests
+        env:
+          BACKEND_URL: https://nr-results-exam-test-backend.apps.silver.devops.gov.bc.ca
+          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+          SMOKE_TIMEOUT: "8000"
+        run: npm run smoke
+
   init-prod:
     name: Init (PROD)
-    needs: [vars, deploys-test]
+    needs: [vars, smoke-test]
     environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 1
