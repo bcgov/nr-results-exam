@@ -6,15 +6,11 @@ import {
   HeaderContainer,
   Header,
   SkipToContent,
-  HeaderNavigation,
   HeaderGlobalBar,
   HeaderGlobalAction,
-  HeaderMenu,
   HeaderMenuButton,
-  HeaderMenuItem,
   SideNav,
-  SideNavItems,
-  HeaderSideNavItems
+  SideNavItems
 } from "@carbon/react";
 import * as Icons from "@carbon/icons-react";
 

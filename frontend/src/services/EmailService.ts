@@ -50,6 +50,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     await axios.post(`${backendUrl}/api/mail`, emailParams)
     return 'success'
   } catch (error) {
+    console.error('Error sending user report email:', error)
     return 'error'
   }
 }
@@ -126,6 +127,7 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
     await axios.post(`${backendUrl}/api/mail`, emailParams)
     return 'success'
   } catch (error) {
+    console.error('Error sending admin report email:', error)
     return 'error'
   }
 }
