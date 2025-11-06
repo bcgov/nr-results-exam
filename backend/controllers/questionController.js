@@ -1,21 +1,28 @@
 const Minio = require('minio');
-const dotenv =require('dotenv');
+const dotenv = require('dotenv');
 dotenv.config({
   path: './.env'
 });
+
 // Define the S3 credentials
 const endPoint = process.env.S3_ENDPOINT;
 const accessKey = process.env.S3_ACCESSKEY;
 const secretKey = process.env.S3_SECRETKEY;
 const bucketName = process.env.S3_BUCKETNAME;
 
-// Create a Minio client instance
-const minioClient = new Minio.Client({
-  endPoint,
-  useSSL: true,
-  accessKey,
-  secretKey
-});
+// Create a Minio client instance lazily
+let minioClient = null;
+function getMinioClient() {
+  if (!minioClient && endPoint && accessKey && secretKey) {
+    minioClient = new Minio.Client({
+      endPoint,
+      useSSL: true,
+      accessKey,
+      secretKey
+    });
+  }
+  return minioClient;
+}
 
 // Controller function to read a file from S3 and return its contents
 async function getFileFromS3(req, res) {
@@ -25,8 +32,13 @@ async function getFileFromS3(req, res) {
   const key = `${fileName}.json`;
 
   try {
+    const client = getMinioClient();
+    if (!client) {
+      return res.status(503).json({ error: 'S3 service not configured' });
+    }
+
     // Get a full object.
-    const dataStream = await minioClient.getObject(bucketName, key);
+    const dataStream = await client.getObject(bucketName, key);
 
     let fileData = '';
 
