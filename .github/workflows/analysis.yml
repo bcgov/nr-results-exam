@@ -78,12 +78,14 @@ jobs:
             token: SONAR_BACKEND
             sonar_args: >
               -Dsonar.sources=.
+              -Dsonar.tests=__tests__/
             triggers: ('backend/')
           - dir: frontend
             sonar_projectKey: nr-results-exam-frontend
             token: SONAR_FRONTEND
             sonar_args: >
               -Dsonar.sources=src
+              -Dsonar.tests=src/__test__/
             triggers: ('frontend/')
     steps:
       - uses: bcgov/action-test-and-analyse@v1.4.0
@@ -101,7 +103,6 @@ jobs:
             ${{ matrix.sonar_args }}
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
             -Dsonar.typescript.tsconfigPaths=tsconfig.json
-            -Dsonar.tests=src/__test__/
             -Dsonar.project.monorepo.enabled=true
           sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
