@@ -68,19 +68,60 @@ test and deploy.
 
 # Getting started
 
-Once you have cloned this repository, you can get the app running by typing
-`npm install` and then `npm run start` from the project root directory. Then
-head to http://localhost:3000.
+After cloning the repository install dependencies separately for the frontend and backend:
 
-Be aware of the required environment variables:
+```bash
+# Frontend
+cd frontend
+npm install
+# Backend
+cd ../backend
+npm install
+```
 
-- VITE_MAIN_VERSION
-- VITE_COGNITO_REGION
-- VITE_USER_POOLS_ID
-- VITE_USER_POOLS_WEB_CLIENT_ID
-- VITE_AWS_DOMAIN
+## Running locally
 
-To run the unit tests all you need is `npm run test`.
+### Using npm scripts
+
+```bash
+# Frontend (served at http://localhost:3000)
+cd frontend
+npm run start
+
+# Backend API (served at http://localhost:5000)
+cd backend
+npm start
+```
+
+### Running the unit test suites
+
+```bash
+# Frontend tests (Vitest + Testing Library)
+cd frontend
+npm run test
+
+# Backend tests (node --test)
+cd backend
+npm test
+```
+
+## Required environment variables
+
+Set these before running the apps or Docker Compose. Values can be exported in your shell; do not commit them.
+
+### Frontend
+
+- `VITE_MAIN_VERSION`
+- `VITE_COGNITO_REGION`
+- `VITE_USER_POOLS_ID`
+- `VITE_USER_POOLS_WEB_CLIENT_ID`
+- `VITE_AWS_DOMAIN`
+- `VITE_BACKEND_URL` (defaults to `http://localhost:5000` when using Docker Compose)
+
+### Backend
+
+- `CHES_CLIENT_SECRET`
+- `S3_SECRETKEY`
 
 ## Docker Compose
 
