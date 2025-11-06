@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node --test __tests__/",
-    "test:coverage": "node --test __tests__/",
+    "test": "node --test __tests__/**/*.test.js",
+    "test:coverage": "node --test __tests__/**/*.test.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
