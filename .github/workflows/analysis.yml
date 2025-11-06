@@ -78,12 +78,17 @@ jobs:
             token: SONAR_BACKEND
             sonar_args: >
               -Dsonar.sources=.
+              -Dsonar.exclusions=node_modules/**,coverage/**,__tests__/**,jest.config.js
+              -Dsonar.tests=__tests__
             triggers: ('backend/')
           - dir: frontend
             sonar_projectKey: nr-results-exam-frontend
             token: SONAR_FRONTEND
             sonar_args: >
               -Dsonar.sources=src
+              -Dsonar.exclusions=src/__test__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
+              -Dsonar.tests=src/__test__/
+              -Dsonar.typescript.tsconfigPaths=tsconfig.json
             triggers: ('frontend/')
     steps:
       - uses: bcgov/action-test-and-analyse@v1.4.0
@@ -95,13 +100,10 @@ jobs:
           dir: ${{ matrix.dir }}
           node_version: "22"
           sonar_args: >
-            -Dsonar.exclusions=src/__test__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=${{ matrix.sonar_projectKey }}
             ${{ matrix.sonar_args }}
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.typescript.tsconfigPaths=tsconfig.json
-            -Dsonar.tests=src/__test__/
             -Dsonar.project.monorepo.enabled=true
           sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
