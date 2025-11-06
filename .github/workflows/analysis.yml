@@ -97,7 +97,7 @@ jobs:
           dir: ${{ matrix.dir }}
           node_version: "22"
           sonar_args: >
-            -Dsonar.exclusions=src/__tests__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
+            -Dsonar.exclusions=src/__tests__/**,__tests__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=${{ matrix.sonar_projectKey }}
             ${{ matrix.sonar_args }}
