@@ -103,7 +103,7 @@ jobs:
             -Dsonar.typescript.tsconfigPaths=tsconfig.json
             -Dsonar.tests=src/__test__/
             -Dsonar.project.monorepo.enabled=true
-          # sonar_token: ${{ secrets[matrix.token] }}
+          sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
 
   results:
