@@ -14,8 +14,6 @@ import { useAuth } from '../../contexts/AuthProvider';
 const MyProfile = () => {
   const {user, logout} = useAuth();
   const { theme, setTheme } = useThemePreference();
-  console.log("Current userDetails from context"+ user)
-  console.log(user)
 
   const changeTheme = () => {
     if (theme === 'g10') {
@@ -37,7 +35,7 @@ const MyProfile = () => {
         <div className="user-data">
           <p className="user-name">{`${user.firstName} ${user.lastName}`}</p>
           <p>{`IDIR: ${user.userName}`}</p>
-          <p>{`Email:${user.email}`}</p>
+          <p>{`Email: ${user.email}`}</p>
 
         </div>
       </div>
