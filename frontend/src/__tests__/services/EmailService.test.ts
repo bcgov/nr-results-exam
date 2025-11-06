@@ -118,7 +118,6 @@ describe('EmailService', () => {
 
     it('should NOT send admin report email in PR environment (numeric zone)', async () => {
       env.VITE_ZONE = '123'
-      const consoleLogSpy = vi.spyOn(console, 'log')
 
       const result = await sendAdminReport(
         'John Doe',
@@ -130,14 +129,10 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).not.toHaveBeenCalled()
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Admin report email skipped for environment: 123 (only sent in prod or test)'
-      )
     })
 
     it('should NOT send admin report email in PR environment (pr-prefix zone)', async () => {
       env.VITE_ZONE = 'pr-456'
-      const consoleLogSpy = vi.spyOn(console, 'log')
 
       const result = await sendAdminReport(
         'John Doe',
@@ -149,14 +144,10 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).not.toHaveBeenCalled()
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Admin report email skipped for environment: pr-456 (only sent in prod or test)'
-      )
     })
 
     it('should NOT send admin report email in DEV environment', async () => {
       env.VITE_ZONE = 'dev'
-      const consoleLogSpy = vi.spyOn(console, 'log')
 
       const result = await sendAdminReport(
         'John Doe',
@@ -168,9 +159,6 @@ describe('EmailService', () => {
 
       expect(result).toBe('success')
       expect(mockedAxios.post).not.toHaveBeenCalled()
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'Admin report email skipped for environment: dev (only sent in prod or test)'
-      )
     })
 
     it('should handle case-insensitive environment names for PROD', async () => {

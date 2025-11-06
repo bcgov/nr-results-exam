@@ -3,8 +3,6 @@ import { isRouteErrorResponse, useRouteError, Navigate } from 'react-router-dom'
 
 const ErrorHandling: React.FC = () => {
   const error = useRouteError();
-  
-  console.log('ErrorHandling',error);
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 401) {

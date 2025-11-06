@@ -48,10 +48,9 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 
   try {
     await axios.post(`${backendUrl}/api/mail`, emailParams)
-    console.log('User report email sent successfully')
     return 'success'
   } catch (error) {
-    console.error('Error sending user report:', error)
+    console.error('Error sending user report email:', error)
     return 'error'
   }
 }
@@ -69,7 +68,6 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   const isProdOrTest = zone === 'prod' || zone === 'test'
   
   if (!isProdOrTest) {
-    console.log(`Admin report email skipped for environment: ${zone} (only sent in prod or test)`)
     return 'success'
   }
 
@@ -127,10 +125,9 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
 
   try {
     await axios.post(`${backendUrl}/api/mail`, emailParams)
-    console.log('Admin report email sent successfully')
     return 'success'
   } catch (error) {
-    console.error('Error sending admin report:', error)
+    console.error('Error sending admin report email:', error)
     return 'error'
   }
 }

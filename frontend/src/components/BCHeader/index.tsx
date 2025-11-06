@@ -6,22 +6,16 @@ import {
   HeaderContainer,
   Header,
   SkipToContent,
-  HeaderNavigation,
   HeaderGlobalBar,
   HeaderGlobalAction,
-  HeaderMenu,
-  HeaderMenuButton,
-  HeaderMenuItem,
-  SideNav,
-  SideNavItems,
-  HeaderSideNavItems
+  HeaderMenuButton
 } from "@carbon/react";
 import * as Icons from "@carbon/icons-react";
 
 import "./BCHeader.scss";
 
 const BCHeader: React.FC = () => {
-  //can only be impored at component level
+  // Can only be imported at component level
   const { theme, setTheme } = useThemePreference();
 
   return (
@@ -43,7 +37,8 @@ const BCHeader: React.FC = () => {
               BCGOV
               <span className="header-full-name"> RESULTS EXAM</span>
             </Link>
-            <HeaderNavigation aria-label="BC-Gov Starter">
+            {/* Navigation placeholder - remove when actual links are needed */}
+            {/* <HeaderNavigation aria-label="BC-Gov Starter">
               <HeaderMenuItem href="#">Link 1</HeaderMenuItem>
               <HeaderMenuItem href="#">Link 2</HeaderMenuItem>
               <HeaderMenuItem href="#">Link 3</HeaderMenuItem>
@@ -56,7 +51,7 @@ const BCHeader: React.FC = () => {
                 <HeaderMenuItem href="#">Sub-link 2</HeaderMenuItem>
                 <HeaderMenuItem href="#">Sub-link 3</HeaderMenuItem>
               </HeaderMenu>
-            </HeaderNavigation>
+            </HeaderNavigation> */}
             <HeaderGlobalBar>
               <HeaderGlobalAction
                 aria-label={
@@ -92,24 +87,7 @@ const BCHeader: React.FC = () => {
                 <Icons.Switcher size={20} />
               </HeaderGlobalAction>
             </HeaderGlobalBar>
-            <SideNav
-              aria-label="Side navigation"
-              expanded={isSideNavExpanded}
-              isPersistent={false}
-            >
-              <SideNavItems>
-                <HeaderSideNavItems>
-                  <HeaderMenuItem href="#">Link 1</HeaderMenuItem>
-                  <HeaderMenuItem href="#">Link 2</HeaderMenuItem>
-                  <HeaderMenuItem href="#">Link 3</HeaderMenuItem>
-                  <HeaderMenu aria-label="Link 4" menuLinkName="Link 4">
-                    <HeaderMenuItem href="#">Sub-link 1</HeaderMenuItem>
-                    <HeaderMenuItem href="#">Sub-link 2</HeaderMenuItem>
-                    <HeaderMenuItem href="#">Sub-link 3</HeaderMenuItem>
-                  </HeaderMenu>
-                </HeaderSideNavItems>
-              </SideNavItems>
-            </SideNav>
+            {/* SideNav removed until navigation items are defined */}
           </Header>
         )}
       />
