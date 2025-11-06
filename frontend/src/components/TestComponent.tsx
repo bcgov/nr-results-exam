@@ -18,7 +18,7 @@ interface ComponentProps {
   questionFileName: string;
 }
 
-const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
+const TestComponent = ({ user, testName, questionFileName }: ComponentProps): React.ReactElement => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [emailStatus, setEmailStatus] = useState<'success' | 'error' | null>(null);
