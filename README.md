@@ -54,7 +54,7 @@ test and deploy.
   - TypeScript
   - Context API
   - React Testing Library
-  - Jest
+  - Vitest
 - Lint
   - Airbnb ESLint
 - Tools
