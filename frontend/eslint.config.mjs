@@ -99,6 +99,6 @@ export default [
     }
   },
   {
-    ignores: ['**/__test__/*', '**/assets/*', '**/*.scss', '**/*.css', '**/*.svg', 'build/**', 'node_modules/**']
+    ignores: ['**/__tests__/*', '**/assets/*', '**/*.scss', '**/*.css', '**/*.svg', 'build/**', 'node_modules/**']
   }
 ];

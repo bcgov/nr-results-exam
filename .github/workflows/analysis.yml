@@ -85,7 +85,7 @@ jobs:
             token: SONAR_FRONTEND
             sonar_args: >
               -Dsonar.sources=src
-              -Dsonar.tests=src/__test__/
+              -Dsonar.tests=src/__tests__/
             triggers: ('frontend/')
     steps:
       - uses: bcgov/action-test-and-analyse@v1.4.0
@@ -97,7 +97,7 @@ jobs:
           dir: ${{ matrix.dir }}
           node_version: "22"
           sonar_args: >
-            -Dsonar.exclusions=src/__test__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
+            -Dsonar.exclusions=src/__tests__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
             -Dsonar.projectKey=${{ matrix.sonar_projectKey }}
             ${{ matrix.sonar_args }}
