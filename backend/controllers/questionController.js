@@ -13,7 +13,11 @@ const bucketName = process.env.S3_BUCKETNAME;
 // Create a Minio client instance lazily
 let minioClient = null;
 function getMinioClient() {
-  if (!minioClient && endPoint && accessKey && secretKey) {
+  if (!minioClient) {
+    // Check if required environment variables are set
+    if (!endPoint || !accessKey || !secretKey) {
+      throw new Error('S3 configuration incomplete: endPoint, accessKey, and secretKey are required');
+    }
     minioClient = new Minio.Client({
       endPoint,
       useSSL: true,
@@ -33,8 +37,8 @@ async function getFileFromS3(req, res) {
 
   try {
     const client = getMinioClient();
-    if (!client) {
-      return res.status(503).json({ error: 'S3 service not configured' });
+    if (!bucketName) {
+      return res.status(503).json({ error: 'S3 bucket name not configured' });
     }
 
     // Get a full object.
