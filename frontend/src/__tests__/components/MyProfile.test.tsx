@@ -63,7 +63,7 @@ describe('MyProfile', () => {
     
         expect(screen.getByText('John Doe')).toBeInTheDocument();
         expect(screen.getByText('IDIR: jdoe')).toBeInTheDocument();
-        expect(screen.getByText('Email:john.doe@example.com')).toBeInTheDocument();
+        expect(screen.getByText('Email: john.doe@example.com')).toBeInTheDocument();
       });
 
 });
