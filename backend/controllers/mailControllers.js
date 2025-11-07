@@ -12,10 +12,6 @@ async function requestToken() {
       throw new Error('CHES credentials are not configured');
     }
 
-    if (!clientId || !clientSecret) {
-      throw new Error('CHES credentials are not configured');
-    }
-
     const tokenEndpoint = `${authHost}/auth/realms/comsvcauth/protocol/openid-connect/token`;
 
     // Set up the request payload
