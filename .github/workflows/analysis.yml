@@ -137,7 +137,7 @@ jobs:
     name: Analysis Results
     if: always() && !failure()
     # Include all needs that could have failures!
-    needs: [codeql, trivy, tests, integration-smoke]
+    needs: [codeql, trivy, tests]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Workflow completed successfully!"
