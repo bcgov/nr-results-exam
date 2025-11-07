@@ -111,21 +111,14 @@ jobs:
     name: Integration Smoke
     runs-on: ubuntu-24.04
     steps:
-      - name: Skip smoke for non-Renovate PRs
-        if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'renovate/')
-        run: echo "Skipping smoke tests for non-Renovate PR"
       - uses: actions/checkout@v5
-        if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'renovate/')
       - uses: actions/setup-node@v4
-        if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'renovate/')
         with:
           node-version: "22"
       - name: Install smoke dependencies
-        if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'renovate/')
         working-directory: integration-tests
         run: npm ci
       - name: Run smoke checks against TEST
-        if: github.event_name != 'pull_request' || startsWith(github.head_ref, 'renovate/')
         working-directory: integration-tests
         env:
           BACKEND_URL: https://nr-results-exam-test-backend.apps.silver.devops.gov.bc.ca
