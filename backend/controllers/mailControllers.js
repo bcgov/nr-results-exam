@@ -8,6 +8,10 @@ async function requestToken() {
     const clientSecret = process.env.CHES_CLIENT_SECRET;
     const authHost = 'https://test.loginproxy.gov.bc.ca';
 
+    if (!clientId || !clientSecret) {
+      throw new Error('CHES credentials are not configured');
+    }
+
     const tokenEndpoint = `${authHost}/auth/realms/comsvcauth/protocol/openid-connect/token`;
 
     // Set up the request payload
@@ -35,6 +39,9 @@ async function requestToken() {
     console.error('Error fetching token:', error.response?.data || error.message);
     if (error.response) {
       throw new Error(`Failed to fetch token: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    }
+    if (error.message === 'CHES credentials are not configured') {
+      throw error;
     }
     throw new Error('Failed to fetch token');
   }

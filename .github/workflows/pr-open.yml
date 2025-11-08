@@ -68,11 +68,35 @@ jobs:
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
           triggers: ('backend/' 'common/' 'frontend/')
 
+  smoke:
+    name: Smoke Tests
+    needs: [deploys]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install smoke dependencies
+        working-directory: integration-tests
+        run: npm ci
+      - name: Run smoke checks against PR deployment
+        working-directory: integration-tests
+        env:
+          SMOKE_TIMEOUT: "8000"
+        run: |
+          pr="${{ github.event.number }}"
+          mod=$(( pr % 50 ))
+          export BACKEND_URL="https://nr-results-exam-${pr}-backend.apps.silver.devops.gov.bc.ca"
+          export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
+          npm run smoke
+
   results:
     name: PR Results
     if: always() && !failure()
     # Include all needs that could have failures!
-    needs: [builds, deploys]
+    needs: [builds, deploys, smoke]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Workflow completed successfully!"

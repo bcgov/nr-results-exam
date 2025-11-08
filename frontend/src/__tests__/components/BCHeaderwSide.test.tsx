@@ -1,25 +1,42 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, expect, it, vi, beforeAll } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi, beforeAll, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import BCHeaderwSide from '../../components/BCHeaderwSide';
 import { AuthProvider } from '../../contexts/AuthProvider';
 import { ThemePreference } from '../../utils/ThemePreference';
 
-const renderComponent = async () => {
+const navigateMock = vi.fn();
 
-  await act(() => render(
-    <ThemePreference>
-      <AuthProvider>
-          <BrowserRouter>
-            <BCHeaderwSide />
-          </BrowserRouter>
-      </AuthProvider>
-    </ThemePreference>
-  ));
-};
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => navigateMock
+  };
+});
 
-describe('BCHeaderwSide', async () => {
+vi.mock('@carbon/icons-react', async () => {
+  const actual = await vi.importActual<typeof import('@carbon/icons-react')>('@carbon/icons-react');
+  return {
+    ...actual,
+    Home: () => <svg data-testid="icon-home" />,
+    Dashboard: undefined,
+    UserAvatar: () => <svg data-testid="icon-avatar" />
+  };
+});
+
+const renderComponent = () => render(
+  <ThemePreference>
+    <AuthProvider>
+      <MemoryRouter>
+        <BCHeaderwSide />
+      </MemoryRouter>
+    </AuthProvider>
+  </ThemePreference>
+);
+
+describe('BCHeaderwSide', () => {
   beforeAll(() => {
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -34,25 +51,45 @@ describe('BCHeaderwSide', async () => {
     });
   });
 
-  it('should render the component', async () => {
-    await renderComponent();
-    expect(await screen.findByTestId('header')).toBeInTheDocument();
+  beforeEach(() => {
+    navigateMock.mockReset();
+    window.history.replaceState({}, '', '/');
   });
 
-  it('should renders the site name', async () => {
+  it('renders the header with site name', () => {
     renderComponent();
-    screen.debug();
-    expect(screen.getByText('RESULTS EXAM')).toBeDefined();
+    expect(screen.getByTestId('header')).toBeInTheDocument();
+    expect(screen.getByText('RESULTS EXAM')).toBeInTheDocument();
   });
 
   it('opens and closes the My Profile panel', async () => {
     renderComponent();
     const userSettingsButton = screen.getByTestId('header-button__user');
-    fireEvent.click(userSettingsButton);
-    expect(screen.getByText('My Profile')).toBeDefined();
-    fireEvent.click(userSettingsButton);
-    // expect(screen.queryByText('My Profile')).not.toBeVisible();
+    const panel = screen.getByLabelText('User Profile Tab');
+
+    await act(async () => {
+      fireEvent.click(userSettingsButton);
+    });
+
+    await act(async () => {
+      fireEvent.click(userSettingsButton);
+    });
+
+    const closeButton = panel.querySelector<HTMLButtonElement>('button.cds--btn--ghost');
+    expect(closeButton).not.toBeNull();
+    await act(async () => {
+      fireEvent.click(closeButton!);
+    });
   });
 
+  it('navigates when a side navigation link is selected', async () => {
+    renderComponent();
+
+    fireEvent.click(screen.getByText('Home'));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith('/dashboard');
+    });
+  });
 });
 

@@ -52,7 +52,16 @@ export default defineConfig(({ mode }) => {
         reporter: ['lcov', 'text-summary'],
         reportsDirectory: './coverage',
         include: ['src/**/*'],
-        exclude: [],
+        exclude: [
+          'src/amplifyconfiguration.ts',
+          'src/reportWebVitals.ts'
+        ],
+        thresholds: {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70
+        }
       }
     },
   };
