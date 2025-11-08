@@ -80,6 +80,8 @@ const run = async () => {
 };
 
 run().catch((error) => {
-  console.error(error);
-  process.exit(1);
+  if (process.exitCode !== 1) {
+    console.error(error);
+  }
+  process.exit(process.exitCode ?? 1);
 });
