@@ -24,6 +24,9 @@ function buildApp() {
   return app;
 }
 
+// Tests in this suite manipulate process.env (environment variables) in beforeEach/afterEach.
+// To avoid race conditions and interference between tests, we must run them sequentially.
+// Therefore, we set { concurrency: 1 } below. Do not remove unless environment variable usage is refactored.
 // Tests in this suite mutate process.env credentials before and after each test.
 // Running sequentially avoids race conditions between tests that read/write the same env vars.
 describe('Mail Routes', { concurrency: 1 }, () => {
