@@ -8,11 +8,16 @@ interface AvatarImageProps {
 }
 
 const getInitials = (userName: string) => {
-  const nameParts = userName.split(' ');
+  const trimmed = userName.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  const nameParts = trimmed.split(/\s+/);
   if (nameParts.length >= 2) {
-    return nameParts[ 0 ][ 0 ] + nameParts[ 1 ][ 0 ];
+    return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
   } else if (nameParts.length === 1) {
-    return nameParts[ 0 ][ 0 ];
+    return (nameParts[0]?.[0] ?? '').toUpperCase();
   }
   return '';
 };
