@@ -8,7 +8,10 @@ const origin =
   process.env.SMOKE_ORIGIN ??
   process.env.FRONTEND_URL ??
   "http://localhost:3000";
-const timeoutMs = Number(process.env.SMOKE_TIMEOUT ?? 5000);
+const timeoutMs = (() => {
+  const parsed = Number.parseInt(process.env.SMOKE_TIMEOUT ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 5000;
+})();
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "");
 
 const checks = [

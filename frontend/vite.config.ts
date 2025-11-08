@@ -55,7 +55,7 @@ export default defineConfig(({ mode }) => {
         exclude: [],
         thresholds: {
           statements: 70,
-          branches: 44,
+          branches: 70,
           functions: 70,
           lines: 70
         }
