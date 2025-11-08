@@ -77,6 +77,8 @@ const run = async () => {
     console.error("Smoke checks failed");
     return;
   }
+
+  console.info("✅ All smoke checks passed");
 };
 
 run().catch((error) => {
