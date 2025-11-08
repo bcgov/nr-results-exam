@@ -24,6 +24,8 @@ function buildApp() {
   return app;
 }
 
+// Tests in this suite mutate process.env credentials before and after each test.
+// Running sequentially avoids race conditions between tests that read/write the same env vars.
 describe('Mail Routes', { concurrency: 1 }, () => {
   beforeEach(() => {
     sinon.restore();

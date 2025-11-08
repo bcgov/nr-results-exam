@@ -74,7 +74,8 @@ const run = async () => {
   }
 
   if (process.exitCode === 1) {
-    throw new Error("Smoke checks failed");
+    console.error("Smoke checks failed");
+    return;
   }
 };
 
