@@ -16,6 +16,16 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('@carbon/icons-react', async () => {
+  const actual = await vi.importActual<typeof import('@carbon/icons-react')>('@carbon/icons-react');
+  return {
+    ...actual,
+    Home: () => <svg data-testid="icon-home" />,
+    Dashboard: undefined,
+    UserAvatar: () => <svg data-testid="icon-avatar" />
+  };
+});
+
 const renderComponent = () => render(
   <ThemePreference>
     <AuthProvider>

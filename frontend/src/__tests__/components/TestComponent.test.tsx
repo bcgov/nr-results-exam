@@ -109,10 +109,6 @@ const expectRadioSelections = (answers: Array<number | undefined>) => {
   });
 };
 
-const submitForm = () => {
-  fireEvent.click(screen.getByRole('button', { name: /submit/i }));
-};
-
 describe('TestComponent', () => {
   beforeEach(() => {
     env.VITE_BACKEND_URL = 'https://example.test';
@@ -138,7 +134,7 @@ describe('TestComponent', () => {
 
     expectRadioSelections([0, 1, 0]);
 
-    submitForm();
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
 
     await waitFor(() => {
       expect(sendUserReport).toHaveBeenCalledTimes(1);
@@ -166,7 +162,7 @@ describe('TestComponent', () => {
 
     expectRadioSelections([1, 0, 1]);
 
-    submitForm();
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
 
     await waitFor(() => {
       expect(sendAdminReport).toHaveBeenCalled();
@@ -174,6 +170,29 @@ describe('TestComponent', () => {
 
     expect(screen.getByText(/Failed to send the email report/i)).toBeInTheDocument();
     expect(screen.getByText(/Sorry! You have failed/i)).toBeInTheDocument();
+  });
+
+  it('prompts the user to answer all questions before submitting', async () => {
+    resolveFetchWithQuestions(global.fetch as FetchMock);
+    (sendUserReport as ReturnType<typeof vi.fn>).mockResolvedValue('success');
+    (sendAdminReport as ReturnType<typeof vi.fn>).mockResolvedValue('success');
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+
+    renderComponent();
+    await screen.findByText('Online Test');
+
+    expectRadioSelections([0, undefined, undefined]);
+
+    const form = screen.getByTestId('online-test-form');
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith('Please answer all the questions before submitting.');
+    });
+    expect(sendUserReport).not.toHaveBeenCalled();
+    expect(sendAdminReport).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
   });
 
   it('renders an error message when fetching questions fails', async () => {
