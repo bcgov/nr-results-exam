@@ -199,6 +199,61 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
+  test('POST /api/mail should return 400 if toEmails is not an array', async () => {
+    const axiosPostStub = sinon.stub(axios, 'post');
+
+    const response = await request(buildApp())
+      .post('/api/mail')
+      .send({
+        fromEmail: 'test@example.com',
+        toEmails: 'recipient@example.com',
+        subject: 'Test Subject',
+        mailBody: '<p>Test body</p>'
+      })
+      .expect(400);
+
+    assert.strictEqual(response.body.status, 400);
+    assert.strictEqual(response.body.success, false);
+    assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
+  });
+
+  test('POST /api/mail should return 400 if subject is missing', async () => {
+    const axiosPostStub = sinon.stub(axios, 'post');
+
+    const response = await request(buildApp())
+      .post('/api/mail')
+      .send({
+        fromEmail: 'test@example.com',
+        toEmails: ['recipient@example.com'],
+        mailBody: '<p>Test body</p>'
+      })
+      .expect(400);
+
+    assert.strictEqual(response.body.status, 400);
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Missing required field: subject');
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
+  });
+
+  test('POST /api/mail should return 400 if mailBody is missing', async () => {
+    const axiosPostStub = sinon.stub(axios, 'post');
+
+    const response = await request(buildApp())
+      .post('/api/mail')
+      .send({
+        fromEmail: 'test@example.com',
+        toEmails: ['recipient@example.com'],
+        subject: 'Test Subject'
+      })
+      .expect(400);
+
+    assert.strictEqual(response.body.status, 400);
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Missing required field: mailBody');
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
+  });
+
   test('POST /api/mail should return 400 if toEmails is empty array', async () => {
     const axiosPostStub = sinon.stub(axios, 'post');
 
@@ -268,6 +323,27 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.match(response.body.error, /Failed to fetch token/);
   });
 
+  test('POST /api/mail should return 500 if token request fails without response', async () => {
+    const axiosPostStub = sinon.stub(axios, 'post');
+    axiosPostStub.onCall(0).rejects(new Error('Network error'));
+
+    const response = await request(buildApp())
+      .post('/api/mail')
+      .send({
+        fromEmail: 'test@example.com',
+        toEmails: ['recipient@example.com'],
+        subject: 'Test Subject',
+        mailBody: '<p>Test body</p>'
+      })
+      .expect(500);
+
+    assert.strictEqual(axiosPostStub.callCount, 1, 'Should stop after token failure');
+    assert.strictEqual(response.body.status, 500);
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Failed to send email');
+    assert.strictEqual(response.body.error, 'Failed to fetch token');
+  });
+
   test('POST /api/mail should return 500 if email send fails', async () => {
     const axiosPostStub = sinon.stub(axios, 'post');
     axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
@@ -291,5 +367,27 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
     assert.match(response.body.error, /Failed to send email:/);
+  });
+
+  test('POST /api/mail should return 500 if email send fails without response', async () => {
+    const axiosPostStub = sinon.stub(axios, 'post');
+    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
+    axiosPostStub.onCall(1).rejects(new Error('Socket hang up'));
+
+    const response = await request(buildApp())
+      .post('/api/mail')
+      .send({
+        fromEmail: 'test@example.com',
+        toEmails: ['recipient@example.com'],
+        subject: 'Test Subject',
+        mailBody: '<p>Test body</p>'
+      })
+      .expect(500);
+
+    assert.strictEqual(axiosPostStub.callCount, 2, 'Should attempt to send email after obtaining token');
+    assert.strictEqual(response.body.status, 500);
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Failed to send email');
+    assert.strictEqual(response.body.error, 'Failed to send email');
   });
 });
