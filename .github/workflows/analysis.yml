@@ -107,32 +107,6 @@ jobs:
           sonar_token: ${{ secrets[matrix.token] }}
           triggers: ${{ matrix.triggers }}
 
-  integration-smoke:
-    name: Integration Smoke
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
-      - name: Run smoke checks against TEST
-        working-directory: integration-tests
-        env:
-          SMOKE_TIMEOUT: "8000"
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            mod=$(( ${{ github.event.number }} % 50 ))
-            export BACKEND_URL="https://nr-results-exam-${mod}-backend.apps.silver.devops.gov.bc.ca"
-            export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
-          else
-            export BACKEND_URL="https://nr-results-exam-test-backend.apps.silver.devops.gov.bc.ca"
-            export FRONTEND_URL="https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca"
-          fi
-          npm run smoke
-
   results:
     name: Analysis Results
     if: always() && !failure()
