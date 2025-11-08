@@ -13,10 +13,10 @@ const MIN_TIMEOUT_MS = 1;
 
 const timeoutMs = (() => {
   const parsed = Number.parseInt(process.env.SMOKE_TIMEOUT ?? "", 10);
-  if (!Number.isFinite(parsed)) {
-    return DEFAULT_TIMEOUT_MS;
+  if (Number.isFinite(parsed) && parsed >= MIN_TIMEOUT_MS) {
+    return parsed;
   }
-  return parsed >= MIN_TIMEOUT_MS ? parsed : DEFAULT_TIMEOUT_MS;
+  return DEFAULT_TIMEOUT_MS;
 })();
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "");
 
