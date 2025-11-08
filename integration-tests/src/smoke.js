@@ -9,7 +9,7 @@ const origin =
   process.env.FRONTEND_URL ??
   "http://localhost:3000";
 const DEFAULT_TIMEOUT_MS = 5000;
-const MIN_TIMEOUT_MS = 1;
+const MIN_TIMEOUT_MS = 1000;
 
 const timeoutMs = (() => {
   const parsed = Number.parseInt(process.env.SMOKE_TIMEOUT ?? "", 10);
