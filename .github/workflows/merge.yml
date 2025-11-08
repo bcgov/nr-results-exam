@@ -74,7 +74,7 @@ jobs:
     name: Smoke Tests (TEST)
     needs: [vars, deploys-test]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
@@ -136,7 +136,7 @@ jobs:
     name: Smoke Tests (PROD)
     needs: [vars, deploys-prod]
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
