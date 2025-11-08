@@ -18,9 +18,12 @@ interface ComponentProps {
   questionFileName: string;
 }
 
+const areAnswersComplete = (answers: Array<number | undefined>): answers is number[] =>
+  !answers.some((answer) => answer === undefined);
+
 const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [userAnswers, setUserAnswers] = useState<number[]>([]);
+  const [userAnswers, setUserAnswers] = useState<Array<number | undefined>>([]);
   const [emailStatus, setEmailStatus] = useState<'success' | 'error' | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(false);
@@ -35,7 +38,9 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     try {
       const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`);
       const data = await response.json();
-      setQuestions(getRandomQuestions(data, 10));
+      const randomizedQuestions = getRandomQuestions(data, 10);
+      setQuestions(randomizedQuestions);
+      setUserAnswers(new Array(randomizedQuestions.length).fill(undefined));
     } catch (errorFetch) {
       console.error('Error fetching questions:', errorFetch);
       setError(true);
@@ -54,7 +59,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
     event.preventDefault();
     window.scrollTo(0, 0);
 
-    if (userAnswers.some((answer) => answer === undefined)) {
+    if (!areAnswersComplete(userAnswers)) {
       alert('Please answer all the questions before submitting.');
       return;
     }
@@ -74,7 +79,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
   };
 
   const renderPassFailMessage = () => {
-    if (isSubmitted) {
+    if (isSubmitted && areAnswersComplete(userAnswers)) {
       const scorePercentage = calculateScorePercentage(questions, userAnswers);
       return (
         <p className={isPassing(questions, userAnswers) ? 'text-success' : 'text-danger'}>
@@ -94,7 +99,7 @@ const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JS
               {emailStatus && (<EmailNotification emailStatus={emailStatus} />)}
               <h4 className='pt-2'>Hello <span className='fw-bold'>{user.firstName} {user.lastName}</span>, welcome to the {testName} for the RESULTS application access.</h4>
               <h1 className="mt-4">Online Test</h1>
-              <form onSubmit={handleSubmit}>
+              <form data-testid="online-test-form" onSubmit={handleSubmit}>
                 {renderPassFailMessage()}
                 {questions.map((question, index) => (
                   <div key={index} className="mt-5 unselectable">

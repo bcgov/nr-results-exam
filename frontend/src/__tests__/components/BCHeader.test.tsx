@@ -1,10 +1,19 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, vitest } from 'vitest';
-import { BrowserRouter } from 'react-router-dom';
+import { render, fireEvent, screen } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import BCHeader from '../../components/BCHeader';
 import '@testing-library/jest-dom';
-import { ThemePreference } from '../../utils/ThemePreference';
+import { useThemePreference } from '../../utils/ThemePreference';
+import { toggleTheme } from '../../utils/ThemeFunction';
+
+vi.mock('../../utils/ThemePreference', () => ({
+  useThemePreference: vi.fn(),
+}));
+
+vi.mock('../../utils/ThemeFunction', () => ({
+  toggleTheme: vi.fn(),
+}));
 
 //mock the matchMedia function to have a dark theme
 Object.defineProperty(window, 'matchMedia', {
@@ -20,22 +29,48 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn()
   }))
 });
-const renderComponent = () => {
-  return render(
-    <BrowserRouter>
-      <ThemePreference>
-        <BCHeader />
-      </ThemePreference>
-    </BrowserRouter>
-  );
-}
 
 describe('BC Header component tests', () => {
-  it('should have a Header with proper class name', async () => {
-    const { getByTestId } = renderComponent();
-    const header = getByTestId('header');
-    await waitFor(() => {
-      expect(header).toHaveClass('results-exam-header');
+  const mockedUseThemePreference = useThemePreference as unknown as vi.Mock;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  const renderComponent = () => render(
+    <MemoryRouter>
+      <BCHeader />
+    </MemoryRouter>
+  );
+
+  it('renders with the light theme and toggles to dark', () => {
+    const setTheme = vi.fn();
+    mockedUseThemePreference.mockReturnValue({
+      theme: 'g10',
+      setTheme
     });
+
+    const { getByTestId } = renderComponent();
+
+    expect(getByTestId('header')).toHaveClass('results-exam-header');
+    const themeToggle = screen.getByLabelText('Switch to Dark Mode');
+    fireEvent.click(themeToggle);
+
+    expect(toggleTheme).toHaveBeenCalledWith('g10', setTheme);
+  });
+
+  it('renders with the dark theme and toggles back to light', () => {
+    const setTheme = vi.fn();
+    mockedUseThemePreference.mockReturnValue({
+      theme: 'g100',
+      setTheme
+    });
+
+    renderComponent();
+
+    const themeToggle = screen.getByLabelText('Switch to Light Mode');
+    fireEvent.click(themeToggle);
+
+    expect(toggleTheme).toHaveBeenCalledWith('g100', setTheme);
   });
 });
