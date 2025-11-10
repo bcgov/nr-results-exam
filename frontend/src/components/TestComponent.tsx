@@ -21,7 +21,7 @@ interface ComponentProps {
 const areAnswersComplete = (answers: Array<number | undefined>): answers is number[] =>
   !answers.some((answer) => answer === undefined);
 
-const TestComponent = ({ user, testName, questionFileName }: ComponentProps): JSX.Element => {
+const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileName }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<Array<number | undefined>>([]);
   const [emailStatus, setEmailStatus] = useState<'success' | 'error' | null>(null);
