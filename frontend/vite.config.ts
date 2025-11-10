@@ -38,7 +38,10 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        // Use lottie-web light version to avoid eval() security issues
+        // Light version excludes expression support which requires eval
+        'lottie-web': fileURLToPath(new URL('./node_modules/lottie-web/build/player/lottie_light.js', import.meta.url))
       }
     },
     test: {
