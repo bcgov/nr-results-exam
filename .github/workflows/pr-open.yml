@@ -75,9 +75,9 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Install smoke dependencies
         working-directory: integration-tests
         run: npm ci
