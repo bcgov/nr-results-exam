@@ -77,20 +77,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
-      - name: Skip if deploys didn’t trigger
-        run: |
-
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
       - name: Run smoke checks against PR deployment
         working-directory: integration-tests
-        env:
-          SMOKE_TIMEOUT: "8000"
         run: |
           if [ "${{ needs.deploys.outputs.triggered }}" != "true" ]; then
             echo "Deploy skipped; no smoke checks required."
@@ -101,6 +93,8 @@ jobs:
           mod=$(( pr % 50 ))
           export BACKEND_URL="https://nr-results-exam-${pr}-backend.apps.silver.devops.gov.bc.ca"
           export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
+          export SMOKE_TIMEOUT="8000"
+          npm ci
           npm run smoke
 
   results:
