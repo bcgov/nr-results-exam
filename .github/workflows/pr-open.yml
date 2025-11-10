@@ -57,6 +57,7 @@ jobs:
         name: [backend, frontend]
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
+        id: deploy
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -67,6 +68,8 @@ jobs:
             -p TAG=${{ github.event.number }}
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
           triggers: ('backend/' 'common/' 'frontend/')
+    outputs:
+      triggered: ${{ steps.deploy.outputs.triggered }}
 
   smoke:
     name: Smoke Tests
@@ -74,6 +77,13 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
+      - name: Skip if deploys didn’t trigger
+        run: |
+          if [ "${{ needs.deploys.outputs.triggered }}" != "true" ]; then
+            echo "Deploy skipped; no smoke checks required."
+            exit 0
+          fi
+
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
