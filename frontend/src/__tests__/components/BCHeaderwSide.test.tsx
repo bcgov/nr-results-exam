@@ -21,7 +21,7 @@ vi.mock('@carbon/icons-react', async () => {
   return {
     ...actual,
     Home: () => <svg data-testid="icon-home" />,
-    Dashboard: undefined,
+    Dashboard: () => <svg data-testid="icon-dashboard" />,
     UserAvatar: () => <svg data-testid="icon-avatar" />
   };
 });
