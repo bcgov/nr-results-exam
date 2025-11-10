@@ -12,6 +12,18 @@ dotenv.config({
 const app = express();
 app.use(express.json());
 
+// Middleware to remove proxy disclosure headers
+// These headers are added by OpenShift HAProxy router but should not be exposed to clients
+app.use((req, res, next) => {
+  res.removeHeader('Via');
+  res.removeHeader('X-Forwarded-For');
+  res.removeHeader('X-Forwarded-Host');
+  res.removeHeader('X-Forwarded-Port');
+  res.removeHeader('X-Forwarded-Proto');
+  res.removeHeader('Forwarded');
+  next();
+});
+
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
   'http://localhost:3000', // For local development
