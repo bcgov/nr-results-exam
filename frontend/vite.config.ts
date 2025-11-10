@@ -15,9 +15,10 @@ export default defineConfig(({ mode }) => {
             html,
             tags: [
               {
-                tag: 'script',
+                tag: 'meta',
                 attrs: {
-                  src: '/env.js'
+                  name: 'app-config',
+                  content: '__APP_CONFIG__'
                 },
                 injectTo: 'head'
               }
