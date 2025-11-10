@@ -35,7 +35,7 @@ vi.mock('../../utils/ThemePreference', async () => {
 });
 
 describe('MyProfile', () => {
-    const mockedUseThemePreference = useThemePreference as unknown as vi.Mock;
+    let mockedUseThemePreference: vi.Mock;
     beforeAll(() => {
         // Mock matchMedia
         Object.defineProperty(window, 'matchMedia', {
@@ -53,6 +53,8 @@ describe('MyProfile', () => {
     );
 
     beforeEach(() => {
+      mockedUseThemePreference = useThemePreference as unknown as vi.Mock;
+      mockedUseThemePreference.mockReset();
       mockedUseThemePreference.mockReturnValue({
         theme: 'g10',
         setTheme: vi.fn()
