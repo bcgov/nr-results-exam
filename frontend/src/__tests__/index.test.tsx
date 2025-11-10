@@ -22,8 +22,8 @@ function mockBootstrapModules() {
   }));
 
   CookieStorageFake = class CookieStorageMock {
-    constructor() {
-      cookieStorageNewMock();
+    constructor(options?: unknown) {
+      cookieStorageNewMock(options);
     }
   };
 
@@ -102,6 +102,13 @@ describe("application bootstrap", () => {
     expect(renderMock).toHaveBeenCalledTimes(1);
     expect(configureMock).toHaveBeenCalledWith({ mock: "config" });
     expect(cookieStorageNewMock).toHaveBeenCalledTimes(1);
+    expect(cookieStorageNewMock).toHaveBeenCalledWith({
+      domain: expect.any(String),
+      path: '/',
+      expires: 1,
+      secure: true,
+      sameSite: 'strict'
+    });
     expect(setKeyValueStorageMock).toHaveBeenCalledWith(expect.any(CookieStorageFake));
 
     const strictModeElement = renderMock.mock.calls[0][0];
