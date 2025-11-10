@@ -28,7 +28,6 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setIsLoading] = useState(false);
-  const backendUrl = env.VITE_BACKEND_URL;
 
   useEffect(() => {
     fetchQuestions();
@@ -36,7 +35,7 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`);
+      const response = await fetch(`/api/questions/questions${questionFileName}`);
       const data = await response.json();
       const randomizedQuestions = getRandomQuestions(data, 10);
       setQuestions(randomizedQuestions);

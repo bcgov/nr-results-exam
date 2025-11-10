@@ -1,13 +1,7 @@
 import axios from "axios";
 
-const backendBase =
-  process.env.BACKEND_URL?.replace(/\/$/, "") ??
-  process.env.BASE_URL?.replace(/\/$/, "") ??
-  "http://localhost:5000";
-const origin =
-  process.env.SMOKE_ORIGIN ??
-  process.env.FRONTEND_URL ??
-  "http://localhost:3000";
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+const origin = process.env.SMOKE_ORIGIN ?? frontendUrl;
 const DEFAULT_TIMEOUT_MS = 5000;
 const MIN_TIMEOUT_MS = 1000;
 
@@ -18,30 +12,26 @@ const timeoutMs = (() => {
   }
   return DEFAULT_TIMEOUT_MS;
 })();
-const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "");
 
 const checks = [
   {
-    name: "health",
-    url: `${backendBase}/health`,
+    name: "health (via frontend proxy)",
+    url: `${frontendUrl}/health`,
     validate: (response) =>
       response.status === 200 && response.data?.message === "OK"
   },
   {
-    name: "api root",
-    url: `${backendBase}/api/`,
+    name: "api root (via frontend proxy)",
+    url: `${frontendUrl}/api/`,
     validate: (response) =>
       response.status === 200 && response.data?.success === true
-  }
-];
-
-if (frontendUrl) {
-  checks.push({
+  },
+  {
     name: "frontend",
     url: frontendUrl,
     validate: (response) => response.status === 200
-  });
-}
+  }
+];
 
 const run = async () => {
   for (const check of checks) {
