@@ -10,9 +10,9 @@ const origin =
   "http://localhost:3000";
 const DEFAULT_TIMEOUT_MS = 5000;
 const MIN_TIMEOUT_MS = 1000;
-const DEFAULT_RETRIES = 5;
+const DEFAULT_RETRIES = 10;
 const MIN_RETRIES = 1;
-const DEFAULT_RETRY_DELAY_MS = 2000;
+const DEFAULT_RETRY_DELAY_MS = 5000;
 const MIN_RETRY_DELAY_MS = 0;
 
 const timeoutMs = (() => {
