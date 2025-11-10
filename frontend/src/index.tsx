@@ -17,7 +17,15 @@ if (!container) {
 const root = createRoot(container);
 
 Amplify.configure(amplifyconfig);
-cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage());
+cognitoUserPoolsTokenProvider.setKeyValueStorage(
+  new CookieStorage({
+    domain: window.location.hostname,
+    path: '/',
+    expires: 365,
+    sameSite: 'lax',
+    secure: true
+  })
+);
 root.render(
   <React.StrictMode>
     <ClassPrefix prefix="bx">
