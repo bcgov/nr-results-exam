@@ -15,7 +15,7 @@
  */
 
 import express from 'express';
-import healthRouter from './health';
+import healthRouter from './health.js';
 
 const app = express();
 

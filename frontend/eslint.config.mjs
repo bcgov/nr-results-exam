@@ -104,6 +104,19 @@ export default [
       globals: {
         ...globals.node
       }
+    },
+    rules: {
+      // Allow .js extensions for ESM compatibility in server code
+      'import/extensions': [
+        'error',
+        'ignorePackages',
+        {
+          'js': 'always',
+          'ts': 'never'
+        }
+      ],
+      // Disable unresolved check for .js imports in .ts files (they resolve at runtime after compilation)
+      'import/no-unresolved': 'off'
     }
   },
   {
