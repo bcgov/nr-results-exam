@@ -186,6 +186,11 @@ docker compose up
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
 
+## Documentation
+
+- [Session Management Security](docs/SESSION_MANAGEMENT.md) - Details on authentication, cookie security, and token lifecycle
+- [ZAP Alert Resolution](docs/ZAP_ALERT_RESOLUTION.md) - Evidence of security testing and alert resolutions
+
 ## Getting help
 
 As mentioned, we're here to help. Feel free to start a conversation
