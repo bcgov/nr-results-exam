@@ -99,6 +99,14 @@ export default [
     }
   },
   {
+    files: ['src/server/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        ...globals.node
+      }
+    }
+  },
+  {
     ignores: ['**/__tests__/*', '**/assets/*', '**/*.scss', '**/*.css', '**/*.svg', 'build/**', 'node_modules/**']
   }
 ];

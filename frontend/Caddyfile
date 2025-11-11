@@ -4,7 +4,7 @@
 }
 
 :3000 {
-	root * /srv
+	root * /app/build
 
 	encode gzip
 
@@ -71,10 +71,4 @@
 	}
 
 	file_server
-}
-
-:3001 {
-	handle /health {
-		respond "OK"
-	}
 }

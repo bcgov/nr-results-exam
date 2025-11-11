@@ -84,8 +84,15 @@ objects:
                   value: "${LOG_LEVEL}"
                 - name: VITE_AWS_DOMAIN
                   value: ${VITE_AWS_DOMAIN}
+<<<<<<< HEAD
                 - name: BACKEND_SERVICE_URL
                   value: "http://${NAME}-${ZONE}-backend:80"
+=======
+                - name: VITE_BACKEND_URL
+                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
+                - name: BACKEND_SERVICE_URL
+                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
+>>>>>>> a88ea80 (Add health check endpoints and probe configuration)
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
@@ -100,6 +107,8 @@ objects:
               ports:
                 - containerPort: 3000
                   protocol: TCP
+                - containerPort: 3001
+                  protocol: TCP
               resources:
                 requests:
                   cpu: "${CPU_REQUEST}"
@@ -109,24 +118,34 @@ objects:
                   memory: "${MEMORY_LIMIT}"
               readinessProbe:
                 httpGet:
-                  path: /
-                  port: 3000
+                  path: /health/ready
+                  port: 3001
                   scheme: HTTP
-                initialDelaySeconds: 5
-                periodSeconds: 2
-                timeoutSeconds: 2
-                successThreshold: 1
-                failureThreshold: 30
-              livenessProbe:
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                timeoutSeconds: 3
                 successThreshold: 1
                 failureThreshold: 3
+              livenessProbe:
                 httpGet:
-                  path: /
-                  port: 3000
+                  path: /health/live
+                  port: 3001
                   scheme: HTTP
-                initialDelaySeconds: 15
-                periodSeconds: 30
-                timeoutSeconds: 5
+                initialDelaySeconds: 30
+                periodSeconds: 10
+                timeoutSeconds: 3
+                successThreshold: 1
+                failureThreshold: 3
+              startupProbe:
+                httpGet:
+                  path: /health/live
+                  port: 3001
+                  scheme: HTTP
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                timeoutSeconds: 3
+                successThreshold: 1
+                failureThreshold: 60
   - apiVersion: v1
     kind: Service
     metadata:

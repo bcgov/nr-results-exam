@@ -1,0 +1,72 @@
+---
+# OpenShift Deployment/DeploymentConfig probe configuration patch for frontend
+#
+# This patch replaces the existing probes with lightweight health endpoints
+# that perform fast, deterministic checks instead of slow smoke tests.
+#
+# Usage:
+#   Apply this to your existing Deployment/DeploymentConfig for the frontend.
+#   In openshift.deploy.yml template, update the container spec probes section.
+#
+# Benefits:
+#   - Fast readiness checks (cached, <100ms typical)
+#   - Backend connectivity validation before routing traffic
+#   - Optional JWKS endpoint validation
+#   - Clear separation between liveness and readiness concerns
+#
+# Note: These timings are conservative for OpenShift. Adjust based on your
+# environment and observed behavior.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nr-results-exam-frontend-example
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          # ... existing container config ...
+          
+          # Readiness probe - gates traffic routing
+          # Uses /health/ready which checks:
+          # - BACKEND_SERVICE_URL env var is set
+          # - Backend /health endpoint is accessible (cached 15s)
+          # - JWKS endpoint is accessible if configured (cached 15s)
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Liveness probe - detects if container needs restart
+          # Uses /health/live which only checks process responsiveness
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Startup probe - allows slow initial startup
+          # Gives the container up to 5 minutes to start (60 * 5s)
+          # Once this succeeds, liveness and readiness probes take over
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: 3001
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 60
