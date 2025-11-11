@@ -38,7 +38,7 @@
 	}
 	handle /env.js {
 		header Content-Type "text/javascript"
-    respond `window.config = {"VITE_USER_POOLS_WEB_CLIENT_ID":"{$VITE_USER_POOLS_WEB_CLIENT_ID}","VITE_USER_POOLS_ID":"{$VITE_USER_POOLS_ID}","VITE_ZONE":"{$VITE_ZONE}","VITE_BACKEND_URL":""};`
+    respond `window.config = {"VITE_USER_POOLS_WEB_CLIENT_ID":"{$VITE_USER_POOLS_WEB_CLIENT_ID}","VITE_USER_POOLS_ID":"{$VITE_USER_POOLS_ID}","VITE_ZONE":"{$VITE_ZONE}"};`
 	}
 
 	# Proxy backend API requests to internal backend service
