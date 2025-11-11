@@ -17,12 +17,15 @@ if (!container) {
 const root = createRoot(container);
 
 Amplify.configure(amplifyconfig);
+
+// Configure CookieStorage with security attributes for session management
+// See docs/SESSION_MANAGEMENT.md for detailed documentation
 cognitoUserPoolsTokenProvider.setKeyValueStorage(new CookieStorage({
   domain: window.location.hostname,
   path: '/',
   expires: 1, // 1 day
-  secure: true,
-  sameSite: 'strict'
+  secure: true, // HTTPS-only
+  sameSite: 'strict' // CSRF protection
 }));
 root.render(
   <React.StrictMode>
