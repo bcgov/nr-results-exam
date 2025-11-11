@@ -11,7 +11,6 @@ describe('EmailService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // Setup default environment
-    env.VITE_BACKEND_URL = 'http://localhost:3000'
     env.VITE_CHES_FROM_EMAIL = 'test@gov.bc.ca'
     env.VITE_CHES_ADMIN_EMAIL = 'admin@gov.bc.ca'
   })
@@ -34,7 +33,7 @@ describe('EmailService', () => {
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:3000/api/mail',
+        '/api/mail',
         expect.objectContaining({
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['john@example.com'],
@@ -83,7 +82,7 @@ describe('EmailService', () => {
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:3000/api/mail',
+        '/api/mail',
         expect.objectContaining({
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['admin@gov.bc.ca'],
@@ -107,7 +106,7 @@ describe('EmailService', () => {
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:3000/api/mail',
+        '/api/mail',
         expect.objectContaining({
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['john@example.com'],
@@ -176,7 +175,7 @@ describe('EmailService', () => {
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:3000/api/mail',
+        '/api/mail',
         expect.objectContaining({
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['admin@gov.bc.ca'],
@@ -200,7 +199,7 @@ describe('EmailService', () => {
       expect(result).toBe('success')
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'http://localhost:3000/api/mail',
+        '/api/mail',
         expect.objectContaining({
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['john@example.com'],

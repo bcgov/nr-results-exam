@@ -88,7 +88,6 @@ jobs:
         run: |
           pr="${{ github.event.number }}"
           mod=$(( pr % 50 ))
-          export BACKEND_URL="https://nr-results-exam-${pr}-backend.apps.silver.devops.gov.bc.ca"
           export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
           npm run smoke
 
