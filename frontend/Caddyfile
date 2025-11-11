@@ -46,7 +46,7 @@
 		reverse_proxy {$BACKEND_SERVICE_URL}
 	}
 
-	# Proxy health endpoint to internal backend service
+	# Proxy health endpoint to internal backend service  
 	handle /health {
 		reverse_proxy {$BACKEND_SERVICE_URL}
 	}
