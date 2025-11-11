@@ -91,6 +91,7 @@ The application follows a defense-in-depth approach with restricted network acce
 - **Simplified CORS**: Browser requests originate from the same domain (frontend)
 - **Network Policy Enforcement**: Kubernetes NetworkPolicies control traffic flow
 - **Least Privilege**: Only necessary services are exposed externally
+- **Proxy Header Validation**: Caddy sets the `X-Forwarded-By: caddy-proxy` header when proxying requests to the backend. The backend validates this header for defense-in-depth, protecting against accidental backend exposure or network policy misconfiguration.
 
 ### Network Policies
 
