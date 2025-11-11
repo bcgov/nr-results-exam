@@ -15,13 +15,13 @@ const timeoutMs = (() => {
 
 const checks = [
   {
-    name: "health (via frontend proxy)",
+    name: "health",
     url: `${frontendUrl}/health`,
     validate: (response) =>
       response.status === 200 && response.data?.message === "OK"
   },
   {
-    name: "api root (via frontend proxy)",
+    name: "api root",
     url: `${frontendUrl}/api/`,
     validate: (response) =>
       response.status === 200 && response.data?.success === true
