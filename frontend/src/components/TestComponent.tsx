@@ -10,7 +10,7 @@ import {
   Question
 } from '../utils/examCalculations';
 import EmailNotification from './EmailNotifications';
-import { FamLoginUser } from '../services/AuthService';
+import { FamLoginUser, getAuthIdToken } from '../services/AuthService';
 
 interface ComponentProps {
   user: FamLoginUser;
@@ -36,7 +36,9 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`);
+      const token = getAuthIdToken()
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`, { headers });
       const data = await response.json();
       const randomizedQuestions = getRandomQuestions(data, 10);
       setQuestions(randomizedQuestions);

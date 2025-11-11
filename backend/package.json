@@ -19,6 +19,8 @@
     "dotenv": "^17.0.0",
     "express": "^5.0.0",
     "express-async-handler": "^1.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.0",
     "minio": "^8.0.0"
   },
   "devDependencies": {

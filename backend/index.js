@@ -5,6 +5,7 @@ const indexRoutes = require('./routes/indexRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const mailRoutes = require('./routes/mailRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const { authenticateToken } = require('./middleware/authMiddleware');
 
 dotenv.config({
   path: './.env'
@@ -77,8 +78,9 @@ app.use('/health', healthRoutes);
 app.use(cors(corsOptions));
 
 app.use('/api/', indexRoutes);
-app.use('/api/questions', questionRoutes);
-app.use('/api/mail', mailRoutes);
+// Protected routes - require authentication
+app.use('/api/questions', authenticateToken, questionRoutes);
+app.use('/api/mail', authenticateToken, mailRoutes);
 
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
