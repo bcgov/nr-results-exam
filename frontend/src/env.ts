@@ -3,7 +3,7 @@ interface WindowConfig {
 }
 
 /**
- * Reads application configuration from a meta tag in the HTML.
+ * Reads application configuration from data attributes on the root div.
  * This is used to inject environment-specific config at deployment time
  * without requiring inline scripts, keeping the CSP strict.
  *
@@ -14,22 +14,27 @@ function getConfigFromMeta(): WindowConfig {
     return {};
   }
   
-  const metaTag = document.querySelector('meta[name="app-config"]');
-  if (!metaTag) {
+  const rootElement = document.getElementById('root');
+  if (!rootElement) {
     return {};
   }
   
-  const content = metaTag.getAttribute('content');
-  if (!content || content === '__APP_CONFIG__') {
+  const clientId = rootElement.getAttribute('data-vite-client-id');
+  const poolId = rootElement.getAttribute('data-vite-pool-id');
+  const zone = rootElement.getAttribute('data-vite-zone');
+  const backendUrl = rootElement.getAttribute('data-vite-backend-url');
+  
+  // If any value contains template syntax, config hasn't been replaced yet (dev mode)
+  if (clientId?.includes('{{') || !clientId) {
     return {};
   }
   
-  try {
-    return JSON.parse(content);
-  } catch (e) {
-    console.error('Failed to parse app config from meta tag:', e);
-    return {};
-  }
+  return {
+    VITE_USER_POOLS_WEB_CLIENT_ID: clientId,
+    VITE_USER_POOLS_ID: poolId || undefined,
+    VITE_ZONE: zone || undefined,
+    VITE_BACKEND_URL: backendUrl || undefined
+  };
 }
 
 export const env: Record<string, string | undefined> = { ...import.meta.env, ...getConfigFromMeta() }

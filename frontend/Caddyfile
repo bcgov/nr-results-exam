@@ -44,34 +44,25 @@
 		Cross-Origin-Embedder-Policy "credentialless"
 	}
 
-	handle /env.js {
-		header Content-Type "text/javascript"
-		respond `window.config = {"VITE_USER_POOLS_WEB_CLIENT_ID":"{$VITE_USER_POOLS_WEB_CLIENT_ID}","VITE_USER_POOLS_ID":"{$VITE_USER_POOLS_ID}","VITE_ZONE":"{$VITE_ZONE}"};`
+	templates
+
+	@html {
+		path /index.html
 	}
 
-	# Proxy backend API requests to internal backend service
-	handle /api/* {
-		reverse_proxy {$BACKEND_SERVICE_URL} {
-			header_up X-Forwarded-By "caddy-proxy"
-		}
-	}
-
-	# Proxy health endpoint to internal backend service
-	handle /health {
-		reverse_proxy {$BACKEND_SERVICE_URL} {
-			header_up X-Forwarded-By "caddy-proxy"
-		}
+	handle @html {
+		file_server
 	}
 
 	handle_path /* {
-		try_files {path} {path}/ {file} /index.html?
-	}
-
-	@html path /index.html
-	handle @html {
-		templates
-		replace __APP_CONFIG__ `{\"VITE_USER_POOLS_WEB_CLIENT_ID\":\"{$VITE_USER_POOLS_WEB_CLIENT_ID}\",\"VITE_USER_POOLS_ID\":\"{$VITE_USER_POOLS_ID}\",\"VITE_ZONE\":\"{$VITE_ZONE}\",\"VITE_BACKEND_URL\":\"{$VITE_BACKEND_URL}\"}`
+		try_files {path} {path}/ {file} /index.html
 	}
 
 	file_server
+}
+
+:3001 {
+	handle /health {
+		respond "OK"
+	}
 }

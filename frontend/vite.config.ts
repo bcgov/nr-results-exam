@@ -11,18 +11,14 @@ export default defineConfig(({ mode }) => {
         name: 'build-html',
         apply: 'build',
         transformIndexHtml: (html) => {
+          // Inject environment variables as data attributes on the root div
+          // This avoids CSP inline script issues while allowing runtime config
+          const configPlaceholder = `data-vite-client-id="{{env "VITE_USER_POOLS_WEB_CLIENT_ID"}}" data-vite-pool-id="{{env "VITE_USER_POOLS_ID"}}" data-vite-zone="{{env "VITE_ZONE"}}" data-vite-backend-url="{{env "VITE_BACKEND_URL"}}"`;
+          const modifiedHtml = html.replace('<div id="root"></div>', `<div id="root" ${configPlaceholder}></div>`);
+          
           return {
-            html,
-            tags: [
-              {
-                tag: 'meta',
-                attrs: {
-                  name: 'app-config',
-                  content: '__APP_CONFIG__'
-                },
-                injectTo: 'head'
-              }
-            ]
+            html: modifiedHtml,
+            tags: []
           }
         }
       },
