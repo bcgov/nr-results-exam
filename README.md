@@ -216,10 +216,10 @@ docker compose up
 - **backend** - Node.js backend API (port 5000)
   - Accessible at http://localhost:5000 when running in dev mode
 - **frontend** - React development server (port 3000)
-  - Connects directly to backend at http://localhost:5000
+  - Uses relative URLs for API requests (e.g., `/api/*`). To ensure these requests reach the backend, run the frontend using the Caddy profile (see below).
 - **caddy** - Production-like server with Caddy (port 3000)
   - Proxies `/api/*` and `/health` requests to the backend service
-  - Use this profile to test the production network topology locally
+  - Use this profile (`docker compose --profile caddy up caddy`) for local development to properly proxy backend requests and test the production network topology locally
 
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
