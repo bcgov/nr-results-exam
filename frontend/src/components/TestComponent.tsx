@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { env } from '../env';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
 import { Loading } from "@carbon/react";
 import {
