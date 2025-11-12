@@ -86,7 +86,6 @@ jobs:
       - name: Verify deployed services
         working-directory: integration-tests
         env:
-          BACKEND_URL: https://nr-results-exam-test-backend.apps.silver.devops.gov.bc.ca
           FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
           SMOKE_TIMEOUT: "8000"
         run: npm run smoke
@@ -148,7 +147,6 @@ jobs:
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
-          BACKEND_URL: https://nr-results-exam-prod-backend.apps.silver.devops.gov.bc.ca
           FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
           SMOKE_TIMEOUT: "8000"
         run: npm run smoke

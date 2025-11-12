@@ -111,7 +111,6 @@ const expectRadioSelections = (answers: Array<number | undefined>) => {
 
 describe('TestComponent', () => {
   beforeEach(() => {
-    env.VITE_BACKEND_URL = 'https://example.test';
     window.scrollTo = vi.fn();
     global.fetch = vi.fn() as unknown as FetchMock;
   });
@@ -130,7 +129,7 @@ describe('TestComponent', () => {
 
     await screen.findByText('Online Test');
     expect(getRandomQuestions).toHaveBeenCalledWith(mockQuestionBank, 10);
-    expect(global.fetch).toHaveBeenCalledWith('https://example.test/api/questions/questionsA');
+    expect(global.fetch).toHaveBeenCalledWith('/api/questions/questionsA');
 
     expectRadioSelections([0, 1, 0]);
 
