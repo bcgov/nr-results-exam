@@ -63,4 +63,4 @@ Response headers should NOT include Via or X-Forwarded-* headers.
 ### References
 - [Caddy Header Directive](https://caddyserver.com/docs/caddyfile/directives/header)
 - [OpenShift Routes Documentation](https://docs.openshift.com/container-platform/latest/networking/routes/route-configuration.html)
-- [OWASP Proxy Disclosure](https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url)
+- [OWASP Proxy Disclosure](https://owasp.org/www-community/attacks/Proxy_Disclosure)
