@@ -113,6 +113,7 @@ test-report.xml
 .idea
 *.iml
 **/bin
+!frontend/bin
 **/build
 **/dist
 **/out
