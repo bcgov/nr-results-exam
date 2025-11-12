@@ -18,6 +18,7 @@
 	}
 
 	header {
+		# Security headers
 		X-Frame-Options "SAMEORIGIN"
 		X-XSS-Protection "1;mode=block"
 		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
@@ -36,6 +37,15 @@
 			worker-src 'none';"
 		Referrer-Policy "same-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), ambient-light-sensor=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()"
+		
+		# Remove proxy disclosure headers added by OpenShift HAProxy router
+		# These headers are added by the infrastructure but should not be exposed to clients
+		-Via
+		-X-Forwarded-For
+		-X-Forwarded-Host
+		-X-Forwarded-Port
+		-X-Forwarded-Proto
+		-Forwarded
 	}
 	handle /env.js {
 		header Content-Type "text/javascript"
