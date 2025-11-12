@@ -84,15 +84,10 @@ objects:
                   value: "${LOG_LEVEL}"
                 - name: VITE_AWS_DOMAIN
                   value: ${VITE_AWS_DOMAIN}
-<<<<<<< HEAD
-                - name: BACKEND_SERVICE_URL
-                  value: "http://${NAME}-${ZONE}-backend:80"
-=======
                 - name: VITE_BACKEND_URL
                   value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
                 - name: BACKEND_SERVICE_URL
-                  value: "https://${NAME}-${ZONE}-backend.${DOMAIN}:443"
->>>>>>> a88ea80 (Add health check endpoints and probe configuration)
+                  value: "http://${NAME}-${ZONE}-backend:80"
                 - name: VITE_USER_POOLS_WEB_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
