@@ -37,7 +37,6 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   `
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
-  const backendUrl = env.VITE_BACKEND_URL
 
   const emailParams: EmailParams = {
     fromEmail,
@@ -47,7 +46,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   }
 
   try {
-    await axios.post(`${backendUrl}/api/mail`, emailParams)
+    await axios.post('/api/mail', emailParams)
     return 'success'
   } catch (error) {
     console.error('Error sending user report email:', error)
@@ -110,7 +109,6 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
   const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca'
-  const backendUrl = env.VITE_BACKEND_URL
 
   // In TEST environment, send admin report to test taker's email
   // In PROD environment, send to admin email address
@@ -124,7 +122,7 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   }
 
   try {
-    await axios.post(`${backendUrl}/api/mail`, emailParams)
+    await axios.post('/api/mail', emailParams)
     return 'success'
   } catch (error) {
     console.error('Error sending admin report email:', error)

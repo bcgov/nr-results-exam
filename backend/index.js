@@ -18,11 +18,18 @@ const whitelist = [
   frontendUrl // Frontend URL from environment variable
 ].filter(Boolean); // Remove any undefined values
 
-const corsOptions = {
+const getCorsOptions = (req) => ({
   origin: function (origin, callback) {
-    // Deny requests with no origin to avoid bypassing CORS protection
+    // Allow requests with no origin only if they come from the internal proxy
+    // (validated by custom header set by Caddy)
     if (!origin) {
-      return callback(new Error('CORS: Requests with no origin are not allowed'));
+      // For server-to-server requests, require the X-Forwarded-By header
+      // This adds defense-in-depth beyond network isolation
+      if (req.headers['x-forwarded-by'] === 'caddy-proxy') {
+        return callback(null, true);
+      }
+      // Deny requests without origin and without the trusted proxy header
+      return callback(new Error('CORS: Requests with no origin must come from trusted proxy'));
     }
     
     // Check if origin matches any whitelisted domain (by hostname)
@@ -68,13 +75,15 @@ const corsOptions = {
       callback(new Error('Not allowed by CORS'));
     }
   }
-};
+});
 
 // Let health check through before CORS
 app.use('/health', healthRoutes);
 
 // CORS, routes
-app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  cors(getCorsOptions(req))(req, res, next);
+});
 
 app.use('/api/', indexRoutes);
 app.use('/api/questions', questionRoutes);
