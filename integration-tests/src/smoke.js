@@ -30,6 +30,25 @@ const checks = [
     name: "frontend",
     url: frontendUrl,
     validate: (response) => response.status === 200
+  },
+  {
+    name: "frontend security headers",
+    url: frontendUrl,
+    validate: (response) => {
+      const permissionsPolicy = response.headers['permissions-policy'];
+      if (!permissionsPolicy) {
+        throw new Error('Permissions-Policy header is missing');
+      }
+      // Verify that key security features are disabled
+      const requiredPolicies = ['camera=()', 'microphone=()', 'geolocation=()'];
+      const hasAllPolicies = requiredPolicies.every(policy => 
+        permissionsPolicy.includes(policy)
+      );
+      if (!hasAllPolicies) {
+        throw new Error(`Permissions-Policy header missing required policies. Got: ${permissionsPolicy}`);
+      }
+      return response.status === 200;
+    }
   }
 ];
 
