@@ -54,7 +54,8 @@ Switched to `lottie-web`'s "light" build variant which excludes expression suppo
 
 **Benefits**:
 1. ✅ Completely removes `eval()` from the bundle
-2. ✅ Reduces bundle size by ~237KB (38% reduction from 625KB to 388KB)
+2. ✅ Reduces bundle size by ~438KB (70% reduction from 625KB to 187KB)
+   > **Note:** Previous documentation stated a reduction of ~237KB (38%), but the actual reduction observed in the PR/build artifacts is ~438KB (from 625KB to 187KB). This clarifies the true bundle size impact.
 3. ✅ Maintains full functionality since animations don't use expressions
 4. ✅ Eliminates ZAP security warning
 5. ✅ No code changes required in components
