@@ -141,7 +141,7 @@ npm test
 
 ## Required environment variables
 
-Set these before running the apps or Docker Compose. A template file `.env.example` is provided - copy it to `.env` and fill in your values.
+Set these before running the apps or Docker Compose. Export values in your shell; do not commit them.
 
 ### Frontend
 
@@ -161,8 +161,6 @@ Set these before running the apps or Docker Compose. A template file `.env.examp
 
 Other backend variables like `CHES_CLIENT_ID`, `S3_ACCESSKEY`, etc. have sensible defaults for development but can be overridden if needed.
 
-See `.env.example` for complete documentation and default values.
-
 ## Docker Compose
 
 This project includes Docker Compose configuration for local development. Docker Compose runs both the backend and frontend services together.
@@ -170,21 +168,24 @@ This project includes Docker Compose configuration for local development. Docker
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
-- Environment variables configured (see below)
+- Environment variables exported in your shell (see below)
 
 ### Quick Start
 
-1. **Copy the environment template:**
+1. **Export required environment variables:**
    ```bash
-   cp .env.example .env
+   # Required secrets
+   export CHES_CLIENT_SECRET="your-secret-here"
+   export S3_SECRETKEY="your-s3-secret-here"
+   
+   # Required frontend variables
+   export VITE_COGNITO_REGION="ca-central-1"
+   export VITE_USER_POOLS_ID="your-pool-id"
+   export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
+   export VITE_AWS_DOMAIN="your-domain.auth.ca-central-1.amazoncognito.com"
    ```
 
-2. **Edit `.env` and fill in your values:**
-   - Required secrets: `CHES_CLIENT_SECRET`, `S3_SECRETKEY`
-   - Required frontend values: `VITE_USER_POOLS_ID`, `VITE_USER_POOLS_WEB_CLIENT_ID`, `VITE_AWS_DOMAIN`
-   - See `.env.example` for all available variables and descriptions
-
-3. **Start the services:**
+2. **Start the services:**
    ```bash
    # Start backend only (recommended for most development)
    docker compose up backend
@@ -196,7 +197,7 @@ This project includes Docker Compose configuration for local development. Docker
    docker compose --profile caddy up
    ```
 
-4. **Stop services:**
+3. **Stop services:**
    ```bash
    docker compose down
    ```
@@ -227,22 +228,7 @@ docker compose --profile caddy up
 
 ### Required Environment Variables
 
-Environment variables can be set in two ways:
-
-1. **Using a `.env` file** (recommended):
-   - Copy `.env.example` to `.env`
-   - Fill in your values
-   - Docker Compose will automatically load variables from `.env`
-
-2. **Exporting in your shell:**
-   ```bash
-   export CHES_CLIENT_SECRET="your-secret-here"
-   export S3_SECRETKEY="your-s3-secret-here"
-   export VITE_USER_POOLS_ID="your-pool-id"
-   # ... etc
-   
-   docker compose up
-   ```
+The following environment variables must be set before running Docker Compose. **Export these in your shell and do NOT commit them to any files.**
 
 **Required Backend Variables:**
 - `CHES_CLIENT_SECRET` - CHES email service client secret
@@ -259,7 +245,18 @@ Environment variables can be set in two ways:
 - `VITE_ZONE` - Environment zone (default: DEV)
 - `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT` - Have sensible defaults for development
 
-See `.env.example` for complete documentation of all variables.
+**Example:**
+```bash
+export CHES_CLIENT_SECRET="your-secret-here"
+export S3_SECRETKEY="your-s3-secret-here"
+export VITE_COGNITO_REGION="ca-central-1"
+export VITE_USER_POOLS_ID="your-pool-id"
+export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
+export VITE_AWS_DOMAIN="your-domain.auth.ca-central-1.amazoncognito.com"
+
+# Then run docker compose
+docker compose up
+```
 
 ### Available Services
 
@@ -307,9 +304,9 @@ docker compose --profile frontend up
 ### Troubleshooting
 
 **Containers won't start:**
-- Check that all required environment variables are set
-- Verify `.env` file exists and has correct values
-- Run `docker compose config` to validate configuration
+- Check that all required environment variables are exported in your shell
+- Run `docker compose config` to validate configuration and see resolved values
+- Verify `docker compose config` shows your exported variables
 
 **Port already in use:**
 - Stop existing services: `docker compose down`
