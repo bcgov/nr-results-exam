@@ -45,10 +45,31 @@ This document describes the security headers implemented in the RESULTS Exam app
 
 ## Spectre Vulnerability Mitigation
 
-These headers work together to enable "cross-origin isolation," which:
+COOP and COEP headers work together to enable "cross-origin isolation," which:
 1. Separates the application into its own process/browsing context
 2. Prevents attackers from using timing attacks to read cross-origin data
 3. Addresses ZAP finding: `Insufficient Site Isolation Against Spectre Vulnerability [90004]`
+
+## Other Security Headers
+
+The application also implements other security headers as part of a defense-in-depth strategy:
+
+### Permissions-Policy
+
+**Value:** `camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), ambient-light-sensor=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()`
+
+**Purpose:** Restricts which browser features and APIs can be used by the application and any embedded content.
+
+**Key Features Disabled:**
+- Camera and microphone access
+- Geolocation
+- Payment APIs
+- USB device access
+- Motion sensors (accelerometer, gyroscope, magnetometer)
+- Interest-cohort (FLoC)
+- Various media features
+
+For more details on Permissions-Policy, see `docs/SECURITY_HEADERS.md`.
 
 ## Browser Support
 
@@ -84,8 +105,10 @@ To verify the headers are set correctly:
 
 ## Implementation Locations
 
-- **Production:** `/frontend/Caddyfile` (lines 18-19)
+- **Production:** `/frontend/Caddyfile` (lines 38-41)
 - **Development:** `/frontend/vite.config.ts` (server.headers)
+
+Note: The Permissions-Policy header is configured in the Caddyfile but not in the Vite dev server configuration.
 
 ## Future Considerations
 
