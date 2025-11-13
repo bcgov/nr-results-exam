@@ -21,19 +21,20 @@ const originalEnv = {
 /**
  * Create a test Express app with authentication middleware
  */
-function buildApp(mockJwt) {
+function buildApp(mockJwt, mockJwks) {
   // Clear the require cache for the middleware module to pick up the mock
   delete require.cache[require.resolve('../middleware/authMiddleware')];
   
   // Mock the jsonwebtoken module if mockJwt is provided
-  if (mockJwt) {
-    Module.prototype.require = function (id) {
-      if (id === 'jsonwebtoken') {
-        return mockJwt;
-      }
-      return originalRequire.apply(this, arguments);
-    };
-  }
+  Module.prototype.require = function (id) {
+    if (id === 'jsonwebtoken' && mockJwt) {
+      return mockJwt;
+    }
+    if (id === 'jwks-rsa' && mockJwks) {
+      return mockJwks;
+    }
+    return originalRequire.apply(this, arguments);
+  };
   
   const { authenticateToken } = require('../middleware/authMiddleware');
   
@@ -311,5 +312,84 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     assert.strictEqual(response.body.success, true);
     assert.deepStrictEqual(response.body.user.tokenPayload['custom:roles'], ['admin', 'user']);
+  });
+
+  test('should obtain signing key from JWKS when verifying token', async () => {
+    let jwksClientCalls = 0;
+    let lastJwksOptions = null;
+    let getSigningKeyCalls = 0;
+
+    const mockPayload = {
+      sub: '12345678-1234-1234-1234-123456789012',
+      email: 'jwksuser@example.com',
+      'custom:idp_username': 'jwksuser',
+      'custom:idp_display_name': 'JWKS User',
+      'custom:idp_name': 'IDIR'
+    };
+
+    const mockJwks = sinon.stub().callsFake((options) => {
+      jwksClientCalls += 1;
+      lastJwksOptions = options;
+      return {
+        getSigningKey: sinon.stub().callsFake((kid, callback) => {
+          getSigningKeyCalls += 1;
+          assert.strictEqual(kid, 'test-kid');
+          callback(null, { publicKey: 'mock-public-key' });
+        })
+      };
+    });
+
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        assert.strictEqual(options.algorithms[0], 'RS256');
+        getKey({ kid: 'test-kid' }, (err, signingKey) => {
+          assert.ifError(err);
+          assert.strictEqual(signingKey, 'mock-public-key');
+          callback(null, mockPayload);
+        });
+      }
+    };
+
+    const app = buildApp(mockJwt, mockJwks);
+
+    await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
+
+    // Second request should reuse cached JWKS client
+    await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
+
+    assert.strictEqual(jwksClientCalls, 1);
+    assert.strictEqual(getSigningKeyCalls, 2);
+    assert.ok(lastJwksOptions.jwksUri.includes('/.well-known/jwks.json'));
+  });
+
+  test('should return authentication error when JWKS signing key retrieval fails', async () => {
+    const mockJwks = () => ({
+      getSigningKey: (kid, callback) => {
+        callback(new Error('JWKS key retrieval failed'));
+      }
+    });
+
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        getKey({ kid: 'bad-kid' }, (err) => {
+          callback(err);
+        });
+      }
+    };
+
+    const response = await request(buildApp(mockJwt, mockJwks))
+      .get('/protected')
+      .set('Authorization', 'Bearer token')
+      .expect(401);
+
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Authentication failed');
+    assert.strictEqual(response.body.error, 'JWKS key retrieval failed');
   });
 });
