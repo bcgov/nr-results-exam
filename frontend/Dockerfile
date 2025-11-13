@@ -20,7 +20,7 @@ COPY Caddyfile /etc/caddy/Caddyfile
 COPY readiness_check.sh /usr/local/bin/readiness_check.sh
 
 # CA certs, wget and verify Caddy formatting
-RUN apk add --no-cache ca-certificates wget && 
+RUN apk add --no-cache ca-certificates wget && \
     caddy fmt --diff /etc/caddy/Caddyfile
 
 # User, port and healthcheck
