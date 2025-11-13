@@ -85,8 +85,8 @@ jobs:
       - name: Run smoke checks against PR deployment
         working-directory: integration-tests
         env:
+          FRONTEND_URL: https://nr-results-exam-${{ github.event.number % 50 }}-frontend.apps.silver.devops.gov.bc.ca"
           SMOKE_TRIGGERED: ${{ needs.deploys.outputs.triggered }}
-          FRONTEND_URL: https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca
         run: |
           if [ "${SMOKE_TRIGGERED}" != "true" ]; then
             echo "Smoke checks against PR deployment not triggered"
