@@ -1,0 +1,143 @@
+# Dockerfile.fragment - Instructions for integrating readiness_check.sh into container images
+#
+# This file provides guidance on how to include the readiness check script in your
+# Docker images. This is not a standalone Dockerfile but should be integrated into
+# your existing Dockerfile(s).
+
+# ============================================================================
+# STEP 1: Copy the readiness check script
+# ============================================================================
+# Add this during the build stage or final image creation:
+
+COPY scripts/readiness_check.sh /opt/app/readiness_check.sh
+RUN chmod +x /opt/app/readiness_check.sh
+
+# ============================================================================
+# STEP 2: Ensure curl is available
+# ============================================================================
+# The readiness check script requires curl to be installed.
+# Add the appropriate installation command based on your base image:
+
+# For Alpine-based images (e.g., caddy:alpine, node:alpine):
+# RUN apk add --no-cache curl
+
+# For Debian/Ubuntu-based images (e.g., node:bullseye, ubuntu):
+# RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# For distroless images:
+# Distroless images don't support package installation. You'll need to either:
+# 1. Copy curl binary from another stage, or
+# 2. Use a base image that includes curl (e.g., gcr.io/distroless/base-debian11)
+# Note: gcr.io/distroless/nodejs images typically don't include curl.
+# Consider using a multi-stage build if you need distroless with curl.
+
+# ============================================================================
+# STEP 3: Example - Full integration for Alpine-based image
+# ============================================================================
+# FROM alpine:3.18
+# 
+# # Install curl
+# RUN apk add --no-cache curl
+# 
+# # Copy application files
+# COPY . /app
+# 
+# # Copy readiness check script
+# COPY scripts/readiness_check.sh /opt/app/readiness_check.sh
+# RUN chmod +x /opt/app/readiness_check.sh
+# 
+# # Configure for your application
+# ENV HEALTH_URL=http://localhost:3000/health
+# 
+# # Your application startup command
+# CMD ["/app/start.sh"]
+
+# ============================================================================
+# STEP 4: Example - Full integration for Node.js application (multi-stage)
+# ============================================================================
+# # Build stage
+# FROM node:20-bullseye-slim AS build
+# WORKDIR /app
+# COPY package*.json ./
+# RUN npm ci --only=production
+# COPY . .
+# 
+# # Deploy stage
+# FROM node:20-bullseye-slim AS deploy
+# 
+# # Install curl
+# RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# 
+# WORKDIR /app
+# COPY --from=build /app ./
+# 
+# # Copy readiness check script
+# COPY scripts/readiness_check.sh /opt/app/readiness_check.sh
+# RUN chmod +x /opt/app/readiness_check.sh
+# 
+# # Configure health check URL for your app
+# ENV HEALTH_URL=http://localhost:5000/health
+# 
+# EXPOSE 5000
+# CMD ["node", "index.js"]
+
+# ============================================================================
+# USAGE IN KUBERNETES/OPENSHIFT
+# ============================================================================
+# Once the script is in your image, configure the readiness probe:
+#
+# readinessProbe:
+#   exec:
+#     command:
+#       - /opt/app/readiness_check.sh
+#   initialDelaySeconds: 10
+#   periodSeconds: 10
+#   timeoutSeconds: 5
+#   successThreshold: 1
+#   failureThreshold: 3
+
+# ============================================================================
+# CONFIGURATION VIA ENVIRONMENT VARIABLES
+# ============================================================================
+# You can configure the readiness check script using environment variables
+# in your deployment configuration:
+#
+# env:
+#   - name: HEALTH_URL
+#     value: "http://localhost:3000/health"
+#   - name: API_URL
+#     value: "http://localhost:5000/api/health"
+#   - name: TIMEOUT
+#     value: "3"
+#   - name: PROBE_AUTH_TOKEN_FILE
+#     value: "/var/run/secrets/probe-token/token"
+#   - name: EXTERNAL_DEPENDENCIES
+#     value: "api.example.com,database.example.com"
+
+# ============================================================================
+# MOUNTING AUTHENTICATION TOKENS
+# ============================================================================
+# To enable authenticated health checks, mount a secret containing the token:
+#
+# volumeMounts:
+#   - name: probe-token
+#     mountPath: /var/run/secrets/probe-token
+#     readOnly: true
+# 
+# volumes:
+#   - name: probe-token
+#     secret:
+#       secretName: readiness-probe-token
+#       items:
+#         - key: token
+#           path: token
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# 1. The script must be executable (chmod +x)
+# 2. The script uses /bin/sh, which should be available in most images
+# 3. curl is required for HTTP health checks
+# 4. nslookup or getent is required for DNS checks (usually pre-installed)
+# 5. Adjust HEALTH_URL to match your application's health endpoint
+# 6. Consider your application's startup time when setting initialDelaySeconds

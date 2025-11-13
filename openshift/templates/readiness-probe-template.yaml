@@ -1,0 +1,207 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: readiness-probe-template
+  annotations:
+    description: "OpenShift Template for deploying applications with exec-based readiness probes"
+    tags: "readiness,probe,health-check"
+    iconClass: "icon-openshift"
+labels:
+  template: readiness-probe-template
+objects:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      replicas: ${{REPLICAS}}
+      selector:
+        matchLabels:
+          app: ${APP_NAME}
+      template:
+        metadata:
+          labels:
+            app: ${APP_NAME}
+        spec:
+          containers:
+            - name: ${APP_NAME}
+              image: ${IMAGE}
+              imagePullPolicy: Always
+              ports:
+                - containerPort: ${{CONTAINER_PORT}}
+                  protocol: TCP
+              env:
+                - name: HEALTH_URL
+                  value: ${HEALTH_URL}
+                - name: API_URL
+                  value: ${API_URL}
+                - name: TIMEOUT
+                  value: ${PROBE_TIMEOUT}
+                - name: PROBE_AUTH_TOKEN_FILE
+                  value: ${PROBE_AUTH_TOKEN_FILE}
+                - name: EXTERNAL_DEPENDENCIES
+                  value: ${EXTERNAL_DEPENDENCIES}
+              readinessProbe:
+                exec:
+                  command:
+                    - /opt/app/readiness_check.sh
+                initialDelaySeconds: ${{PROBE_INITIAL_DELAY_SECONDS}}
+                periodSeconds: ${{PROBE_PERIOD_SECONDS}}
+                timeoutSeconds: ${{PROBE_TIMEOUT_SECONDS}}
+                successThreshold: ${{PROBE_SUCCESS_THRESHOLD}}
+                failureThreshold: ${{PROBE_FAILURE_THRESHOLD}}
+              livenessProbe:
+                exec:
+                  command:
+                    - /opt/app/readiness_check.sh
+                initialDelaySeconds: ${{PROBE_LIVENESS_INITIAL_DELAY}}
+                periodSeconds: ${{PROBE_LIVENESS_PERIOD}}
+                timeoutSeconds: ${{PROBE_TIMEOUT_SECONDS}}
+                successThreshold: 1
+                failureThreshold: 3
+              resources:
+                requests:
+                  cpu: ${CPU_REQUEST}
+                  memory: ${MEMORY_REQUEST}
+                limits:
+                  cpu: ${CPU_LIMIT}
+                  memory: ${MEMORY_LIMIT}
+              volumeMounts:
+                - name: probe-token
+                  mountPath: /var/run/secrets/probe-token
+                  readOnly: true
+          volumes:
+            - name: probe-token
+              secret:
+                secretName: ${PROBE_TOKEN_SECRET_NAME}
+                optional: true
+                items:
+                  - key: token
+                    path: token
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${APP_NAME}
+      labels:
+        app: ${APP_NAME}
+    spec:
+      selector:
+        app: ${APP_NAME}
+      ports:
+        - name: http
+          port: ${{SERVICE_PORT}}
+          targetPort: ${{CONTAINER_PORT}}
+          protocol: TCP
+      type: ClusterIP
+parameters:
+  - name: APP_NAME
+    displayName: Application Name
+    description: The name of the application
+    required: true
+    value: "app"
+  - name: IMAGE
+    displayName: Container Image
+    description: The container image to deploy (must include readiness_check.sh at /opt/app/readiness_check.sh)
+    required: true
+  - name: REPLICAS
+    displayName: Number of Replicas
+    description: The number of pod replicas to run
+    required: true
+    value: "2"
+  - name: CONTAINER_PORT
+    displayName: Container Port
+    description: The port the container listens on
+    required: true
+    value: "3000"
+  - name: SERVICE_PORT
+    displayName: Service Port
+    description: The port the service exposes
+    required: true
+    value: "3000"
+  - name: HEALTH_URL
+    displayName: Health Check URL
+    description: The local health endpoint URL to check
+    required: true
+    value: "http://localhost:3000/health"
+  - name: API_URL
+    displayName: API Dependency URL
+    description: Optional API dependency endpoint to verify (leave empty to skip)
+    required: false
+    value: ""
+  - name: PROBE_AUTH_TOKEN_FILE
+    displayName: Probe Auth Token File Path
+    description: Path to mounted token file for authenticated checks (e.g., /var/run/secrets/probe-token/token)
+    required: false
+    value: ""
+  - name: EXTERNAL_DEPENDENCIES
+    displayName: External Dependencies
+    description: Comma-separated list of hostnames to verify DNS resolution (e.g., api.example.com,db.example.com)
+    required: false
+    value: ""
+  - name: PROBE_TIMEOUT
+    displayName: HTTP Request Timeout
+    description: Timeout for HTTP requests in seconds
+    required: true
+    value: "3"
+  - name: PROBE_INITIAL_DELAY_SECONDS
+    displayName: Readiness Probe Initial Delay
+    description: Number of seconds to wait before starting readiness probes
+    required: true
+    value: "10"
+  - name: PROBE_PERIOD_SECONDS
+    displayName: Readiness Probe Period
+    description: How often (in seconds) to perform the readiness probe
+    required: true
+    value: "10"
+  - name: PROBE_TIMEOUT_SECONDS
+    displayName: Probe Timeout
+    description: Number of seconds after which the probe times out
+    required: true
+    value: "5"
+  - name: PROBE_SUCCESS_THRESHOLD
+    displayName: Readiness Probe Success Threshold
+    description: Minimum consecutive successes for the probe to be considered successful
+    required: true
+    value: "1"
+  - name: PROBE_FAILURE_THRESHOLD
+    displayName: Readiness Probe Failure Threshold
+    description: Minimum consecutive failures for the probe to be considered failed
+    required: true
+    value: "3"
+  - name: PROBE_LIVENESS_INITIAL_DELAY
+    displayName: Liveness Probe Initial Delay
+    description: Number of seconds to wait before starting liveness probes
+    required: true
+    value: "30"
+  - name: PROBE_LIVENESS_PERIOD
+    displayName: Liveness Probe Period
+    description: How often (in seconds) to perform the liveness probe
+    required: true
+    value: "30"
+  - name: PROBE_TOKEN_SECRET_NAME
+    displayName: Probe Token Secret Name
+    description: Name of the secret containing the authentication token (optional)
+    required: false
+    value: "readiness-probe-token"
+  - name: CPU_REQUEST
+    displayName: CPU Request
+    description: The minimum CPU allocation for the container
+    required: true
+    value: "100m"
+  - name: CPU_LIMIT
+    displayName: CPU Limit
+    description: The maximum CPU allocation for the container
+    required: true
+    value: "500m"
+  - name: MEMORY_REQUEST
+    displayName: Memory Request
+    description: The minimum memory allocation for the container
+    required: true
+    value: "128Mi"
+  - name: MEMORY_LIMIT
+    displayName: Memory Limit
+    description: The maximum memory allocation for the container
+    required: true
+    value: "512Mi"
