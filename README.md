@@ -141,22 +141,27 @@ npm test
 
 ## Required environment variables
 
-Set these before running the apps or Docker Compose. Values can be exported in your shell; do not commit them.
+Set these before running the apps or Docker Compose. A template file `.env.example` is provided - copy it to `.env` and fill in your values.
 
 ### Frontend
 
-- `VITE_MAIN_VERSION`
-- `VITE_COGNITO_REGION`
-- `VITE_USER_POOLS_ID`
-- `VITE_USER_POOLS_WEB_CLIENT_ID`
-- `VITE_AWS_DOMAIN`
+- `VITE_MAIN_VERSION` (optional, defaults to 1.0.0)
+- `VITE_COGNITO_REGION` (required)
+- `VITE_USER_POOLS_ID` (required)
+- `VITE_USER_POOLS_WEB_CLIENT_ID` (required)
+- `VITE_AWS_DOMAIN` (required)
+- `VITE_ZONE` (optional, defaults to DEV)
 
 **Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
 ### Backend
 
-- `CHES_CLIENT_SECRET`
-- `S3_SECRETKEY`
+- `CHES_CLIENT_SECRET` (required)
+- `S3_SECRETKEY` (required)
+
+Other backend variables like `CHES_CLIENT_ID`, `S3_ACCESSKEY`, etc. have sensible defaults for development but can be overridden if needed.
+
+See `.env.example` for complete documentation and default values.
 
 ## Docker Compose
 
@@ -165,62 +170,154 @@ This project includes Docker Compose configuration for local development. Docker
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
-- Environment variables set (see below)
+- Environment variables configured (see below)
+
+### Quick Start
+
+1. **Copy the environment template:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit `.env` and fill in your values:**
+   - Required secrets: `CHES_CLIENT_SECRET`, `S3_SECRETKEY`
+   - Required frontend values: `VITE_USER_POOLS_ID`, `VITE_USER_POOLS_WEB_CLIENT_ID`, `VITE_AWS_DOMAIN`
+   - See `.env.example` for all available variables and descriptions
+
+3. **Start the services:**
+   ```bash
+   # Start backend only (recommended for most development)
+   docker compose up backend
+   
+   # Start backend + frontend dev server
+   docker compose --profile frontend up
+   
+   # Start backend + Caddy (production-like, with proxying)
+   docker compose --profile caddy up
+   ```
+
+4. **Stop services:**
+   ```bash
+   docker compose down
+   ```
 
 ### Running with Docker Compose
 
-Start all services:
+**Backend only** (most common for frontend developers):
 ```bash
-docker compose up
+docker compose up backend
+# Backend will be available at http://localhost:5000
+# Then run frontend separately with: cd frontend && npm start
 ```
 
-Start specific services:
+**Frontend development server:**
 ```bash
-# Start only frontend
-docker compose --profile frontend up frontend
-
-# Start with Caddy (production-like server)
-docker compose --profile caddy up caddy
+docker compose --profile frontend up
+# Frontend dev server at http://localhost:3000
+# Note: API calls need to go directly to backend at :5000 or use Caddy profile
 ```
 
-Stop services:
+**Caddy (production-like setup):**
 ```bash
-docker compose down
+docker compose --profile caddy up
+# Caddy serves built frontend and proxies API calls to backend
+# Access at http://localhost:3000
+# API calls to /api/* are automatically proxied to backend
 ```
 
 ### Required Environment Variables
 
-The following environment variables must be set before running Docker Compose. **These should be set as local environment variables and should NOT be committed to `docker compose.yml`.**
+Environment variables can be set in two ways:
 
-**Backend:**
-- `CHES_CLIENT_SECRET` - CHES email service client secret (obtain from team secrets/vault)
-- `S3_SECRETKEY` - S3 object storage secret key (obtain from team secrets/vault)
+1. **Using a `.env` file** (recommended):
+   - Copy `.env.example` to `.env`
+   - Fill in your values
+   - Docker Compose will automatically load variables from `.env`
 
-**Frontend (Caddy profile only):**
-- When using the Caddy profile, the `BACKEND_SERVICE_URL` is automatically set to `http://backend:5000` in docker-compose.yml
+2. **Exporting in your shell:**
+   ```bash
+   export CHES_CLIENT_SECRET="your-secret-here"
+   export S3_SECRETKEY="your-s3-secret-here"
+   export VITE_USER_POOLS_ID="your-pool-id"
+   # ... etc
+   
+   docker compose up
+   ```
 
-**Setting Environment Variables Locally:**
+**Required Backend Variables:**
+- `CHES_CLIENT_SECRET` - CHES email service client secret
+- `S3_SECRETKEY` - S3 object storage secret key
 
-Set these variables in your shell before running docker compose:
+**Required Frontend Variables:**
+- `VITE_COGNITO_REGION` - AWS Cognito region
+- `VITE_USER_POOLS_ID` - Cognito user pool ID
+- `VITE_USER_POOLS_WEB_CLIENT_ID` - Cognito web client ID
+- `VITE_AWS_DOMAIN` - Cognito domain
 
-```bash
-# Set environment variables
-export CHES_CLIENT_SECRET="your-secret-here"
-export S3_SECRETKEY="your-s3-secret-here"
+**Optional Variables with Defaults:**
+- `VITE_MAIN_VERSION` - App version (default: 1.0.0)
+- `VITE_ZONE` - Environment zone (default: DEV)
+- `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT` - Have sensible defaults for development
 
-# Then run docker compose
-docker compose up
-```
+See `.env.example` for complete documentation of all variables.
 
 ### Available Services
 
 - **backend** - Node.js backend API (port 5000)
-  - Accessible at http://localhost:5000 when running in dev mode
+  - Always runs when any profile is started
+  - Accessible at http://localhost:5000
+  - Runs `npm ci` and starts with hot reload on file changes
+  
 - **frontend** - React development server (port 3000)
-  - Uses relative URLs for API requests (e.g., `/api/*`). To ensure these requests reach the backend, run the frontend using the Caddy profile (see below).
+  - Requires `--profile frontend` or `--profile dev`
+  - Vite dev server with hot module replacement
+  - Direct backend access needed (or use Caddy profile)
+  
 - **caddy** - Production-like server with Caddy (port 3000)
-  - Proxies `/api/*` and `/health` requests to the backend service
-  - Use this profile (`docker compose --profile caddy up caddy`) for local development to properly proxy backend requests and test the production network topology locally
+  - Requires `--profile caddy`
+  - Builds frontend and serves with Caddy
+  - Proxies `/api/*` and `/health` requests to backend
+  - **Recommended for testing production-like setup**
+
+### Development Workflow
+
+**For frontend development:**
+```bash
+# Terminal 1: Start backend
+docker compose up backend
+
+# Terminal 2: Run frontend locally
+cd frontend
+npm install
+npm start
+```
+
+**For testing production setup:**
+```bash
+# Single command starts everything
+docker compose --profile caddy up
+```
+
+**For full-stack development with hot reload:**
+```bash
+docker compose --profile frontend up
+# Both frontend and backend will reload on file changes
+```
+
+### Troubleshooting
+
+**Containers won't start:**
+- Check that all required environment variables are set
+- Verify `.env` file exists and has correct values
+- Run `docker compose config` to validate configuration
+
+**Port already in use:**
+- Stop existing services: `docker compose down`
+- Or change ports in `docker-compose.yml`
+
+**Changes not reflected:**
+- Rebuild containers: `docker compose up --build`
+- Clear volumes: `docker compose down -v` (warning: removes node_modules)
 
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
