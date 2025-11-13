@@ -26,4 +26,4 @@ RUN apk add --no-cache ca-certificates && \
 # User, port and healthcheck
 USER 1001
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s CMD sh -c 'true > /dev/tcp/127.0.0.1/3000'
+HEALTHCHECK --interval=30s --timeout=10s CMD sh /usr/local/bin/readiness_check.sh
