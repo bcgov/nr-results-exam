@@ -20,7 +20,7 @@ COPY --from=build /app ./
 
 # Ports, health check and non-root user
 EXPOSE 5000
-HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost/:5000 || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD ["node", "-e", "const http=require('http');const req=http.request({hostname:'127.0.0.1',port:5000,path:'/health',timeout:4000},res=>{if(res.statusCode===200){process.exit(0);}process.exit(1);});req.on('timeout',()=>{req.destroy();process.exit(1);});req.on('error',()=>process.exit(1));req.end();"]
 USER app
 
 # Start up command with 50MB of heap size, each application needs to determine what is the best value. DONT use default as it is 4GB.
