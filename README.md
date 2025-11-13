@@ -157,11 +157,11 @@ Other backend variables like `CHES_CLIENT_ID`, `S3_ACCESSKEY`, etc. have sensibl
 - `VITE_USER_POOLS_WEB_CLIENT_ID` (required for full-stack) - Cognito web client ID (obtain from team secrets/vault)
 
 **Optional with defaults:**
-- `VITE_MAIN_VERSION` (defaults to 1.0.0)
-- `VITE_COGNITO_REGION` (defaults to ca-central-1)
-- `VITE_USER_POOLS_ID` (defaults to ca-central-1_t2HSZBHur)
-- `VITE_AWS_DOMAIN` (defaults to prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
-- `VITE_ZONE` (defaults to DEV)
+- `VITE_MAIN_VERSION` (default: 1.0.0)
+- `VITE_COGNITO_REGION` (default: ca-central-1)
+- `VITE_USER_POOLS_ID` (default: ca-central-1_t2HSZBHur)
+- `VITE_AWS_DOMAIN` (default: prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `VITE_ZONE` (default: DEV)
 
 **Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
