@@ -84,11 +84,15 @@ fi
 # Check 4: Optional DNS resolution checks
 if [ -n "$EXTERNAL_DEPENDENCIES" ]; then
     log "Checking DNS resolution for external dependencies"
-    # Split comma-separated list and check each hostname
-    echo "$EXTERNAL_DEPENDENCIES" | tr ',' '\n' | while read -r hostname; do
+    # Save IFS and split comma-separated list
+    OLD_IFS="$IFS"
+    IFS=','
+    set -- $EXTERNAL_DEPENDENCIES
+    IFS="$OLD_IFS"
+    
+    for hostname in "$@"; do
         # Trim whitespace
         hostname=$(echo "$hostname" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-        
         if [ -n "$hostname" ]; then
             log "Resolving: $hostname"
             if ! nslookup "$hostname" >/dev/null 2>&1 && ! getent hosts "$hostname" >/dev/null 2>&1; then
