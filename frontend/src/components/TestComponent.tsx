@@ -38,10 +38,9 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
   const fetchQuestions = async () => {
     try {
       const token = getAuthIdToken();
-      const response = await fetch(
-        `${backendUrl}/api/questions/questions${questionFileName}`,
-        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-      );
+      const requestUrl = `${backendUrl}/api/questions/questions${questionFileName}`;
+      const fetchOptions = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await fetch(requestUrl, fetchOptions);
       const data = await response.json();
       const randomizedQuestions = getRandomQuestions(data, 10);
       setQuestions(randomizedQuestions);
