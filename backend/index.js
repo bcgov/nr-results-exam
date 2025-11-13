@@ -22,6 +22,14 @@ const questionsRateLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
+// Rate limiter for /api/mail route
+const mailRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
   'http://localhost:3000', // For local development
@@ -98,7 +106,7 @@ app.use((req, res, next) => {
 app.use('/api/', indexRoutes);
 // Protected routes - require authentication
 app.use('/api/questions', questionsRateLimiter, authenticateToken, questionRoutes);
-app.use('/api/mail', authenticateToken, mailRoutes);
+app.use('/api/mail', mailRateLimiter, authenticateToken, mailRoutes);
 
 app.listen(5000, () => {
   console.log('Backend server is running on port 5000');
