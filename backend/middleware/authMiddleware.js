@@ -1,21 +1,27 @@
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 
+// Singleton JWKS client instance to avoid recreating on every request
+let jwksClientInstance = null;
+
 /**
- * Get JWKS client - creates a new client each time to support dynamic config
+ * Get JWKS client - creates client once and reuses it
  */
 function getJwksClient() {
-  const USER_POOL_ID = process.env.VITE_USER_POOLS_ID;
-  const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
-  const JWKS_URI = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
-  
-  return jwksClient({
-    jwksUri: JWKS_URI,
-    cache: true,
-    cacheMaxAge: 600000, // 10 minutes
-    rateLimit: true,
-    jwksRequestsPerMinute: 10
-  });
+  if (!jwksClientInstance) {
+    const USER_POOL_ID = process.env.VITE_USER_POOLS_ID;
+    const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
+    const JWKS_URI = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
+    
+    jwksClientInstance = jwksClient({
+      jwksUri: JWKS_URI,
+      cache: true,
+      cacheMaxAge: 600000, // 10 minutes
+      rateLimit: true,
+      jwksRequestsPerMinute: 10
+    });
+  }
+  return jwksClientInstance;
 }
 
 /**
