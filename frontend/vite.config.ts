@@ -34,11 +34,18 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       hmr:{
         overlay:false
+      },
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+        'Cross-Origin-Embedder-Policy': 'credentialless'
       }
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        // Use lottie-web light version to avoid eval() security issues
+        // Light version excludes expression support which requires eval
+        'lottie-web': 'lottie-web/build/player/lottie_light'
       }
     },
     test: {

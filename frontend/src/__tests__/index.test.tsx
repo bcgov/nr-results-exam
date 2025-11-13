@@ -9,7 +9,7 @@ const createRootMock = vi.fn(() => ({
 const configureMock = vi.fn();
 const cookieStorageNewMock = vi.fn();
 const setKeyValueStorageMock = vi.fn();
-let CookieStorageFake: new () => Record<string, never>;
+let CookieStorageFake: new (config?: Record<string, unknown>) => Record<string, never>;
 let ClassPrefixComponent: (props: PropsWithChildren<{ prefix: string }>) => JSX.Element;
 
 function mockBootstrapModules() {
@@ -22,8 +22,8 @@ function mockBootstrapModules() {
   }));
 
   CookieStorageFake = class CookieStorageMock {
-    constructor(options?: unknown) {
-      cookieStorageNewMock(options);
+    constructor(config?: Record<string, unknown>) {
+      cookieStorageNewMock(config);
     }
   };
 
@@ -103,11 +103,11 @@ describe("application bootstrap", () => {
     expect(configureMock).toHaveBeenCalledWith({ mock: "config" });
     expect(cookieStorageNewMock).toHaveBeenCalledTimes(1);
     expect(cookieStorageNewMock).toHaveBeenCalledWith({
-      domain: expect.any(String),
+      domain: window.location.hostname,
       path: '/',
-      expires: 1,
-      secure: true,
-      sameSite: 'strict'
+      expires: 365,
+      sameSite: 'lax',
+      secure: true
     });
     expect(setKeyValueStorageMock).toHaveBeenCalledWith(expect.any(CookieStorageFake));
 
