@@ -31,13 +31,13 @@
 		# - bootstrap.min.js: sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ
 		# - bootstrap.min.css: sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ
 		Content-Security-Policy "base-uri 'self';
-			connect-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			default-src 'self';
 			font-src 'self';
 			form-action 'self';
 			frame-ancestors 'self';
 			frame-src 'self' https://*.gov.bc.ca;
-			img-src 'self' http://www.w3.org/;
+			img-src 'self' data: http://www.w3.org/;
 			manifest-src 'self';
 			media-src 'self';
 			object-src 'none';
@@ -45,7 +45,7 @@
 			style-src 'self';
 			worker-src 'none';"
 		Referrer-Policy "same-origin"
-		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), ambient-light-sensor=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()"
 		Cross-Origin-Opener-Policy "same-origin-allow-popups"
 		Cross-Origin-Embedder-Policy "credentialless"
 	}
@@ -64,6 +64,15 @@
 		}
 	}
 
+	# Rewrite SPA routes to index.html so we can inject runtime config via templates
+	@spa {
+		not path /api/*
+		not path /health
+		not file
+	}
+
+	rewrite @spa /index.html
+
 	# Process templates only for index.html to inject runtime config
 	@html {
 		path /index.html
@@ -72,10 +81,6 @@
 	handle @html {
 		templates
 		file_server
-	}
-
-	handle_path /* {
-		try_files {path} {path}/ {file} /index.html
 	}
 
 	file_server
