@@ -230,6 +230,7 @@ our [CONTRIBUTING](CONTRIBUTING.md) guide.
 - [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
 - [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
 - [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
+- [ZAP Accepted Alerts](docs/security/zap-accepted-alerts.md) - Documentation of accepted low-risk ZAP security scan alerts
 
 ## Getting help
 
