@@ -22,8 +22,8 @@ COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY readiness_check.sh /opt/app/readiness_check.sh
 
-# CA certs and Caddy format and readiness check script
-RUN caddy fmt --overwrite /etc/caddy/Caddyfile 
+# Fail if Caddyfile is not correctly formatted
+RUN caddy fmt --diff /etc/caddy/Caddyfile 
 
 # User, port and healthcheck
 USER 1001
