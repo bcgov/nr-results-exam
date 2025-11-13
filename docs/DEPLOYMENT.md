@@ -98,7 +98,7 @@ To include the readiness check script in your container images, follow the instr
 FROM node:20-bullseye-slim AS build
 WORKDIR /app
 COPY . .
-RUN npm ci --ignore-scripts && npm run build
+RUN npm ci --omit=dev --ignore-scripts && npm run build
 
 FROM caddy:2.10.2-alpine
 # Install curl for readiness checks
