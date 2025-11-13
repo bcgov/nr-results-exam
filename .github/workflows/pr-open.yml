@@ -90,7 +90,7 @@ jobs:
           SMOKE_TIMEOUT: "8000"
           SMOKE_TRIGGERED: ${{ needs.deploys.outputs.triggered }}
         run: |
-          if [ ! -n "${{ env.SMOKE_TRIGGERED }}" ]; then
+          if [ "${SMOKE_TRIGGERED}" != "true" ]; then
             echo "Smoke checks against PR deployment not triggered"
             exit 0
           fi
