@@ -145,12 +145,14 @@ Set these before running the apps or Docker Compose. Export values in your shell
 
 ### Frontend
 
-- `VITE_MAIN_VERSION` (optional, defaults to 1.0.0)
-- `VITE_COGNITO_REGION` (required)
-- `VITE_USER_POOLS_ID` (required)
-- `VITE_USER_POOLS_WEB_CLIENT_ID` (required)
-- `VITE_AWS_DOMAIN` (required)
-- `VITE_ZONE` (optional, defaults to DEV)
+- `VITE_USER_POOLS_WEB_CLIENT_ID` (required) - Cognito web client ID (obtain from team secrets/vault)
+
+**Optional with defaults:**
+- `VITE_MAIN_VERSION` (defaults to 1.0.0)
+- `VITE_COGNITO_REGION` (defaults to ca-central-1)
+- `VITE_USER_POOLS_ID` (defaults to ca-central-1_t2HSZBHur)
+- `VITE_AWS_DOMAIN` (defaults to prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `VITE_ZONE` (defaults to DEV)
 
 **Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
@@ -177,12 +179,7 @@ This project includes Docker Compose configuration for local development. Docker
    # Required secrets
    export CHES_CLIENT_SECRET="your-secret-here"
    export S3_SECRETKEY="your-s3-secret-here"
-   
-   # Required frontend variables
-   export VITE_COGNITO_REGION="ca-central-1"
-   export VITE_USER_POOLS_ID="your-pool-id"
    export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
-   export VITE_AWS_DOMAIN="your-domain.auth.ca-central-1.amazoncognito.com"
    ```
 
 2. **Start the services:**
@@ -230,29 +227,26 @@ docker compose --profile caddy up
 
 The following environment variables must be set before running Docker Compose. **Export these in your shell and do NOT commit them to any files.**
 
-**Required Backend Variables:**
+**Required Secrets:**
 - `CHES_CLIENT_SECRET` - CHES email service client secret
 - `S3_SECRETKEY` - S3 object storage secret key
-
-**Required Frontend Variables:**
-- `VITE_COGNITO_REGION` - AWS Cognito region
-- `VITE_USER_POOLS_ID` - Cognito user pool ID
 - `VITE_USER_POOLS_WEB_CLIENT_ID` - Cognito web client ID
-- `VITE_AWS_DOMAIN` - Cognito domain
 
 **Optional Variables with Defaults:**
-- `VITE_MAIN_VERSION` - App version (default: 1.0.0)
-- `VITE_ZONE` - Environment zone (default: DEV)
-- `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT` - Have sensible defaults for development
+All other variables have sensible defaults for development:
+- `VITE_MAIN_VERSION` (default: 1.0.0)
+- `VITE_COGNITO_REGION` (default: ca-central-1)
+- `VITE_USER_POOLS_ID` (default: ca-central-1_t2HSZBHur)
+- `VITE_AWS_DOMAIN` (default: prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `VITE_ZONE` (default: DEV)
+- `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT` - Backend defaults
 
 **Example:**
 ```bash
+# Only need to export the required secrets
 export CHES_CLIENT_SECRET="your-secret-here"
 export S3_SECRETKEY="your-s3-secret-here"
-export VITE_COGNITO_REGION="ca-central-1"
-export VITE_USER_POOLS_ID="your-pool-id"
 export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
-export VITE_AWS_DOMAIN="your-domain.auth.ca-central-1.amazoncognito.com"
 
 # Then run docker compose
 docker compose up
