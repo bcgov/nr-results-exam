@@ -21,6 +21,8 @@ interface ComponentProps {
 const areAnswersComplete = (answers: Array<number | undefined>): answers is number[] =>
   !answers.some((answer) => answer === undefined);
 
+const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+
 const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileName }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<Array<number | undefined>>([]);
@@ -28,7 +30,6 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(false);
   const [loading, setIsLoading] = useState(false);
-  const backendUrl = env.VITE_BACKEND_URL;
 
   useEffect(() => {
     fetchQuestions();
@@ -36,8 +37,8 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
 
   const fetchQuestions = async () => {
     try {
-      const token = getAuthIdToken()
-      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const token = getAuthIdToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch(`${backendUrl}/api/questions/questions${questionFileName}`, { headers });
       const data = await response.json();
       const randomizedQuestions = getRandomQuestions(data, 10);

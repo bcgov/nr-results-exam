@@ -9,7 +9,7 @@ const createRootMock = vi.fn(() => ({
 const configureMock = vi.fn();
 const cookieStorageNewMock = vi.fn();
 const setKeyValueStorageMock = vi.fn();
-let CookieStorageFake: new () => Record<string, never>;
+let CookieStorageFake: new (config?: Record<string, unknown>) => Record<string, never>;
 let ClassPrefixComponent: (props: PropsWithChildren<{ prefix: string }>) => JSX.Element;
 
 function mockBootstrapModules() {
@@ -22,8 +22,8 @@ function mockBootstrapModules() {
   }));
 
   CookieStorageFake = class CookieStorageMock {
-    constructor() {
-      cookieStorageNewMock();
+    constructor(config?: Record<string, unknown>) {
+      cookieStorageNewMock(config);
     }
   };
 
@@ -54,6 +54,9 @@ function mockBootstrapModules() {
       <div data-testid="auth-provider">{children}</div>
     )
   }));
+
+  vi.doMock("bootstrap/dist/css/bootstrap.min.css", () => ({}));
+  vi.doMock("bootstrap/dist/js/bootstrap.bundle.min", () => ({}));
 
   ClassPrefixComponent = ({ children, prefix }: PropsWithChildren<{ prefix: string }>) => (
     <div data-testid="class-prefix" data-prefix={prefix}>
@@ -86,6 +89,8 @@ describe("application bootstrap", () => {
     vi.unmock("../utils/ThemePreference");
     vi.unmock("../contexts/AuthProvider");
     vi.unmock("@carbon/react");
+    vi.unmock("bootstrap/dist/css/bootstrap.min.css");
+    vi.unmock("bootstrap/dist/js/bootstrap.bundle.min");
     document.body.innerHTML = "";
   });
 
@@ -102,6 +107,13 @@ describe("application bootstrap", () => {
     expect(renderMock).toHaveBeenCalledTimes(1);
     expect(configureMock).toHaveBeenCalledWith({ mock: "config" });
     expect(cookieStorageNewMock).toHaveBeenCalledTimes(1);
+    expect(cookieStorageNewMock).toHaveBeenCalledWith({
+      domain: window.location.hostname,
+      path: '/',
+      expires: 365,
+      sameSite: 'lax',
+      secure: true
+    });
     expect(setKeyValueStorageMock).toHaveBeenCalledWith(expect.any(CookieStorageFake));
 
     const strictModeElement = renderMock.mock.calls[0][0];

@@ -2,6 +2,8 @@ import axios from 'axios'
 import { env } from '../env'
 import { getAuthIdToken } from './AuthService'
 
+const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '')
+
 interface EmailParams {
   fromEmail: string;
   toEmails: string[];
@@ -38,7 +40,6 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   `
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
-  const backendUrl = env.VITE_BACKEND_URL
 
   const emailParams: EmailParams = {
     fromEmail,
@@ -113,7 +114,6 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
 
   const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
   const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca'
-  const backendUrl = env.VITE_BACKEND_URL
 
   // In TEST environment, send admin report to test taker's email
   // In PROD environment, send to admin email address

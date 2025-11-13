@@ -58,10 +58,8 @@ async function performEachMethod(BASE_URL, testCase, method, id) {
   }
 }
 
-async function performTesting(testSuitesDir, testSuiteFile) {
-  console.info(`Running test suite for : ${testSuiteFile}`);
-  const testSuitePath = path.join(testSuitesDir, testSuiteFile);
-  const testSuite = JSON.parse(await fs.promises.readFile(testSuitePath, "utf-8"));
+async function performTesting(testSuite) {
+  console.info(`Running test suite for : ${testSuite.api_name || "unknown suite"}`);
   for (const testCase of testSuite.tests) {
     let id = null;
     for (const method of testCase.methods) {
@@ -74,10 +72,35 @@ async function performTesting(testSuitesDir, testSuiteFile) {
 }
 
 const main = async () => {
+  if (!apiName) {
+    throw new Error("API_NAME environment variable is required to select an integration test suite.");
+  }
   const testSuitesDir = path.join(__dirname, "test_suites");
   const testSuiteFiles = await fs.promises.readdir(testSuitesDir);
-  const testFile = testSuiteFiles.find(file => file.includes(apiName));
-  await performTesting(testSuitesDir, testFile);
+  const availableSuites = [];
+
+  for (const testSuiteFile of testSuiteFiles) {
+    if (!testSuiteFile.endsWith(".json")) {
+      continue;
+    }
+    const testSuitePath = path.join(testSuitesDir, testSuiteFile);
+    let testSuite;
+    try {
+      const rawSuite = await fs.promises.readFile(testSuitePath, "utf-8");
+      testSuite = JSON.parse(rawSuite);
+    } catch (error) {
+      throw new Error(`Failed to read or parse integration test suite "${testSuiteFile}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (testSuite.api_name === apiName) {
+      await performTesting(testSuite);
+      return;
+    }
+    availableSuites.push(testSuite.api_name || testSuiteFile);
+  }
+
+  throw new Error(
+    `No integration test suite found for API_NAME=${apiName}. Available suites: ${availableSuites.length > 0 ? availableSuites.join(", ") : "none"}.`
+  );
 };
 
 try {

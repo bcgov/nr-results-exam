@@ -66,6 +66,40 @@ test and deploy.
 - Authentication
   - AWS Cognito (FAM)
 
+# Architecture & Network Topology
+
+## Network Security
+
+The application follows a defense-in-depth approach with restricted network access:
+
+### Production Deployment (OpenShift)
+
+- **Frontend (Caddy)**: Publicly accessible via OpenShift Route
+  - Serves static React application
+  - Acts as a reverse proxy for backend API calls
+  - All backend requests from the browser go through the frontend proxy (e.g., `/api/*`)
+  
+- **Backend (Node.js)**: Internal-only access
+  - No public Route exposed
+  - Only accessible from within the OpenShift namespace
+  - Frontend Caddy proxy forwards requests to backend Service using internal cluster DNS
+  - Network policies ensure pod-to-pod communication is allowed within the namespace
+
+### Security Benefits
+
+- **Reduced Attack Surface**: Backend is not directly reachable from the internet
+- **Simplified CORS**: Browser requests originate from the same domain (frontend)
+- **Network Policy Enforcement**: Kubernetes NetworkPolicies control traffic flow
+- **Least Privilege**: Only necessary services are exposed externally
+- **Proxy Header Validation**: Caddy sets the `X-Forwarded-By: caddy-proxy` header when proxying requests to the backend. The backend validates this header for defense-in-depth, protecting against accidental backend exposure or network policy misconfiguration.
+
+### Network Policies
+
+The deployment includes the following network policies:
+
+1. **allow-from-openshift-ingress**: Allows traffic from OpenShift ingress controller to all pods (for Route access)
+2. **allow-same-namespace**: Allows all pods within the namespace to communicate with each other (for frontend→backend communication)
+
 # Getting started
 
 After cloning the repository install dependencies separately for the frontend and backend:
@@ -116,7 +150,8 @@ Set these before running the apps or Docker Compose. Values can be exported in y
 - `VITE_USER_POOLS_ID`
 - `VITE_USER_POOLS_WEB_CLIENT_ID`
 - `VITE_AWS_DOMAIN`
-- `VITE_BACKEND_URL` (defaults to `http://localhost:5000` when using Docker Compose)
+
+**Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
 ### Backend
 
@@ -161,8 +196,8 @@ The following environment variables must be set before running Docker Compose. *
 - `CHES_CLIENT_SECRET` - CHES email service client secret (obtain from team secrets/vault)
 - `S3_SECRETKEY` - S3 object storage secret key (obtain from team secrets/vault)
 
-**Frontend:**
-- `VITE_BACKEND_URL` - Set to `http://localhost:5000` by default in docker compose.yml
+**Frontend (Caddy profile only):**
+- When using the Caddy profile, the `BACKEND_SERVICE_URL` is automatically set to `http://backend:5000` in docker-compose.yml
 
 **Setting Environment Variables Locally:**
 
@@ -180,11 +215,21 @@ docker compose up
 ### Available Services
 
 - **backend** - Node.js backend API (port 5000)
+  - Accessible at http://localhost:5000 when running in dev mode
 - **frontend** - React development server (port 3000)
+  - Uses relative URLs for API requests (e.g., `/api/*`). To ensure these requests reach the backend, run the frontend using the Caddy profile (see below).
 - **caddy** - Production-like server with Caddy (port 3000)
+  - Proxies `/api/*` and `/health` requests to the backend service
+  - Use this profile (`docker compose --profile caddy up caddy`) for local development to properly proxy backend requests and test the production network topology locally
 
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
+
+## Documentation
+
+- [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
+- [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
+- [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
 
 ## Getting help
 
