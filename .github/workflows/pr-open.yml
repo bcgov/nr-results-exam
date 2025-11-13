@@ -57,6 +57,7 @@ jobs:
         name: [backend, frontend]
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
+        id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -67,10 +68,13 @@ jobs:
             -p TAG=${{ github.event.number }}
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
           triggers: ('backend/' 'common/' 'frontend/')
+    outputs:
+      triggered: ${{ steps.deploys.outputs.triggered }}
 
   smoke:
     name: Smoke Tests
     needs: [deploys]
+    if: needs.deploys.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -78,17 +82,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
+
       - name: Run smoke checks against PR deployment
         working-directory: integration-tests
-        env:
-          SMOKE_TIMEOUT: "8000"
         run: |
-          pr="${{ github.event.number }}"
-          mod=$(( pr % 50 ))
-          export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
+          npm ci
+          export FRONTEND_URL="https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca"
           npm run smoke
 
   results:

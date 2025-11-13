@@ -141,22 +141,29 @@ npm test
 
 ## Required environment variables
 
-Set these before running the apps or Docker Compose. Values can be exported in your shell; do not commit them.
-
-### Frontend
-
-- `VITE_MAIN_VERSION`
-- `VITE_COGNITO_REGION`
-- `VITE_USER_POOLS_ID`
-- `VITE_USER_POOLS_WEB_CLIENT_ID`
-- `VITE_AWS_DOMAIN`
-
-**Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
+Set these before running the apps or Docker Compose. Export values in your shell; do not commit them.
 
 ### Backend
 
-- `CHES_CLIENT_SECRET`
-- `S3_SECRETKEY`
+- `CHES_CLIENT_SECRET` (required)
+- `S3_SECRETKEY` (required)
+
+Other backend variables like `CHES_CLIENT_ID`, `S3_ACCESSKEY`, etc. have sensible defaults for development but can be overridden if needed.
+
+### Frontend
+
+> **Note**: Frontend variables are only required when running full-stack with Docker Compose (Caddy or frontend profiles). For backend-only development, these are not needed.
+
+- `VITE_USER_POOLS_WEB_CLIENT_ID` (required for full-stack) - Cognito web client ID (obtain from team secrets/vault)
+
+**Optional with defaults:**
+- `VITE_MAIN_VERSION` (defaults to 1.0.0)
+- `VITE_COGNITO_REGION` (defaults to ca-central-1)
+- `VITE_USER_POOLS_ID` (defaults to ca-central-1_t2HSZBHur)
+- `VITE_AWS_DOMAIN` (defaults to prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `VITE_ZONE` (defaults to DEV)
+
+**Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
 ## Docker Compose
 
@@ -165,62 +172,162 @@ This project includes Docker Compose configuration for local development. Docker
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed
-- Environment variables set (see below)
+- Environment variables exported in your shell (see below)
+
+### Quick Start
+
+**For Backend-Only Development** (most common):
+```bash
+# Only backend secrets required
+export CHES_CLIENT_SECRET="your-secret-here"
+export S3_SECRETKEY="your-s3-secret-here"
+
+# Start backend
+docker compose up backend
+# Backend will be available at http://localhost:5000
+# Then run frontend locally: cd frontend && npm start
+```
+
+**For Full-Stack Development with Caddy** (production-like):
+```bash
+# All required secrets (backend + frontend)
+export CHES_CLIENT_SECRET="your-secret-here"
+export S3_SECRETKEY="your-s3-secret-here"
+export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
+
+# Start with Caddy proxy
+docker compose --profile caddy up
+# Access at http://localhost:3000
+```
 
 ### Running with Docker Compose
 
-Start all services:
+**Backend only** (most common for frontend developers):
 ```bash
-docker compose up
+docker compose up backend
+# Backend will be available at http://localhost:5000
+# Then run frontend separately with: cd frontend && npm start
 ```
 
-Start specific services:
+**Frontend development server (NOT RECOMMENDED):**
 ```bash
-# Start only frontend
-docker compose --profile frontend up frontend
-
-# Start with Caddy (production-like server)
-docker compose --profile caddy up caddy
+docker compose --profile frontend up
+# Frontend dev server at http://localhost:3000
 ```
 
-Stop services:
+> **⚠️ Important**: API calls to `/api/*` will NOT work with this profile because the Vite dev server does not include a proxy configuration to forward requests to the backend.
+> 
+> **Recommended alternatives:**
+> - Use the Caddy profile for full-stack development: `docker compose --profile caddy up`
+> - Or run frontend locally outside Docker: `docker compose up backend` + `cd frontend && npm start`
+
+**Caddy (production-like setup - RECOMMENDED for full-stack development):**
 ```bash
-docker compose down
+docker compose --profile caddy up
+# Caddy serves built frontend and proxies API calls to backend
+# Access at http://localhost:3000
+# API calls to /api/* are automatically proxied to backend
 ```
 
 ### Required Environment Variables
 
-The following environment variables must be set before running Docker Compose. **These should be set as local environment variables and should NOT be committed to `docker compose.yml`.**
+The following environment variables must be set before running Docker Compose. **Export these in your shell and do NOT commit them to any files.**
 
-**Backend:**
-- `CHES_CLIENT_SECRET` - CHES email service client secret (obtain from team secrets/vault)
-- `S3_SECRETKEY` - S3 object storage secret key (obtain from team secrets/vault)
+**For Backend-Only Development:**
+- `CHES_CLIENT_SECRET` - CHES email service client secret
+- `S3_SECRETKEY` - S3 object storage secret key
 
-**Frontend (Caddy profile only):**
-- When using the Caddy profile, the `BACKEND_SERVICE_URL` is automatically set to `http://backend:5000` in docker-compose.yml
+**For Full-Stack Development (Caddy or Frontend profiles):**
+- `CHES_CLIENT_SECRET` - CHES email service client secret
+- `S3_SECRETKEY` - S3 object storage secret key
+- `VITE_USER_POOLS_WEB_CLIENT_ID` - Cognito web client ID (required for authentication)
 
-**Setting Environment Variables Locally:**
-
-Set these variables in your shell before running docker compose:
-
-```bash
-# Set environment variables
-export CHES_CLIENT_SECRET="your-secret-here"
-export S3_SECRETKEY="your-s3-secret-here"
-
-# Then run docker compose
-docker compose up
-```
+**Optional Variables with Defaults:**
+All other variables have sensible defaults for development:
+- `VITE_MAIN_VERSION` (default: 1.0.0)
+- `VITE_COGNITO_REGION` (default: ca-central-1)
+- `VITE_USER_POOLS_ID` (default: ca-central-1_t2HSZBHur)
+- `VITE_AWS_DOMAIN` (default: prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `VITE_ZONE` (default: DEV)
+- `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT`, `FRONTEND_URL` - Backend defaults
 
 ### Available Services
 
 - **backend** - Node.js backend API (port 5000)
-  - Accessible at http://localhost:5000 when running in dev mode
+  - Always runs when any profile is started
+  - Accessible at http://localhost:5000
+  - Runs `npm ci` and starts with hot reload on file changes
+  
 - **frontend** - React development server (port 3000)
-  - Uses relative URLs for API requests (e.g., `/api/*`). To ensure these requests reach the backend, run the frontend using the Caddy profile (see below).
+  - Requires `--profile frontend`
+  - Vite dev server with hot module replacement
+  - Direct backend access needed (or use Caddy profile)
+  
 - **caddy** - Production-like server with Caddy (port 3000)
-  - Proxies `/api/*` and `/health` requests to the backend service
-  - Use this profile (`docker compose --profile caddy up caddy`) for local development to properly proxy backend requests and test the production network topology locally
+  - Requires `--profile caddy`
+  - Builds frontend and serves with Caddy
+  - Proxies `/api/*` and `/health` requests to backend
+  - **Recommended for testing production-like setup**
+
+### Development Workflow
+
+**For frontend development:**
+```bash
+# Terminal 1: Start backend
+docker compose up backend
+
+# Terminal 2: Run frontend locally
+cd frontend
+npm install
+npm start
+```
+
+> **Note:** When running the frontend locally and the backend in Docker, API requests from the frontend (e.g., to `/api/*`) must be proxied to the backend at `http://localhost:5000`.  
+> To enable this, add the following proxy configuration to your `vite.config.ts`:
+>
+> ```ts
+> // vite.config.ts
+> import { defineConfig } from 'vite';
+> 
+> export default defineConfig({
+>   server: {
+>     proxy: {
+>       '/api': 'http://localhost:5000',
+>       '/health': 'http://localhost:5000'
+>     }
+>   }
+> });
+> ```
+>
+> This allows you to use relative URLs (e.g., `/api/foo`) in your frontend code, and Vite will forward them to the backend.  
+> If you do not set up this proxy, you must use absolute URLs (e.g., `http://localhost:5000/api/foo`) in your frontend code for API requests to work.
+
+**For testing production setup:**
+```bash
+# Single command starts everything
+docker compose --profile caddy up
+```
+
+**For full-stack development with hot reload:**
+```bash
+docker compose --profile frontend up
+# Both frontend and backend will reload on file changes
+```
+
+### Troubleshooting
+
+**Containers won't start:**
+- Check that all required environment variables are exported in your shell
+- Run `docker compose config` to validate configuration and see resolved values
+- Verify `docker compose config` shows your exported variables
+
+**Port already in use:**
+- Stop existing services: `docker compose down`
+- Or change ports in `docker-compose.yml`
+
+**Changes not reflected:**
+- Rebuild containers: `docker compose up --build`
+- Clear volumes: `docker compose down -v` (warning: removes node_modules)
 
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.

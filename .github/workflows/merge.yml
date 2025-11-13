@@ -78,15 +78,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
       - name: Verify deployed services
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
-        run: npm run smoke
+        run: |
+          npm ci
+          npm run smoke
 
   init-prod:
     name: Init (PROD)
@@ -137,15 +135,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
-        run: npm run smoke
+        run: |
+          npm ci
+          npm run smoke
 
   image-promotions:
     name: Promote images
