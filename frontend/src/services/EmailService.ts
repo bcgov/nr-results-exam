@@ -50,8 +50,10 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 
   try {
     const token = getAuthIdToken()
-    const headers = token ? { Authorization: `Bearer ${token}` } : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, { headers })
+    const config = token 
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending user report email:', error)
@@ -128,8 +130,10 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
 
   try {
     const token = getAuthIdToken()
-    const headers = token ? { Authorization: `Bearer ${token}` } : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, { headers })
+    const config = token 
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending admin report email:', error)
