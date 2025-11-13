@@ -50,7 +50,8 @@ const checks = [
     name: "frontend security headers",
     url: frontendUrl,
     validate: (response) => {
-      const permissionsPolicy = response.headers['permissions-policy'];
+      const headers = response.headers;
+      const permissionsPolicy = headers['permissions-policy'];
       if (!permissionsPolicy) {
         throw new Error('Permissions-Policy header is missing');
       }
@@ -62,7 +63,7 @@ const checks = [
       if (!hasAllPolicies) {
         throw new Error(`Permissions-Policy header missing required policies. Got: ${permissionsPolicy}`);
       }
-      const contentSecurityPolicy = response.headers['content-security-policy'];
+      const contentSecurityPolicy = headers['content-security-policy'];
       if (!contentSecurityPolicy) {
         throw new Error('Content-Security-Policy header is missing');
       }
@@ -72,6 +73,30 @@ const checks = [
       );
       if (!hasDirectives) {
         throw new Error(`Content-Security-Policy header missing required directives. Got: ${contentSecurityPolicy}`);
+      }
+      const requiredHeaderChecks = [
+        {
+          name: 'strict-transport-security',
+          validator: (value) => typeof value === 'string' && value.toLowerCase().includes('max-age=31536000'),
+          message: 'Strict-Transport-Security header is missing or not enforcing 1 year max-age'
+        },
+        {
+          name: 'x-content-type-options',
+          validator: (value) => value === 'nosniff',
+          message: "X-Content-Type-Options header must be set to 'nosniff'"
+        },
+        {
+          name: 'x-frame-options',
+          validator: (value) => value === 'SAMEORIGIN',
+          message: "X-Frame-Options header must be set to 'SAMEORIGIN'"
+        }
+      ];
+
+      for (const { name, validator, message } of requiredHeaderChecks) {
+        const headerValue = headers[name];
+        if (!validator(headerValue)) {
+          throw new Error(message);
+        }
       }
       return response.status === 200;
     }
