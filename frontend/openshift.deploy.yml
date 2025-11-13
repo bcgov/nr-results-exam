@@ -108,9 +108,10 @@ objects:
                   cpu: "${CPU_LIMIT}"
                   memory: "${MEMORY_LIMIT}"
               readinessProbe:
-                exec:
-                  command:
-                    - /usr/local/bin/readiness_check.sh
+                httpGet:
+                  path: /
+                  port: 3000
+                  scheme: HTTP
                 initialDelaySeconds: 5
                 periodSeconds: 10
                 timeoutSeconds: 5
