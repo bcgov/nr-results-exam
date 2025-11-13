@@ -74,6 +74,7 @@ jobs:
   smoke:
     name: Smoke Tests
     needs: [deploys]
+  if: needs.deploys.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -83,7 +84,6 @@ jobs:
           node-version: "24"
 
       - name: Run smoke checks against PR deployment
-        if: needs.deploys.outputs.triggered == 'true'
         working-directory: integration-tests
         run: |
           npm ci
