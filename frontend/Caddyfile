@@ -72,17 +72,11 @@
 	@html {
 		path /index.html
 	}
-	
+
 	handle @html {
 		templates
 		file_server
 	}
 
 	file_server
-}
-
-:3001 {
-	handle /health {
-		respond "OK"
-	}
 }
