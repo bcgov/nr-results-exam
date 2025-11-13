@@ -91,7 +91,6 @@ jobs:
           SMOKE_TRIGGERED: ${{ needs.deploys.outputs.triggered }}
         run: |
           if [ ! -n "${{ env.SMOKE_TRIGGERED }}" ]; then
-          else
             echo "Smoke checks against PR deployment not triggered"
             exit 0
           fi
