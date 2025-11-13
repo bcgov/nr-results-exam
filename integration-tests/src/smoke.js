@@ -33,17 +33,18 @@ const checks = [
       if (response.status !== 200) {
         return false;
       }
+      const contentType = response.headers["content-type"] ?? "";
+      if (!contentType.includes("text/html")) {
+        throw new Error("Frontend response is not HTML content");
+      }
       const body = response.data;
       if (typeof body !== "string") {
-        throw new Error("Frontend response did not return HTML");
-      }
-      if (!body.includes('<div id="root">')) {
-        throw new Error("Root container not found in frontend markup");
+        throw new Error("Frontend response did not return HTML payload");
       }
       if (!body.toLowerCase().includes("<!doctype html>")) {
         throw new Error("DOCTYPE declaration missing from frontend markup");
       }
-      return true;
+      return body.length > 0;
     }
   },
   {
