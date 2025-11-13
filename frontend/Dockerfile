@@ -14,16 +14,15 @@ RUN npm ci --ignore-scripts && \
 FROM caddy:2.10.2-alpine
 ENV LOG_LEVEL=info
 
-# Copy static files, config and readiness check script
+# Copy static files and config
 COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY readiness_check.sh /usr/local/bin/readiness_check.sh
 
-# CA certs, wget and verify Caddy formatting
-RUN apk add --no-cache ca-certificates wget && \
-    caddy fmt --diff /etc/caddy/Caddyfile
+# CA certs and Caddy format
+RUN apk add --no-cache ca-certificates && \
+    caddy fmt --overwrite /etc/caddy/Caddyfile
 
 # User, port and healthcheck
 USER 1001
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=10s CMD sh /usr/local/bin/readiness_check.sh
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -f http://localhost/:3000
