@@ -1,5 +1,9 @@
 # Backend API Documentation
 
+## Overview
+
+This document describes the authentication requirements and available endpoints for the nr-results-exam backend API.
+
 ## Authentication
 
 All API endpoints (except `/health`) require authentication using JWT tokens from AWS Cognito.
