@@ -9,12 +9,10 @@ set -e
 HOST="${HOST:-localhost}"
 PORT="${PORT:-3000}"
 PATH_NAME="${PATH_NAME:-/health}"
+TIMEOUT="${TIMEOUT:-5}"
+URL="http://$HOST:$PORT$PATH_NAME"
 
-if ! {
-  printf "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" "$PATH_NAME" "$HOST"
-  cat
-} >/dev/tcp/"$HOST"/"$PORT" 2>/dev/null | head -n 1 | grep -q " 200 "
-then
-  echo "ERROR: Health endpoint check failed"
+if ! wget -q -O - -T "$TIMEOUT" -t 1 "$URL" >/dev/null; then
+  echo "ERROR: Health endpoint check failed ($URL)"
   exit 1
 fi
