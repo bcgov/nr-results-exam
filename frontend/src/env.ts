@@ -24,22 +24,28 @@ function getConfigFromMeta(): WindowConfig {
   const zone = rootElement.getAttribute('data-vite-zone');
   const backendUrl = rootElement.getAttribute('data-vite-backend-url');
   
-  // Validate that all required values are present and don't contain unprocessed template syntax
-  if (
-    !clientId || clientId.includes('{{') ||
-    !poolId || poolId.includes('{{') ||
-    !zone || zone.includes('{{') ||
-    !backendUrl || backendUrl.includes('{{')
-  ) {
+  // Check if templates have been processed by Caddy
+  // If any value contains template syntax, templates haven't been processed yet
+  // Return empty object to fall back to import.meta.env values
+  const hasUnprocessedTemplates = 
+    clientId?.includes('{{') ||
+    poolId?.includes('{{') ||
+    zone?.includes('{{') ||
+    backendUrl?.includes('{{');
+    
+  if (hasUnprocessedTemplates) {
     return {};
   }
   
-  return {
-    VITE_USER_POOLS_WEB_CLIENT_ID: clientId,
-    VITE_USER_POOLS_ID: poolId,
-    VITE_ZONE: zone,
-    VITE_BACKEND_URL: backendUrl
-  };
+  // Only return values that are actually present (not null/empty)
+  // This allows import.meta.env to provide fallback values
+  const config: WindowConfig = {};
+  if (clientId) config.VITE_USER_POOLS_WEB_CLIENT_ID = clientId;
+  if (poolId) config.VITE_USER_POOLS_ID = poolId;
+  if (zone) config.VITE_ZONE = zone;
+  if (backendUrl) config.VITE_BACKEND_URL = backendUrl;
+  
+  return config;
 }
 
 export const env: Record<string, string | undefined> = { ...import.meta.env, ...getConfigFromMeta() }
