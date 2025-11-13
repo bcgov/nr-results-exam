@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv =require('dotenv');
+const rateLimit = require('express-rate-limit');
 const indexRoutes = require('./routes/indexRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const mailRoutes = require('./routes/mailRoutes');
@@ -12,6 +13,14 @@ dotenv.config({
 });
 const app = express();
 app.use(express.json());
+
+// Rate limiter for /api/questions route
+const questionsRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 const frontendUrl = process.env.FRONTEND_URL;
 const whitelist = [
@@ -88,7 +97,7 @@ app.use((req, res, next) => {
 
 app.use('/api/', indexRoutes);
 // Protected routes - require authentication
-app.use('/api/questions', authenticateToken, questionRoutes);
+app.use('/api/questions', questionsRateLimiter, authenticateToken, questionRoutes);
 app.use('/api/mail', authenticateToken, mailRoutes);
 
 app.listen(5000, () => {
