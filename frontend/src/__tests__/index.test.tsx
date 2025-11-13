@@ -55,6 +55,9 @@ function mockBootstrapModules() {
     )
   }));
 
+  vi.doMock("bootstrap/dist/css/bootstrap.min.css", () => ({}));
+  vi.doMock("bootstrap/dist/js/bootstrap.bundle.min", () => ({}));
+
   ClassPrefixComponent = ({ children, prefix }: PropsWithChildren<{ prefix: string }>) => (
     <div data-testid="class-prefix" data-prefix={prefix}>
       {children}
@@ -86,6 +89,8 @@ describe("application bootstrap", () => {
     vi.unmock("../utils/ThemePreference");
     vi.unmock("../contexts/AuthProvider");
     vi.unmock("@carbon/react");
+    vi.unmock("bootstrap/dist/css/bootstrap.min.css");
+    vi.unmock("bootstrap/dist/js/bootstrap.bundle.min");
     document.body.innerHTML = "";
   });
 
