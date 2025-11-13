@@ -17,7 +17,6 @@ if (!container) {
 const root = createRoot(container);
 
 Amplify.configure(amplifyconfig);
-
 // Configure CookieStorage with security attributes for session management
 // See docs/COOKIE_SECURITY.md for detailed documentation
 cognitoUserPoolsTokenProvider.setKeyValueStorage(
