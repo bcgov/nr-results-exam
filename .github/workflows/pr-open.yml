@@ -6,8 +6,6 @@ on:
 concurrency:
   # Cancel in progress for PR open and close
   group: ${{ github.event.number }}
-  cancel-in-progress: true
-
 jobs:
   # https://github.com/bcgov/action-builder-ghcr
   builds:
