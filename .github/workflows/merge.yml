@@ -85,7 +85,6 @@ jobs:
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
         run: npm run smoke
 
   init-prod:
@@ -144,7 +143,6 @@ jobs:
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
         run: npm run smoke
 
   image-promotions:
