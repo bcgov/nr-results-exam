@@ -225,6 +225,12 @@ docker compose up
 Before writing your first line of code, please take a moment and check out
 our [CONTRIBUTING](CONTRIBUTING.md) guide.
 
+## Documentation
+
+- [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
+- [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
+- [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
+
 ## Getting help
 
 As mentioned, we're here to help. Feel free to start a conversation
