@@ -74,7 +74,7 @@ jobs:
   smoke:
     name: Smoke Tests
     needs: [deploys]
-  if: needs.deploys.outputs.triggered == 'true'
+    if: needs.deploys.outputs.triggered == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
