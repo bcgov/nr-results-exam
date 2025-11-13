@@ -38,6 +38,7 @@ objects:
       labels:
         template: openshift-test
     spec:
+      podSelector: {}
       ingress:
         - from:
             - namespaceSelector:
@@ -52,5 +53,9 @@ objects:
       labels:
         template: nr-spar-backend-network-security-policy
     spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - podSelector: {}
       policyTypes:
         - Ingress

@@ -18,13 +18,14 @@
 	}
 
 	header {
+		# Security headers
 		X-Frame-Options "SAMEORIGIN"
 		X-XSS-Protection "1;mode=block"
 		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
 		X-Content-Type-Options "nosniff"
 		Strict-Transport-Security "max-age=31536000"
 		Content-Security-Policy "base-uri 'self';
-			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			connect-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			default-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			font-src 'self'; frame-src 'self' https://*.gov.bc.ca;
 			img-src 'self' http://www.w3.org/;
@@ -37,10 +38,25 @@
 		Referrer-Policy "same-origin"
 		Cross-Origin-Opener-Policy "same-origin-allow-popups"
 		Cross-Origin-Embedder-Policy "credentialless"
+
 	}
 	handle /env.js {
 		header Content-Type "text/javascript"
-    respond `window.config = {"VITE_USER_POOLS_WEB_CLIENT_ID":"{$VITE_USER_POOLS_WEB_CLIENT_ID}","VITE_USER_POOLS_ID":"{$VITE_USER_POOLS_ID}","VITE_ZONE":"{$VITE_ZONE}","VITE_BACKEND_URL":"{$VITE_BACKEND_URL}"};`
+    respond `window.config = {"VITE_USER_POOLS_WEB_CLIENT_ID":"{$VITE_USER_POOLS_WEB_CLIENT_ID}","VITE_USER_POOLS_ID":"{$VITE_USER_POOLS_ID}","VITE_ZONE":"{$VITE_ZONE}"};`
+	}
+
+	# Proxy backend API requests to internal backend service
+	handle /api/* {
+		reverse_proxy {$BACKEND_SERVICE_URL} {
+			header_up X-Forwarded-By "caddy-proxy"
+		}
+	}
+
+	# Proxy health endpoint to internal backend service
+	handle /health {
+		reverse_proxy {$BACKEND_SERVICE_URL} {
+			header_up X-Forwarded-By "caddy-proxy"
+		}
 	}
 
 	handle_path /* {
