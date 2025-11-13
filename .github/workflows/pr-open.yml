@@ -83,15 +83,9 @@ jobs:
           node-version: "24"
 
       - name: Run smoke checks against PR deployment
+        if: needs.deploys.outputs.triggered == 'true'
         working-directory: integration-tests
-        env:
-          SMOKE_TRIGGERED: ${{ needs.deploys.outputs.triggered }}
         run: |
-          if [ "${SMOKE_TRIGGERED}" != "true" ]; then
-            echo "Smoke checks against PR deployment not triggered"
-            exit 0
-          fi
-
           npm ci
           export FRONTEND_URL="https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca"
           npm run smoke
