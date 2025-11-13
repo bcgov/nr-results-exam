@@ -283,18 +283,20 @@ npm start
 ```
 
 > **Note:** When running the frontend locally and the backend in Docker, API requests from the frontend (e.g., to `/api/*`) must be proxied to the backend at `http://localhost:5000`.  
-> To enable this, add the following proxy configuration to your `vite.config.js`:
+> To enable this, add the following proxy configuration to your `vite.config.ts`:
 >
-> ```js
-> // vite.config.js
-> export default {
+> ```ts
+> // vite.config.ts
+> import { defineConfig } from 'vite';
+> 
+> export default defineConfig({
 >   server: {
 >     proxy: {
 >       '/api': 'http://localhost:5000',
 >       '/health': 'http://localhost:5000'
 >     }
 >   }
-> }
+> });
 > ```
 >
 > This allows you to use relative URLs (e.g., `/api/foo`) in your frontend code, and Vite will forward them to the backend.  
