@@ -212,7 +212,11 @@ docker compose up backend
 ```bash
 docker compose --profile frontend up
 # Frontend dev server at http://localhost:3000
-# Note: API calls need to go directly to backend at :5000 or use Caddy profile
+# Note: API calls to /api/* will NOT work out-of-the-box with this profile, because the frontend dev server does not proxy them to the backend.
+# To enable API calls, either:
+#   - Add a proxy configuration to vite.config.ts (see project docs), OR
+#   - Use the Caddy profile for integrated testing (`docker compose --profile caddy up`), OR
+#   - Run the frontend locally outside Docker with the proxy configured.
 ```
 
 **Caddy (production-like setup):**
