@@ -35,7 +35,7 @@ services:
 
   frontend:
     container_name: frontend
-    profiles: [dev, frontend]
+    profiles: [frontend]
     entrypoint: sh -c "npm ci && npm run start"
     environment:
       VITE_MAIN_VERSION: ${VITE_MAIN_VERSION:-1.0.0}
