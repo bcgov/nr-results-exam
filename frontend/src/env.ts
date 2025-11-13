@@ -24,16 +24,21 @@ function getConfigFromMeta(): WindowConfig {
   const zone = rootElement.getAttribute('data-vite-zone');
   const backendUrl = rootElement.getAttribute('data-vite-backend-url');
   
-  // If any value contains template syntax, config hasn't been replaced yet (dev mode)
-  if (clientId?.includes('{{') || !clientId) {
+  // Validate that all required values are present and don't contain unprocessed template syntax
+  if (
+    !clientId || clientId.includes('{{') ||
+    !poolId || poolId.includes('{{') ||
+    !zone || zone.includes('{{') ||
+    !backendUrl || backendUrl.includes('{{')
+  ) {
     return {};
   }
   
   return {
     VITE_USER_POOLS_WEB_CLIENT_ID: clientId,
-    VITE_USER_POOLS_ID: poolId || undefined,
-    VITE_ZONE: zone || undefined,
-    VITE_BACKEND_URL: backendUrl || undefined
+    VITE_USER_POOLS_ID: poolId,
+    VITE_ZONE: zone,
+    VITE_BACKEND_URL: backendUrl
   };
 }
 

@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
         name: 'build-html',
         apply: 'build',
         transformIndexHtml: (html) => {
-          // Inject environment variables as data attributes on the root div
+          // Inject Caddy template placeholders as data attributes on the root div
+          // Caddy's env function will safely escape values when templates are processed at runtime
           // This avoids CSP inline script issues while allowing runtime config
           const configPlaceholder = `data-vite-client-id="{{env "VITE_USER_POOLS_WEB_CLIENT_ID"}}" data-vite-pool-id="{{env "VITE_USER_POOLS_ID"}}" data-vite-zone="{{env "VITE_ZONE"}}" data-vite-backend-url="{{env "VITE_BACKEND_URL"}}"`;
           const modifiedHtml = html.replace('<div id="root"></div>', `<div id="root" ${configPlaceholder}></div>`);

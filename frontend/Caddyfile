@@ -24,19 +24,25 @@
 		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
 		X-Content-Type-Options "nosniff"
 		Strict-Transport-Security "max-age=31536000"
+		# Content Security Policy
+		# SRI hashes for Bootstrap 5.3.0-alpha3 from cdn.jsdelivr.net:
+		# - bootstrap.bundle.min.js: sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe
+		# - popper.min.js: sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE
+		# - bootstrap.min.js: sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ
+		# - bootstrap.min.css: sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ
 		Content-Security-Policy "base-uri 'self';
-			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			connect-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			default-src 'self';
 			font-src 'self';
 			form-action 'self';
 			frame-ancestors 'self';
 			frame-src 'self' https://*.gov.bc.ca;
-			img-src 'self' http://www.w3.org/ data:;
+			img-src 'self' http://www.w3.org/;
 			manifest-src 'self';
 			media-src 'self';
 			object-src 'none';
-			script-src 'self' 'sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe' 'sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE' 'sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ' https://cdn.jsdelivr.net;
-			style-src 'self' 'sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ' https://cdn.jsdelivr.net;
+			script-src 'self' 'sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe' 'sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE' 'sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ';
+			style-src 'self' 'sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ';
 			worker-src 'none';"
 		Referrer-Policy "same-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), ambient-light-sensor=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()"
@@ -44,13 +50,27 @@
 		Cross-Origin-Embedder-Policy "credentialless"
 	}
 
-	templates
+	# Proxy backend API requests to internal backend service
+	handle /api/* {
+		reverse_proxy {$BACKEND_SERVICE_URL} {
+			header_up X-Forwarded-By "caddy-proxy"
+		}
+	}
 
+	# Proxy health endpoint to internal backend service
+	handle /health {
+		reverse_proxy {$BACKEND_SERVICE_URL} {
+			header_up X-Forwarded-By "caddy-proxy"
+		}
+	}
+
+	# Process templates only for index.html to inject runtime config
 	@html {
 		path /index.html
 	}
-
+	
 	handle @html {
+		templates
 		file_server
 	}
 
