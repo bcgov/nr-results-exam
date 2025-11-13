@@ -76,7 +76,6 @@ objects:
             - name: probe-token
               secret:
                 secretName: ${PROBE_TOKEN_SECRET_NAME}
-                optional: true
                 items:
                   - key: token
                     path: token
