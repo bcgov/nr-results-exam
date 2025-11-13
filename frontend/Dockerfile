@@ -19,7 +19,7 @@ COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY readiness_check.sh /usr/local/bin/readiness_check.sh
 
-# CA certs and verify Caddy formating
+# CA certs and verify Caddy formatting
 RUN apk add --no-cache ca-certificates && \
     caddy fmt --diff /etc/caddy/Caddyfile
 
