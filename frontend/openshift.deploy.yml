@@ -110,7 +110,7 @@ objects:
               readinessProbe:
                 exec:
                   command:
-                    - /opt/app/readiness_check.sh
+                    - /usr/local/bin/readiness_check.sh
                 initialDelaySeconds: 5
                 periodSeconds: 10
                 timeoutSeconds: 5

@@ -20,7 +20,7 @@ RUN apk add --no-cache ca-certificates curl
 # Copy static files, config and readiness check script
 COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY readiness_check.sh /opt/app/readiness_check.sh
+COPY readiness_check.sh /usr/local/bin/readiness_check.sh
 
 # Fail if Caddyfile is not correctly formatted
 RUN caddy fmt --diff /etc/caddy/Caddyfile 
