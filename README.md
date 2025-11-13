@@ -259,7 +259,7 @@ All other variables have sensible defaults for development:
   - Runs `npm ci` and starts with hot reload on file changes
   
 - **frontend** - React development server (port 3000)
-  - Requires `--profile frontend` or `--profile dev`
+  - Requires `--profile frontend`
   - Vite dev server with hot module replacement
   - Direct backend access needed (or use Caddy profile)
   
