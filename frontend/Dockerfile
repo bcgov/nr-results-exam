@@ -15,7 +15,7 @@ FROM caddy:2.10.2-alpine
 ENV LOG_LEVEL=info
 
 # Install curl for readiness checks
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl ca-certificates
 
 # Copy static files and config
 COPY --from=build /app/build/ /srv
