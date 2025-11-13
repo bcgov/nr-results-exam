@@ -22,7 +22,7 @@ COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 
 # Copy readiness check script
-COPY scripts/readiness_check.sh /opt/app/readiness_check.sh
+COPY readiness_check.sh /opt/app/readiness_check.sh
 RUN chmod +x /opt/app/readiness_check.sh
 
 # CA certs and Caddy format
