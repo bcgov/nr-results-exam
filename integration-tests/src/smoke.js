@@ -29,7 +29,22 @@ const checks = [
   {
     name: "frontend",
     url: frontendUrl,
-    validate: (response) => response.status === 200
+    validate: (response) => {
+      if (response.status !== 200) {
+        return false;
+      }
+      const body = response.data;
+      if (typeof body !== "string") {
+        throw new Error("Frontend response did not return HTML");
+      }
+      if (!body.includes('<div id="root">')) {
+        throw new Error("Root container not found in frontend markup");
+      }
+      if (!body.toLowerCase().includes("<!doctype html>")) {
+        throw new Error("DOCTYPE declaration missing from frontend markup");
+      }
+      return true;
+    }
   },
   {
     name: "frontend security headers",
@@ -46,6 +61,17 @@ const checks = [
       );
       if (!hasAllPolicies) {
         throw new Error(`Permissions-Policy header missing required policies. Got: ${permissionsPolicy}`);
+      }
+      const contentSecurityPolicy = response.headers['content-security-policy'];
+      if (!contentSecurityPolicy) {
+        throw new Error('Content-Security-Policy header is missing');
+      }
+      const requiredDirectives = ["default-src 'self'", "connect-src 'self'"];
+      const hasDirectives = requiredDirectives.every((directive) =>
+        contentSecurityPolicy.includes(directive)
+      );
+      if (!hasDirectives) {
+        throw new Error(`Content-Security-Policy header missing required directives. Got: ${contentSecurityPolicy}`);
       }
       return response.status === 200;
     }
