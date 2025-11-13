@@ -136,8 +136,3 @@ test-report.xml
 .env.production.local
 .env
 **/.env
-
-# Playwright test results
-test-results/
-playwright-report/
-playwright/.cache/

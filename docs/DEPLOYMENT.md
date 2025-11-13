@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide provides comprehensive information on deploying the Natural Resources RESULTS Exam application with exec-based readiness probes, authenticated health checks, and e2e smoke test validation.
+This guide provides comprehensive information on deploying the Natural Resources RESULTS Exam application with exec-based readiness probes and authenticated health checks.
 
 ## Table of Contents
 
@@ -11,7 +11,6 @@ This guide provides comprehensive information on deploying the Natural Resources
 - [Mounting Probe Authentication Tokens](#mounting-probe-authentication-tokens)
 - [Recommended Probe Parameters](#recommended-probe-parameters)
 - [Rollout Strategy](#rollout-strategy)
-- [E2E Smoke Tests](#e2e-smoke-tests)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
@@ -308,28 +307,26 @@ This allows you to:
 
 Check CSP reports in your browser console and monitoring tools.
 
-### 4. Run E2E Smoke Tests
+### 4. Run Smoke Tests
 
-After deploying to staging, run the Playwright smoke tests to validate critical user flows:
+After deploying to staging, the existing smoke tests will run automatically as part of the deployment workflow. These tests validate:
+- Health endpoint responds correctly
+- API root returns success
+- Frontend loads successfully
+- Security headers are properly configured
+
+The smoke tests are already integrated into the deployment workflows:
+- PR deployments: `.github/workflows/pr-open.yml` (runs after `deploys` job)
+- Production deployments: `.github/workflows/merge.yml` (runs after test and prod deployments)
+
+You can also run the smoke tests manually:
 
 ```bash
-# Locally
-cd tests
+cd integration-tests
 npm install
-export APP_URL=https://staging.example.com
-export SMOKE_USER=test@example.com
-export SMOKE_PASSWORD=test-password
-npm run test:e2e
-
-# Or trigger via GitHub Actions
-# Manual workflow dispatch from Actions tab
+export FRONTEND_URL=https://your-staging-url.apps.silver.devops.gov.bc.ca
+npm run smoke
 ```
-
-The smoke tests validate:
-- Application loads successfully
-- Authentication flow works end-to-end
-- Post-login UI elements are visible
-- Error handling for invalid credentials
 
 ### 5. Monitor Staging
 
@@ -361,69 +358,10 @@ oc rollout undo deployment/nr-results-frontend
 
 ### 7. Post-Deployment Validation
 
-- Run smoke tests against production (if safe to do so)
+- Smoke tests run automatically after deployment
 - Monitor application metrics
 - Check for increased error rates
 - Verify user workflows are functioning
-
-## E2E Smoke Tests
-
-### Local Execution
-
-Run Playwright smoke tests locally to validate application functionality:
-
-```bash
-cd tests
-
-# Install dependencies (first time only)
-npm install
-npx playwright install --with-deps chromium
-
-# Set environment variables
-export APP_URL=https://your-app-url.com
-export SMOKE_USER=test@example.com
-export SMOKE_PASSWORD=test-password
-
-# Run tests
-npm run test:e2e
-
-# Run with UI for debugging
-npm run test:e2e:ui
-
-# Debug a specific test
-npm run test:e2e:debug
-```
-
-### CI/CD Integration
-
-The e2e smoke tests run automatically via GitHub Actions (`.github/workflows/e2e-smoke.yml`) on:
-- Push to main branch
-- Pull requests
-- Manual workflow dispatch
-- Daily schedule (6 AM UTC)
-
-#### Required Secrets
-
-Configure these secrets in your GitHub repository settings:
-
-- `STAGING_APP_URL`: The staging environment URL
-- `SMOKE_USER`: Test account username/email
-- `SMOKE_PASSWORD`: Test account password
-
-#### Manual Trigger
-
-Manually trigger tests from the GitHub Actions UI:
-1. Go to Actions tab
-2. Select "E2E Smoke Tests" workflow
-3. Click "Run workflow"
-4. Optionally specify a custom staging URL
-
-### Test Results
-
-Test results are available as workflow artifacts:
-- **playwright-report**: HTML report with test details
-- **playwright-artifacts**: Videos and traces
-- **playwright-screenshots**: Screenshots on failure
 
 ## Troubleshooting
 
@@ -477,23 +415,6 @@ export PROBE_AUTH_TOKEN_FILE=/var/run/secrets/probe-token/token
 - Token expired or invalid
 - Health endpoint not expecting auth
 
-### E2E Test Failures
-
-**Symptom**: Smoke tests fail in CI/CD
-
-**Diagnosis**:
-1. Download test artifacts from GitHub Actions
-2. Review playwright-report HTML
-3. Check screenshots and videos
-4. Look for console errors in test output
-
-**Common Causes**:
-- Application not fully loaded (increase timeouts)
-- UI selectors changed (update test selectors)
-- Authentication issues (verify credentials)
-- Network connectivity to staging
-- Staging environment down or misconfigured
-
 ### Probe Taking Too Long
 
 **Symptom**: Probes timeout or slow pod startup
@@ -531,7 +452,6 @@ oc exec -it <pod-name> -- sh -x /opt/app/readiness_check.sh
 
 - [Kubernetes Liveness and Readiness Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
 - [OpenShift Health Checks](https://docs.openshift.com/container-platform/latest/applications/application-health.html)
-- [Playwright Documentation](https://playwright.dev/)
 - [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP)
 
 ## Support
