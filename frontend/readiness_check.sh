@@ -15,6 +15,6 @@ if ! {
   cat
 } >/dev/tcp/"$HOST"/"$PORT" 2>/dev/null | head -n 1 | grep -q " 200 "
 then
-  echo "[readiness] ERROR: Health endpoint check failed ($HOST:$PORT$PATH_NAME)"
+  echo "ERROR: Health endpoint check failed"
   exit 1
 fi
