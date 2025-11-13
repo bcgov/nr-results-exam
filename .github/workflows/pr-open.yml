@@ -57,6 +57,7 @@ jobs:
         name: [backend, frontend]
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
+        id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -67,6 +68,8 @@ jobs:
             -p TAG=${{ github.event.number }}
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
           triggers: ('backend/' 'common/' 'frontend/')
+    outputs:
+      triggered: ${{ steps.deploys.outputs.triggered }}
 
   smoke:
     name: Smoke Tests
@@ -85,7 +88,13 @@ jobs:
         working-directory: integration-tests
         env:
           SMOKE_TIMEOUT: "8000"
+          SMOKE_TRIGGERED: ${{ needs.deploys.outputs.triggered }}
         run: |
+          if [ ! -n "${{ env.SMOKE_TRIGGERED }}" ]; then
+          else
+            echo "Smoke checks against PR deployment not triggered"
+            exit 0
+          fi
           pr="${{ github.event.number }}"
           mod=$(( pr % 50 ))
           export FRONTEND_URL="https://nr-results-exam-${mod}-frontend.apps.silver.devops.gov.bc.ca"
