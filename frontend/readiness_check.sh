@@ -6,21 +6,15 @@
 
 set -e
 
-# Configuration
-HEALTH_URL="${HEALTH_URL:-http://localhost:3000/health}"
-TIMEOUT="${TIMEOUT:-3}"
+HOST="${HOST:-localhost}"
+PORT="${PORT:-3000}"
+PATH_NAME="${PATH_NAME:-/health}"
 
-# Check if curl is available
-if ! command -v curl >/dev/null 2>&1; then
-    echo "[readiness] ERROR: curl is not installed"
-    exit 1
+if ! {
+  printf "GET %s HTTP/1.0\r\nHost: %s\r\n\r\n" "$PATH_NAME" "$HOST"
+  cat
+} >/dev/tcp/"$HOST"/"$PORT" 2>/dev/null | head -n 1 | grep -q " 200 "
+then
+  echo "[readiness] ERROR: Health endpoint check failed ($HOST:$PORT$PATH_NAME)"
+  exit 1
 fi
-
-# Check health endpoint
-if ! curl -sf --max-time "$TIMEOUT" "$HEALTH_URL" >/dev/null 2>&1; then
-    echo "[readiness] ERROR: Health endpoint check failed: $HEALTH_URL"
-    exit 1
-fi
-
-echo "[readiness] Health check passed"
-exit 0
