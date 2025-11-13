@@ -4,10 +4,10 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '*.md'
-      - '.github/**'
-      - '.github/graphics/**'
-      - '!.github/workflows/**'
+      - "*.md"
+      - ".github/**"
+      - ".github/graphics/**"
+      - "!.github/workflows/**"
 
 concurrency:
   # Do not interrupt previous workflows
@@ -40,8 +40,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters:
-            -p ZONE=test
+          parameters: -p ZONE=test
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
@@ -65,8 +64,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: true
-          parameters:
-            -p ZONE=test
+          parameters: -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=test
 
@@ -80,15 +78,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
       - name: Verify deployed services
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
-        run: npm run smoke
+        run: |
+          npm ci
+          npm run smoke
 
   init-prod:
     name: Init (PROD)
@@ -104,8 +100,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
           overwrite: true
-          parameters:
-            -p ZONE=prod
+          parameters: -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
@@ -126,8 +121,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          parameters:
-            -p ZONE=prod
+          parameters: -p ZONE=prod
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=prod
 
@@ -141,15 +135,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
-      - name: Install smoke dependencies
-        working-directory: integration-tests
-        run: npm ci
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
-          SMOKE_TIMEOUT: "8000"
-        run: npm run smoke
+        run: |
+          npm ci
+          npm run smoke
 
   image-promotions:
     name: Promote images
