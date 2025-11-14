@@ -1,0 +1,214 @@
+name: 'Workflow Failure Notification'
+description: 'Creates GitHub issues or PR comments when workflows fail, tagging maintainers for attention'
+inputs:
+  github-token:
+    description: 'GitHub token with permissions to create issues and comments'
+    required: true
+  workflow-name:
+    description: 'Name of the workflow that failed'
+    required: true
+  run-id:
+    description: 'The workflow run ID'
+    required: true
+  run-url:
+    description: 'URL to the failed workflow run'
+    required: true
+  failure-type:
+    description: 'Type of failure: pr-validation, merge-test, merge-prod, renovate, or general'
+    required: false
+    default: 'general'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get CODEOWNERS maintainers
+      id: codeowners
+      shell: bash
+      run: |
+        # Extract maintainers from CODEOWNERS file
+        if [ -f ".github/codeowners" ]; then
+          MAINTAINERS=$(grep -E '^[^#]' .github/codeowners | grep -oE '@[a-zA-Z0-9_-]+' | sort -u | tr '\n' ' ')
+          echo "maintainers=${MAINTAINERS}" >> $GITHUB_OUTPUT
+          echo "Found maintainers: ${MAINTAINERS}"
+        else
+          echo "maintainers=" >> $GITHUB_OUTPUT
+          echo "No CODEOWNERS file found"
+        fi
+
+    - name: Check if PR is from Renovate
+      id: renovate-check
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        IS_RENOVATE="false"
+        PR_NUMBER=""
+
+        # Check if this is a PR event
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          PR_NUMBER="${{ github.event.number }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+
+          if [[ "$PR_AUTHOR" == "renovate"* ]]; then
+            IS_RENOVATE="true"
+          fi
+        fi
+
+        echo "is-renovate=${IS_RENOVATE}" >> $GITHUB_OUTPUT
+        echo "pr-number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+        echo "Renovate PR: ${IS_RENOVATE}, PR Number: ${PR_NUMBER}"
+
+    - name: Comment on Renovate PR
+      if: steps.renovate-check.outputs.is-renovate == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        PR_NUMBER="${{ steps.renovate-check.outputs.pr-number }}"
+        WORKFLOW_NAME="${{ inputs.workflow-name }}"
+        RUN_URL="${{ inputs.run-url }}"
+        MAINTAINERS="${{ steps.codeowners.outputs.maintainers }}"
+        TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+        # Build comment body
+        {
+          echo "## ⚠️ Workflow Failed: ${WORKFLOW_NAME}"
+          echo ""
+          echo "**Automated dependency update failed validation.**"
+          echo ""
+          echo "🔗 **Failed Run:** ${RUN_URL}"
+          echo "📋 **Workflow:** ${WORKFLOW_NAME}"
+          echo "⏰ **Time:** ${TIMESTAMP}"
+          echo ""
+          if [ -n "$MAINTAINERS" ]; then
+            echo "**Maintainers:** ${MAINTAINERS}"
+            echo ""
+          fi
+          echo "Please review the failure and either:"
+          echo "- Fix the underlying issue"
+          echo "- Update dependencies to resolve conflicts"
+          echo "- Close this PR if the update is not compatible"
+          echo ""
+          echo "---"
+          echo "*This is an automated notification from the workflow failure detection system.*"
+        } > /tmp/comment_body.md
+
+        gh pr comment "$PR_NUMBER" --body-file /tmp/comment_body.md
+        echo "✅ Comment added to Renovate PR #${PR_NUMBER}"
+
+    - name: Create or update failure issue
+      if: steps.renovate-check.outputs.is-renovate != 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        WORKFLOW_NAME="${{ inputs.workflow-name }}"
+        RUN_URL="${{ inputs.run-url }}"
+        RUN_ID="${{ inputs.run-id }}"
+        FAILURE_TYPE="${{ inputs.failure-type }}"
+        MAINTAINERS="${{ steps.codeowners.outputs.maintainers }}"
+
+        # Create issue title based on failure type
+        case "$FAILURE_TYPE" in
+          "merge-prod")
+            ISSUE_TITLE="🚨 PROD Deployment Failure - $WORKFLOW_NAME"
+            PRIORITY="critical"
+            LABELS="bug,production,ci/cd"
+            ;;
+          "merge-test")
+            ISSUE_TITLE="⚠️ TEST Deployment Failure - $WORKFLOW_NAME"
+            PRIORITY="high"
+            LABELS="bug,ci/cd"
+            ;;
+          "pr-validation")
+            ISSUE_TITLE="⚠️ PR Validation Failure - $WORKFLOW_NAME"
+            PRIORITY="medium"
+            LABELS="bug,ci/cd"
+            ;;
+          *)
+            ISSUE_TITLE="⚠️ Workflow Failure - $WORKFLOW_NAME"
+            PRIORITY="medium"
+            LABELS="bug,ci/cd"
+            ;;
+        esac
+
+        # Search for existing open issue with same title
+        EXISTING_ISSUE=$(gh issue list --search "in:title $ISSUE_TITLE" --state open --json number --jq '.[0].number')
+
+        # Create issue body
+        TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+        {
+          echo "## Workflow Failure Detected"
+          echo ""
+          echo "**Workflow:** $WORKFLOW_NAME"
+          echo "**Failure Type:** $FAILURE_TYPE"
+          echo "**Priority:** $PRIORITY"
+          echo "**Latest Run:** $RUN_URL"
+          echo "**Run ID:** $RUN_ID"
+          echo "**Time:** $TIMESTAMP"
+          echo ""
+          if [ -n "$MAINTAINERS" ]; then
+            echo "**Attention Required:** $MAINTAINERS"
+            echo ""
+          fi
+          echo "### Recent Failures"
+          echo "| Time | Run | Status |"
+          echo "|------|-----|--------|"
+          echo "| $TIMESTAMP | [Run #$RUN_ID]($RUN_URL) | ❌ Failed |"
+          echo ""
+          echo "### Next Steps"
+          echo "1. Review the failed workflow run logs"
+          echo "2. Identify the root cause"
+          echo "3. Fix the issue or adjust the workflow"
+          echo "4. Close this issue once resolved"
+          echo ""
+          echo "---"
+          echo "*This issue is automatically created/updated when the \`$WORKFLOW_NAME\` workflow fails.*"
+          echo "*It will track recurring failures until resolved.*"
+        } > /tmp/issue_body.md
+
+        if [ -n "$EXISTING_ISSUE" ]; then
+          # Update existing issue
+          echo "📝 Updating existing issue #${EXISTING_ISSUE}"
+
+          {
+            echo "## 🔄 Workflow Failed Again"
+            echo ""
+            echo "**Latest Run:** $RUN_URL"
+            echo "**Run ID:** $RUN_ID"
+            echo "**Time:** $TIMESTAMP"
+            echo ""
+            if [ -n "$MAINTAINERS" ]; then
+              echo "${MAINTAINERS} - Another failure detected."
+              echo ""
+            fi
+            echo "This workflow continues to fail. Please prioritize investigation."
+          } > /tmp/update_comment.md
+
+          gh issue comment "$EXISTING_ISSUE" --body-file /tmp/update_comment.md
+          echo "✅ Updated issue #${EXISTING_ISSUE} with new failure"
+        else
+          # Create new issue
+          echo "📋 Creating new issue for workflow failure"
+          gh issue create \
+            --title "$ISSUE_TITLE" \
+            --body-file /tmp/issue_body.md \
+            --label "$LABELS"
+          echo "✅ Created new issue for $WORKFLOW_NAME failure"
+        fi
+
+    - name: Summary
+      shell: bash
+      run: |
+        echo "### 📢 Failure Notification Sent" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Workflow:** ${{ inputs.workflow-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Type:** ${{ inputs.failure-type }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Run:** ${{ inputs.run-url }}" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ steps.renovate-check.outputs.is-renovate }}" = "true" ]; then
+          echo "**Action:** Comment added to Renovate PR #${{ steps.renovate-check.outputs.pr-number }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "**Action:** GitHub issue created/updated" >> $GITHUB_STEP_SUMMARY
+        fi

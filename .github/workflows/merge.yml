@@ -160,3 +160,45 @@ jobs:
           repository: ${{ github.repository }}/${{ matrix.component }}
           target: ${{ needs.vars.outputs.pr }}
           tags: prod
+
+  # Notification for TEST environment failures
+  notify-test-failure:
+    name: Notify TEST Failure
+    if: always() && (needs.init-test.result == 'failure' || needs.deploys-test.result == 'failure' || needs.smoke-test.result == 'failure')
+    needs: [init-test, deploys-test, smoke-test]
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Send failure notification
+        uses: ./.github/actions/workflow-failed-notification
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          workflow-name: ${{ github.workflow }} (TEST)
+          run-id: ${{ github.run_id }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          failure-type: merge-test
+
+  # Notification for PROD environment failures (critical)
+  notify-prod-failure:
+    name: Notify PROD Failure
+    if: always() && (needs.init-prod.result == 'failure' || needs.deploys-prod.result == 'failure' || needs.smoke-prod.result == 'failure' || needs.image-promotions.result == 'failure')
+    needs: [init-prod, deploys-prod, smoke-prod, image-promotions]
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Send critical failure notification
+        uses: ./.github/actions/workflow-failed-notification
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          workflow-name: ${{ github.workflow }} (PROD)
+          run-id: ${{ github.run_id }}
+          run-url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          failure-type: merge-prod
