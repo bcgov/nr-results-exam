@@ -79,6 +79,7 @@ jobs:
             sonar_args: >
               -Dsonar.sources=.
               -Dsonar.tests=__tests__/
+              -Dsonar.coverage.exclusions=scripts/run-tests.mjs
             triggers: ('backend/')
           - dir: frontend
             sonar_projectKey: nr-results-exam-frontend
