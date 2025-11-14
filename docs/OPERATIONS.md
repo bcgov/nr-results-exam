@@ -21,7 +21,7 @@ paths-ignore:
 ```
 
 **Key behaviors:**
-- **Markdown files** (`*.md`) are ignored - documentation changes don't trigger deploys
+- **Markdown files** (`*.md`) are ignored - documentation changes don't trigger deploys (see issue #428 if this policy changes)
 - **Most `.github/` files** are ignored (issue templates, PR templates, graphics, etc.)
 - **Workflow files** (`!.github/workflows/**`) are **NOT ignored** - the `!` prefix means these files will still trigger the workflow
 
@@ -75,7 +75,7 @@ Consider modifying `paths-ignore` filters when:
 
 This project extends `github>bcgov/renovate-config` which provides:
 - **Automatic dependency updates** for npm packages, GitHub Actions, and Docker images
-- **Automerge capability** for low-risk updates (patch and minor versions)
+- **Automerge capability** for updates (including majors) when required checks pass
 - **Automated testing** via PR workflows before merge
 
 **Expected behavior in maintenance mode:**
@@ -84,7 +84,7 @@ This project extends `github>bcgov/renovate-config` which provides:
 2. **PR workflow runs** - builds, deploys to test environment, runs smoke tests
 3. **Automerge may occur** if:
    - All checks pass (build, deploy, tests)
-   - Update is within automerge rules (typically patch/minor versions)
+   - Update matches the shared config rules (including major updates)
    - No merge conflicts exist
 
 4. **Merge to main triggers** the full deployment pipeline:
@@ -93,7 +93,7 @@ This project extends `github>bcgov/renovate-config` which provides:
    - Validates that automerged changes don't break deployments
 
 **Why this matters:**
-- Renovate may update GitHub Actions versions in workflows
+- Renovate may update GitHub Actions versions in workflows (including major releases)
 - These updates are automerged if checks pass
 - The `merge.yml` workflow must run to validate the updated actions work in the actual deployment environment
 - Ignoring workflow files would skip this validation, risking broken deployments
