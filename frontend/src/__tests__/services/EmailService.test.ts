@@ -39,7 +39,8 @@ describe('EmailService', () => {
           toEmails: ['john@example.com'],
           subject: 'Test A user attempt report : John Doe',
           mailBody: expect.stringContaining('John Doe')
-        })
+        }),
+        expect.objectContaining({})
       )
     })
 
@@ -87,7 +88,8 @@ describe('EmailService', () => {
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['admin@gov.bc.ca'],
           subject: 'Test A admin report : John Doe'
-        })
+        }),
+        expect.objectContaining({})
       )
     })
 
@@ -111,7 +113,8 @@ describe('EmailService', () => {
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['john@example.com'],
           subject: 'Test A admin report : John Doe'
-        })
+        }),
+        expect.objectContaining({})
       )
     })
 
@@ -180,7 +183,8 @@ describe('EmailService', () => {
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['admin@gov.bc.ca'],
           subject: 'Test A admin report : John Doe'
-        })
+        }),
+        expect.objectContaining({})
       )
     })
 
@@ -204,7 +208,8 @@ describe('EmailService', () => {
           fromEmail: 'test@gov.bc.ca',
           toEmails: ['john@example.com'],
           subject: 'Test A admin report : John Doe'
-        })
+        }),
+        expect.objectContaining({})
       )
     })
 

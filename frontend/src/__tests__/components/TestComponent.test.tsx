@@ -129,7 +129,7 @@ describe('TestComponent', () => {
 
     await screen.findByText('Online Test');
     expect(getRandomQuestions).toHaveBeenCalledWith(mockQuestionBank, 10);
-    expect(global.fetch).toHaveBeenCalledWith('/api/questions/questionsA');
+    expect(global.fetch).toHaveBeenCalledWith('/api/questions/questionsA', expect.objectContaining({}));
 
     expectRadioSelections([0, 1, 0]);
 

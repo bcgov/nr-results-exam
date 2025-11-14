@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { env } from '../env';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
 import { Loading } from "@carbon/react";
 import {
@@ -9,7 +10,7 @@ import {
   Question
 } from '../utils/examCalculations';
 import EmailNotification from './EmailNotifications';
-import { FamLoginUser } from '../services/AuthService';
+import { FamLoginUser, getAuthIdToken } from '../services/AuthService';
 
 interface ComponentProps {
   user: FamLoginUser;
@@ -19,6 +20,8 @@ interface ComponentProps {
 
 const areAnswersComplete = (answers: Array<number | undefined>): answers is number[] =>
   !answers.some((answer) => answer === undefined);
+
+const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 
 const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileName }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -34,7 +37,13 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
 
   const fetchQuestions = async () => {
     try {
-      const response = await fetch(`/api/questions/questions${questionFileName}`);
+      const token = getAuthIdToken();
+      const requestUrl = `${backendUrl}/api/questions/questions${questionFileName}`;
+      if (!token) {
+        console.warn('No authentication token available for questions request');
+      }
+      const fetchOptions = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await fetch(requestUrl, fetchOptions);
       const data = await response.json();
       const randomizedQuestions = getRandomQuestions(data, 10);
       setQuestions(randomizedQuestions);

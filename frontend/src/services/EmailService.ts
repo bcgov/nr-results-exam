@@ -1,5 +1,8 @@
 import axios from 'axios'
 import { env } from '../env'
+import { getAuthIdToken } from './AuthService'
+
+const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '')
 
 interface EmailParams {
   fromEmail: string;
@@ -46,7 +49,14 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
   }
 
   try {
-    await axios.post('/api/mail', emailParams)
+    const token = getAuthIdToken()
+    if (!token) {
+      console.warn('No authentication token available for user mail request')
+    }
+    const config = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {}
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending user report email:', error)
@@ -122,7 +132,14 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
   }
 
   try {
-    await axios.post('/api/mail', emailParams)
+    const token = getAuthIdToken()
+    if (!token) {
+      console.warn('No authentication token available for admin mail request')
+    }
+    const config = token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {}
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending admin report email:', error)

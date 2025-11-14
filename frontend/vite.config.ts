@@ -68,7 +68,7 @@ export default defineConfig(({ mode }) => {
           lines: 70
         }
       }
-    },
+    }
   };
 
   if (mode === 'development') {
