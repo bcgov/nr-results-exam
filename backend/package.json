@@ -11,6 +11,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
+  "c8": {
+    "exclude": [
+      "scripts/run-tests.mjs"
+    ]
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
