@@ -129,3 +129,26 @@ Sends an email using CHES (Common Hosted Email Service).
 3. User information is extracted from verified tokens and made available to route handlers
 4. CORS protection is enforced based on whitelisted origins
 5. The `/health` endpoint remains unauthenticated for monitoring purposes
+
+## Rate Limiting
+
+The backend enforces rate limits on protected endpoints to ensure fair usage and system stability:
+
+- **Questions endpoint** (`/api/questions/:fileName`): 100 requests per 15-minute window per client IP
+- **Mail endpoint** (`/api/mail`): 20 requests per 15-minute window per client IP
+
+When a client exceeds a limit, the API responds with `429 Too Many Requests` and includes headers that describe the active window:
+
+- `RateLimit-Limit`: Maximum number of requests allowed in the current window
+- `RateLimit-Remaining`: Remaining requests before the limit is reached
+- `RateLimit-Reset`: Epoch time (seconds) when the current window resets
+
+Example error response:
+
+```json
+{
+  "error": "Too many requests, please try again later."
+}
+```
+
+Client applications should implement retry/backoff logic to handle rate-limit responses gracefully.
