@@ -59,6 +59,12 @@ parameters:
   - name: S3_BUCKETNAME
     description: Bucket name for S3
     value: tivpth
+  - name: VITE_USER_POOLS_ID
+    description: AWS Cognito User Pool ID
+    value: "ca-central-1_t2HSZBHur"
+  - name: VITE_COGNITO_REGION
+    description: AWS Cognito region for user pool
+    value: ca-central-1
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
@@ -114,6 +120,10 @@ objects:
                   value: https://${NAME}-${MOD_ZONE}-frontend.${DOMAIN}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
+                - name: VITE_USER_POOLS_ID
+                  value: ${VITE_USER_POOLS_ID}
+                - name: VITE_COGNITO_REGION
+                  value: ${VITE_COGNITO_REGION}
               ports:
                 - containerPort: 5000
                   protocol: TCP
