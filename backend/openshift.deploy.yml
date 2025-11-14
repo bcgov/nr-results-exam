@@ -136,14 +136,14 @@ objects:
                   memory: "${MEMORY_LIMIT}"
               readinessProbe:
                 httpGet:
-                  path: /health
+                  path: /health?deep=true
                   port: 5000
                   scheme: HTTP
-                initialDelaySeconds: 5
-                periodSeconds: 2
-                timeoutSeconds: 2
+                initialDelaySeconds: 25
+                periodSeconds: 20
+                timeoutSeconds: 5
                 successThreshold: 1
-                failureThreshold: 30
+                failureThreshold: 4
               livenessProbe:
                 successThreshold: 1
                 failureThreshold: 3
