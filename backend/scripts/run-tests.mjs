@@ -47,6 +47,11 @@ const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles]
   env: { ...process.env }
 });
 
+child.on('error', (error) => {
+  console.error('Failed to start test process:', error);
+  process.exit(1);
+});
+
 child.on('exit', (code, signal) => {
   if (signal) {
     process.kill(process.pid, signal);
