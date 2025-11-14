@@ -25,10 +25,10 @@ const MIN_RETRY_DELAY_MS = 100;
 const MAX_RETRY_DELAY_MS = 30_000;
 const RETRY_DELAY_MS = (() => {
   const parsed = Number.parseInt(process.env.SMOKE_RETRY_DELAY ?? "1000", 10);
-  if (!Number.isFinite(parsed)) {
+  if (!Number.isFinite(parsed) || parsed < MIN_RETRY_DELAY_MS) {
     return 1000;
   }
-  return Math.min(Math.max(parsed, MIN_RETRY_DELAY_MS), MAX_RETRY_DELAY_MS);
+  return Math.min(parsed, MAX_RETRY_DELAY_MS);
 })();
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -157,8 +157,9 @@ const executeCheck = async (check) => {
         );
       }
 
+      const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
       console.info(
-        `✅ ${check.name} responded with ${response.status} from ${check.url} (attempt ${attempt}/${MAX_RETRIES})`
+        `✅ ${check.name} responded with ${response.status} from ${check.url}${attemptInfo}`
       );
       return;
     } catch (error) {
@@ -179,7 +180,10 @@ const executeCheck = async (check) => {
         throw error;
       }
 
-      const backoffMs = Math.min(RETRY_DELAY_MS * attempt, MAX_RETRY_DELAY_MS);
+      const backoffMs = Math.min(
+        RETRY_DELAY_MS * (2 ** (attempt - 1)),
+        MAX_RETRY_DELAY_MS
+      );
       console.warn(
         `Retrying ${check.name} in ${backoffMs}ms (retryable error detected)`
       );
