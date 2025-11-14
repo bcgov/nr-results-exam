@@ -1,12 +1,12 @@
 const express = require('express');
-const { getHealthStatus } = require('../services/dependencyHealth');
+const dependencyHealth = require('../services/dependencyHealth');
 
 const router = express.Router({});
 
 router.get('/', async (req, res) => {
   try {
     const forceRefresh = req.query.deep === 'true';
-    const health = await getHealthStatus({ forceRefresh });
+    const health = await dependencyHealth.getHealthStatus({ forceRefresh });
 
     const payload = {
       status: health.status,

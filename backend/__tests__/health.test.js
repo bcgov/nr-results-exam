@@ -12,6 +12,18 @@ describe('Health Routes', () => {
     const app = express();
     app.use('/health', healthRoutes);
 
+    const restore = mock.method(dependencyHealth, 'getHealthStatus', () =>
+      Promise.resolve({
+        status: 'ok',
+        checkedAt: Date.now(),
+        dependencies: {
+          ches: { status: 'ok', latencyMs: 10 },
+          federatedAuth: { status: 'skipped' },
+          objectStorage: { status: 'ok', latencyMs: 5 }
+        }
+      })
+    );
+
     const response = await request(app)
       .get('/health')
       .expect(200);
@@ -23,7 +35,8 @@ describe('Health Routes', () => {
       Object.keys(response.body.dependencies).sort(),
       ['ches', 'federatedAuth', 'objectStorage'].sort()
     );
-    assert.strictEqual(response.body.dependencies.ches.status, 'skipped');
+    assert.strictEqual(response.body.dependencies.ches.status, 'ok');
+    restore.mock.restore();
   });
 
   test('GET /health should return 503 when dependency fails', async () => {
