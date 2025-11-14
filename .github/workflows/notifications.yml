@@ -1,8 +1,8 @@
-name: Merge Notifications
+name: PR Notifications
 
 on:
   workflow_run:
-    workflows: [Merge]
+    workflows: [PR]
     types: [completed]
 
 concurrency:
