@@ -348,6 +348,7 @@ our [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Documentation
 
+- [Operations Guide](docs/OPERATIONS.md) - Maintenance mode CI/CD policy, trigger configuration, and Renovate automerge
 - [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
 - [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
 - [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
