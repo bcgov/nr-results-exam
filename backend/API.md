@@ -39,16 +39,36 @@ The following environment variables must be set for authentication to work:
 
 **GET** `/health`
 
-Returns the health status of the API.
+Returns the API uptime along with dependency status for CHES, S3 object storage, and Cognito (FAM).  
+Use `GET /health?deep=true` to force a live dependency check instead of the cached snapshot.
 
 **Response:**
 ```json
 {
+  "status": "ok",
   "uptime": 12345.67,
-  "message": "OK",
-  "timestamp": 1234567890123
+  "timestamp": 1234567890123,
+  "lastCheckedAt": 1234567889000,
+  "refreshInProgress": false,
+  "dependencies": {
+    "ches": {
+      "status": "ok",
+      "latencyMs": 150
+    },
+    "objectStorage": {
+      "status": "ok",
+      "latencyMs": 120,
+      "bucket": "nr-results-bucket"
+    },
+    "federatedAuth": {
+      "status": "skipped",
+      "message": "VITE_USER_POOLS_ID is not configured"
+    }
+  }
 }
 ```
+
+The HTTP status is `200` when all dependencies are healthy and `503` if any critical dependency reports `status: "error"`.
 
 ### Get Questions (Authenticated)
 

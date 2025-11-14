@@ -58,6 +58,13 @@ are fully automated:
   `packageRules` block locally; otherwise defer to the upstream config to stay
   aligned with NRIDS best practices.
 
+### Runtime Health Checks
+
+- `/health` now includes dependency probes for CHES, the S3/MinIO bucket, and Cognito (FAM).  
+  The endpoint caches results for 60 seconds and returns `503` if any dependency reports `status: "error"`.
+- Append `?deep=true` to force a live probe when troubleshooting (synthetic monitors can call the same URL).
+- Responses list each dependency with `status`, latency, and bucket/endpoint metadata. The payload also exposes `lastCheckedAt` and `refreshInProgress` so operators know whether the values are cached.
+
 ### Automerge Expectations
 
 **When Automerge Occurs:**

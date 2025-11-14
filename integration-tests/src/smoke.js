@@ -54,8 +54,33 @@ const checks = [
   {
     name: "health",
     url: `${frontendUrl}/health`,
-    validate: (response) =>
-      response.status === 200 && response.data?.message === "OK"
+    validate: (response) => {
+      if (response.status !== 200) {
+        return false;
+      }
+
+      const data = response.data;
+      if (!data || typeof data !== "object") {
+        throw new Error("Health payload missing");
+      }
+
+      if (data.status !== "ok") {
+        throw new Error(`Health status is ${data.status ?? "unknown"}`);
+      }
+
+      const dependencies = data.dependencies ?? {};
+      const failingDependencies = Object.entries(dependencies)
+        .filter(([, dependency]) => dependency?.status === "error")
+        .map(([name]) => name);
+
+      if (failingDependencies.length > 0) {
+        throw new Error(
+          `Dependencies failing health check: ${failingDependencies.join(", ")}`
+        );
+      }
+
+      return true;
+    }
   },
   {
     name: "api root",
