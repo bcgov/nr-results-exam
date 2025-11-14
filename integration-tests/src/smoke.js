@@ -13,6 +13,41 @@ const timeoutMs = (() => {
   return DEFAULT_TIMEOUT_MS;
 })();
 
+const MAX_RETRIES = (() => {
+  const parsed = Number.parseInt(process.env.SMOKE_MAX_RETRIES ?? "3", 10);
+  if (Number.isFinite(parsed) && parsed >= 1) {
+    return parsed;
+  }
+  return 3;
+})();
+
+const RETRY_DELAY_MS = (() => {
+  const parsed = Number.parseInt(process.env.SMOKE_RETRY_DELAY ?? "1000", 10);
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+  return 1000;
+})();
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryableError = (error) => {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+
+  if (error.code === "ECONNABORTED") {
+    return true;
+  }
+
+  const status = error.response?.status;
+  if (status === undefined) {
+    return true;
+  }
+
+  return status >= 500 && status < 600;
+};
+
 const checks = [
   {
     name: "health",
@@ -104,8 +139,8 @@ const checks = [
   }
 ];
 
-const run = async () => {
-  for (const check of checks) {
+const executeCheck = async (check) => {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
       const response = await axios.get(check.url, {
         headers: {
@@ -121,20 +156,42 @@ const run = async () => {
       }
 
       console.info(
-        `✅ ${check.name} responded with ${response.status} from ${check.url}`
+        `✅ ${check.name} responded with ${response.status} from ${check.url} (attempt ${attempt}/${MAX_RETRIES})`
       );
+      return;
     } catch (error) {
-      console.error(`❌ ${check.name} failed`);
+      const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
       if (axios.isAxiosError(error)) {
         console.error(
-          `Request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
+          `${attemptPrefix}: request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
         );
         if (error.response?.data) {
           console.error("Response body:", error.response.data);
         }
       } else {
-        console.error(error);
+        console.error(attemptPrefix, error);
       }
+
+      const retryable = isRetryableError(error);
+      if (!retryable || attempt === MAX_RETRIES) {
+        throw error;
+      }
+
+      const backoffMs = RETRY_DELAY_MS * attempt;
+      console.warn(
+        `Retrying ${check.name} in ${backoffMs}ms (retryable error detected)`
+      );
+      await delay(backoffMs);
+    }
+  }
+};
+
+const run = async () => {
+  for (const check of checks) {
+    try {
+      await executeCheck(check);
+    } catch (error) {
+      console.error(`❌ ${check.name} failed after ${MAX_RETRIES} attempts`);
       process.exitCode = 1;
       break;
     }
