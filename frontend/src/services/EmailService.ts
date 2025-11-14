@@ -50,9 +50,12 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
 
   try {
     const token = getAuthIdToken()
-    const config = token 
+    if (!token) {
+      console.warn('No authentication token available for user mail request')
+    }
+    const config = token
       ? { headers: { Authorization: `Bearer ${token}` } }
-      : {};
+      : {}
     await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {
@@ -130,9 +133,12 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
 
   try {
     const token = getAuthIdToken()
-    const config = token 
+    if (!token) {
+      console.warn('No authentication token available for admin mail request')
+    }
+    const config = token
       ? { headers: { Authorization: `Bearer ${token}` } }
-      : {};
+      : {}
     await axios.post(`${backendUrl}/api/mail`, emailParams, config)
     return 'success'
   } catch (error) {

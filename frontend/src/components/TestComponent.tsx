@@ -39,6 +39,9 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
     try {
       const token = getAuthIdToken();
       const requestUrl = `${backendUrl}/api/questions/questions${questionFileName}`;
+      if (!token) {
+        console.warn('No authentication token available for questions request');
+      }
       const fetchOptions = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const response = await fetch(requestUrl, fetchOptions);
       const data = await response.json();

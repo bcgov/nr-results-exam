@@ -128,7 +128,7 @@ Sends an email using CHES (Common Hosted Email Service).
 2. Tokens are verified using RS256 algorithm
 3. User information is extracted from verified tokens and made available to route handlers
 4. CORS protection is enforced based on whitelisted origins
-5. The `/health` endpoint remains unauthenticated for monitoring purposes
+5. The `/health` endpoint and the `/api/` status endpoint remain unauthenticated for monitoring and public status checks
 
 ## Rate Limiting
 

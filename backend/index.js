@@ -13,7 +13,22 @@ dotenv.config({
 });
 const app = express();
 app.use(express.json());
-app.set('trust proxy', 1);
+
+const trustProxySetting = process.env.TRUST_PROXY;
+let trustProxy = 1;
+if (trustProxySetting !== undefined) {
+  if (trustProxySetting === 'true') {
+    trustProxy = true;
+  } else if (trustProxySetting === 'false') {
+    trustProxy = false;
+  } else if (!Number.isNaN(Number(trustProxySetting))) {
+    trustProxy = Number(trustProxySetting);
+  } else {
+    trustProxy = trustProxySetting;
+  }
+}
+app.set('trust proxy', trustProxy);
+console.log(`Express trust proxy set to: ${trustProxy}`);
 
 // Rate limiter for /api/questions route
 const questionsRateLimiter = rateLimit({

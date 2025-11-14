@@ -10,6 +10,9 @@ let jwksClientInstance = null;
 function getJwksClient() {
   if (!jwksClientInstance) {
     const USER_POOL_ID = process.env.VITE_USER_POOLS_ID;
+    if (!USER_POOL_ID) {
+      throw new Error('User pool ID is not configured');
+    }
     const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
     const JWKS_URI = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
     
@@ -79,9 +82,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   // Verify the token
-  jwt.verify(token, getKey, {
-    algorithms: ['RS256']
-  }, (err, decoded) => {
+  const handleVerification = (err, decoded) => {
     if (err) {
       console.error('Token verification error:', err.message);
       
@@ -97,14 +98,14 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({
           success: false,
           message: 'Invalid token',
-          error: 'Authentication failed'
+          error: 'Invalid or expired token'
         });
       }
       
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
-        message: 'Authentication failed',
-        error: err.message
+        message: 'Authentication configuration error',
+        error: 'Unable to verify token'
       });
     }
 
@@ -119,7 +120,20 @@ const authenticateToken = (req, res, next) => {
     };
 
     next();
-  });
+  };
+
+  try {
+    jwt.verify(token, getKey, {
+      algorithms: ['RS256']
+    }, handleVerification);
+  } catch (error) {
+    console.error('Token verification error:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication configuration error',
+      error: 'Unable to verify token'
+    });
+  }
 };
 
 module.exports = {

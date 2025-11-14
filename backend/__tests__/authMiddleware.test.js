@@ -166,7 +166,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Invalid token');
-    assert.strictEqual(response.body.error, 'Authentication failed');
+    assert.strictEqual(response.body.error, 'Invalid or expired token');
   });
 
   test('should deny access with expired token', async () => {
@@ -280,11 +280,11 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const response = await request(buildApp(mockJwt))
       .get('/protected')
       .set('Authorization', 'Bearer problematic-token')
-      .expect(401);
+      .expect(500);
 
     assert.strictEqual(response.body.success, false);
-    assert.strictEqual(response.body.message, 'Authentication failed');
-    assert.strictEqual(response.body.error, 'Generic verification error');
+    assert.strictEqual(response.body.message, 'Authentication configuration error');
+    assert.strictEqual(response.body.error, 'Unable to verify token');
   });
 
   test('should include token payload in req.user', async () => {
@@ -368,7 +368,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.ok(lastJwksOptions.jwksUri.includes('/.well-known/jwks.json'));
   });
 
-  test('should return authentication error when JWKS signing key retrieval fails', async () => {
+  test('should return authentication configuration error when JWKS signing key retrieval fails', async () => {
     const mockJwks = () => ({
       getSigningKey: (kid, callback) => {
         callback(new Error('JWKS key retrieval failed'));
@@ -386,10 +386,10 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const response = await request(buildApp(mockJwt, mockJwks))
       .get('/protected')
       .set('Authorization', 'Bearer token')
-      .expect(401);
+      .expect(500);
 
     assert.strictEqual(response.body.success, false);
-    assert.strictEqual(response.body.message, 'Authentication failed');
-    assert.strictEqual(response.body.error, 'JWKS key retrieval failed');
+    assert.strictEqual(response.body.message, 'Authentication configuration error');
+    assert.strictEqual(response.body.error, 'Unable to verify token');
   });
 });
