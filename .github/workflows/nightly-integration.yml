@@ -1,0 +1,144 @@
+name: Nightly Integration Verification
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 2 AM UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  vars:
+    name: Variables
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      # Get PR number for main branch
+      - name: PR Number
+        id: pr
+        uses: bcgov/action-get-pr@v0.0.1
+
+  init:
+    name: Init (TEST)
+    needs: vars
+    environment: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    steps:
+      - uses: bcgov/action-deployer-openshift@v4.0.0
+        with:
+          file: common/openshift.init.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          parameters: -p ZONE=test
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+
+  deploys:
+    name: Deploys (TEST)
+    needs: [vars, init]
+    environment: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        name: [backend, frontend]
+    steps:
+      - uses: bcgov/action-deployer-openshift@v4.0.0
+        with:
+          file: ${{ matrix.name }}/openshift.deploy.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
+          parameters: -p ZONE=test
+            -p TAG=${{ needs.vars.outputs.pr }}
+            -p MOD_ZONE=test
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: [deploys]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Run smoke tests
+        working-directory: integration-tests
+        env:
+          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+        run: |
+          npm ci
+          npm run smoke
+
+      - name: Upload smoke test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-results
+          path: integration-tests/
+          retention-days: 7
+
+  api-integration-tests:
+    name: API Integration Tests
+    needs: [deploys]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        api: [nest, fastapi, fiber]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - name: Run ${{ matrix.api }} integration tests
+        working-directory: integration-tests
+        env:
+          API_NAME: ${{ matrix.api }}
+          BASE_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+        run: |
+          npm ci
+          npm run dev
+
+      - name: Upload ${{ matrix.api }} test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-integration-test-results-${{ matrix.api }}
+          path: integration-tests/
+          retention-days: 7
+
+  summary:
+    name: Test Summary
+    if: always()
+    needs: [smoke-tests, api-integration-tests]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Nightly Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow Run:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke Tests: ${{ needs.smoke-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API Integration Tests: ${{ needs.api-integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.smoke-tests.result }}" == "failure" ] || [ "${{ needs.api-integration-tests.result }}" == "failure" ]; then
+            echo "### ⚠️ Failures Detected" >> $GITHUB_STEP_SUMMARY
+            echo "Please review the workflow logs and uploaded artifacts for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "### ✅ All Tests Passed" >> $GITHUB_STEP_SUMMARY
+          fi
