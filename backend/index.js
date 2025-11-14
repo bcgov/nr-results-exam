@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv =require('dotenv');
 const rateLimit = require('express-rate-limit');
+const { resolveTrustProxy } = require('./config/trustProxy');
 const indexRoutes = require('./routes/indexRoutes');
 const questionRoutes = require('./routes/questionRoutes');
 const mailRoutes = require('./routes/mailRoutes');
@@ -14,19 +15,7 @@ dotenv.config({
 const app = express();
 app.use(express.json());
 
-const trustProxySetting = process.env.TRUST_PROXY;
-let trustProxy = 1;
-if (trustProxySetting !== undefined) {
-  if (trustProxySetting === 'true') {
-    trustProxy = true;
-  } else if (trustProxySetting === 'false') {
-    trustProxy = false;
-  } else if (!Number.isNaN(Number(trustProxySetting))) {
-    trustProxy = Number(trustProxySetting);
-  } else {
-    trustProxy = trustProxySetting;
-  }
-}
+const trustProxy = resolveTrustProxy(process.env.TRUST_PROXY);
 app.set('trust proxy', trustProxy);
 console.log(`Express trust proxy set to: ${trustProxy}`);
 

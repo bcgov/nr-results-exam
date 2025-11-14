@@ -392,4 +392,21 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.message, 'Authentication configuration error');
     assert.strictEqual(response.body.error, 'Unable to verify token');
   });
+
+  test('should handle synchronous errors from jwt.verify', async () => {
+    const mockJwt = {
+      verify: () => {
+        throw new Error('Synchronous verification failure');
+      }
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer token')
+      .expect(500);
+
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Authentication configuration error');
+    assert.strictEqual(response.body.error, 'Unable to verify token');
+  });
 });
