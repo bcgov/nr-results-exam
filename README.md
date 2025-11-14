@@ -34,15 +34,29 @@ started with a React TS Web Application.
 ## Our Policy
 
 - Work in the open: That means that everything we do should be open, should be
-public. Please, don't create private repositories unless you have a very strong
-reason. Keeping things public is a must follow rule for BC Government.
+  public. Please, don't create private repositories unless you have a very strong
+  reason. Keeping things public is a must follow rule for BC Government.
 - Customer centred services: All the work that's been created is to improve
-users, customers, and friends usability and experience. Is important to keep
-that in mind, because as engineers sometimes we face technical issues, however, our goal is to have a good product.
+  users, customers, and friends usability and experience. Is important to keep
+  that in mind, because as engineers sometimes we face technical issues, however, our goal is to have a good product.
 - Community based work: Remember that you're not alone. It's very likely that
-your problem is someone else's problem. Let's figure it out together. So, ask
-a question using our channels. We have [our own Stackoverflow](https://stackoverflow.developer.gov.bc.ca/)
-and [our Rocket Chat](https://chat.developer.gov.bc.ca/) channel.
+  your problem is someone else's problem. Let's figure it out together. So, ask
+  a question using our channels. We have [our own Stackoverflow](https://stackoverflow.developer.gov.bc.ca/)
+  and [our Rocket Chat](https://chat.developer.gov.bc.ca/) channel.
+
+## Maintenance Mode Automation
+
+This repository operates in a low-dev (maintenance) mode where dependency updates
+are fully automated:
+
+- `renovate.json` extends [`bcgov/renovate-config`](https://github.com/bcgov/renovate-config),
+  which enables Mend Renovate to group updates and automerge them—including major
+  version bumps—once all required checks pass.
+- GitHub branch protection on `main` requires the `PR Validate` workflow, so
+  Renovate PRs can only merge after preview deployments and smoke tests succeed.
+- If you ever need to pause automerge for a risky package, add a temporary
+  `packageRules` block locally; otherwise defer to the upstream config to stay
+  aligned with NRIDS best practices.
 
 # Stack
 
@@ -334,6 +348,7 @@ our [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Documentation
 
+- [Operations Guide](docs/OPERATIONS.md) - Maintenance mode CI/CD policy, trigger configuration, and Renovate automerge
 - [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
 - [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
 - [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
