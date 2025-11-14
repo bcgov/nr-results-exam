@@ -1,0 +1,106 @@
+name: Merge Notifications
+
+on:
+  workflow_run:
+    workflows: [Merge]
+    types: [completed]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  notify-failure:
+    if: github.event.workflow_run.conclusion != 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Gather run context
+        id: meta
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const repo = context.repo;
+
+            const result = {
+              runUrl: run.html_url,
+              conclusion: run.conclusion ?? 'unknown',
+              event: run.event,
+              runId: String(run.id),
+              commitMessage: run.head_commit?.message ?? 'n/a',
+              commitAuthor: run.head_commit?.author?.name ?? 'unknown user',
+              commitSha: run.head_sha
+            };
+
+            let prNumber = run.pull_requests?.[0]?.number;
+
+            if (!prNumber) {
+              const prs = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/pulls', {
+                owner: repo.owner,
+                repo: repo.repo,
+                ref: run.head_sha
+              });
+              prNumber = prs.data[0]?.number;
+            }
+
+            const buttons = [`View Run ${result.runUrl}`];
+
+            if (prNumber) {
+              result.pr = String(prNumber);
+              result.prUrl = `${run.head_repository.html_url}/pull/${prNumber}`;
+              buttons.push(`Pull Request ${result.pr} ${result.prUrl}`);
+            }
+
+            result.buttons = buttons.join('\n');
+
+            for (const [key, value] of Object.entries(result)) {
+              if (value !== undefined && value !== null) {
+                core.setOutput(key, value);
+              }
+            }
+      - name: Notify Microsoft Teams
+        if: vars.MSTEAMS_WEBHOOK != null
+        uses: simbo/msteams-message-card-action@d87ad6c3908b72f4fd94b55d937d05395c7300dc # v1.4.3
+        with:
+          webhook: ${{ vars.MSTEAMS_WEBHOOK }}
+          title: "Merge workflow ${{ steps.meta.outputs.conclusion }}"
+          message: "Run ${{ steps.meta.outputs.runId }} for `${{ github.repository }}` ended with `${{ steps.meta.outputs.conclusion }}`."
+          color: 'darkorange'
+          summary: "Merge workflow ${{ steps.meta.outputs.conclusion }}"
+          buttons: ${{ steps.meta.outputs.buttons }}
+          sections: |
+            -
+              activity:
+                title: ${{ steps.meta.outputs.commitAuthor }}
+                subtitle: ${{ steps.meta.outputs.commitMessage }}
+                text: Merge workflow failure for `${{ github.repository }}`.
+      - name: Notify via PR comment
+        if: vars.MSTEAMS_WEBHOOK == null && steps.meta.outputs.pr != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              '⚠️ **Merge workflow failed**',
+              '',
+              `- Conclusion: \`${{ steps.meta.outputs.conclusion }}\``,
+              `- Run: ${{ steps.meta.outputs.runUrl }}`,
+              `- Commit: ${context.payload.workflow_run.head_sha}`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number(${{ steps.meta.outputs.pr }}),
+              body
+            });
+      - name: Log failure notice
+        if: vars.MSTEAMS_WEBHOOK == null && steps.meta.outputs.pr == ''
+        run: |
+          echo "::warning::Merge workflow failed but no notification channel was available."
+          echo "Run URL: ${{ steps.meta.outputs.runUrl }}"
+
