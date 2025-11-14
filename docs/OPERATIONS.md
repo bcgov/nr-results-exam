@@ -119,6 +119,48 @@ This project extends `github>bcgov/renovate-config` which provides:
 4. **Document exceptions** if you need to ignore additional paths
 5. **Update this guide** when changing CI/CD behavior or transitioning project lifecycle stages
 
+### Workflow Failure Notifications
+
+The repository uses a GitHub-native notification system to alert maintainers when workflows fail. This system replaces MS Teams webhooks and provides better integration with GitHub's native features.
+
+**How it works:**
+
+1. **Automated Issue Creation**: When a workflow fails, a GitHub issue is automatically created with:
+   - Descriptive title indicating the failure type (PR validation, TEST deployment, PROD deployment)
+   - Direct link to the failed workflow run
+   - Priority level (critical for PROD, high for TEST, medium for PR validation)
+   - Automatic tagging of maintainers from the CODEOWNERS file
+   - Appropriate labels for filtering and tracking
+
+2. **Issue Deduplication**: The system searches for existing open issues with the same workflow failure and updates them rather than creating duplicates. This prevents notification spam and provides a single thread for tracking recurring failures.
+
+3. **Renovate PR Comments**: When a Renovate dependency update PR fails validation:
+   - A comment is added directly to the PR (no separate issue created)
+   - Maintainers are tagged in the comment
+   - Provides actionable next steps for resolving the failure
+
+4. **Priority Escalation**: Different failure types receive different priority levels:
+   - **PROD failures** (🚨): Critical priority - immediate attention required
+   - **TEST failures** (⚠️): High priority - blocks deployment pipeline
+   - **PR validation failures** (⚠️): Medium priority - blocks PR merge
+
+**Configuration:**
+
+The notification system is implemented as a reusable composite action at `.github/actions/workflow-failed-notification/`. It's integrated into:
+- `pr-validate.yml` - Notifies on PR validation failures
+- `merge.yml` - Separate notifications for TEST and PROD environment failures
+
+**Maintainer Responsibilities:**
+
+In maintenance mode, maintainers should:
+1. **Monitor GitHub notifications** for workflow failure issues and PR comments
+2. **Respond to critical PROD failures** within your team's SLA
+3. **Review and address** TEST and PR validation failures to keep the pipeline healthy
+4. **Close issues** once the underlying problem is resolved
+5. **Update CODEOWNERS** if team membership changes to ensure correct notifications
+
+For detailed documentation, see [Workflow Failure Notifications](./.github/actions/workflow-failed-notification/README.md).
+
 ### Questions or Issues?
 
 For questions about:

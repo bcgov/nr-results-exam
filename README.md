@@ -119,10 +119,15 @@ For critical updates or when automated checks are insufficient:
 - Production deployments only occur after merge to `main`
 
 **Monitoring:**
-- GitHub Actions workflow status notifications
+- Automated workflow failure notifications via GitHub Issues and PR comments
+- Failed workflows create issues tagging maintainers from CODEOWNERS
+- Renovate PR failures comment directly on the PR
+- PROD failures create critical priority issues for immediate attention
 - Dependabot security alerts monitored
 - OpenShift deployment status tracked
 - Application health monitoring in production
+
+For more details on the notification system, see [Workflow Failure Notifications](./.github/actions/workflow-failed-notification/README.md).
 
 ### Periodic Manual Review Checklist
 
