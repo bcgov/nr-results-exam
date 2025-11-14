@@ -58,6 +58,114 @@ are fully automated:
   `packageRules` block locally; otherwise defer to the upstream config to stay
   aligned with NRIDS best practices.
 
+### Automerge Expectations
+
+**When Automerge Occurs:**
+- Renovate creates PRs for dependency updates (npm packages, GitHub Actions, Docker images)
+- All required status checks pass:
+  - `Validate Results` - PR validation workflow
+  - Preview deployment succeeds to OpenShift test environment
+  - Smoke tests pass (health checks, basic functionality validation)
+- No merge conflicts exist
+- Updates are within the configured automerge policy (including major version bumps)
+
+**When Manual Intervention is Needed:**
+- Any required check fails (build errors, test failures, deployment issues)
+- Merge conflicts with other pending PRs
+- Security alerts flagged by Dependabot or scanning tools
+- Breaking changes noted in package release notes that require code changes
+
+**Automerge Timeline:**
+- Renovate runs before 6am every weekday (configured schedule)
+- New package versions wait 7 days before being proposed (stability period)
+- PRs merge automatically after all checks pass (typically within minutes to hours)
+
+### Smoke Test Coverage
+
+The PR Validate workflow ensures changes are safe before automerge:
+
+**Preview Deployment:**
+- Deploys to OpenShift test environment (`pr-<number>` namespace)
+- Backend API deployed and health-checked
+- Frontend built and served via Caddy
+
+**Automated Checks (current coverage):**
+- Backend `/health` endpoint verification
+- API root (`/api/`) success response
+- Frontend build serves HTML with expected headers
+- Security header enforcement (CSP, Permissions-Policy, HSTS, etc.)
+
+> *Database connectivity and external service integrations are not part of the automated smoke suite today; run manual checks when changes affect those areas.*
+
+**Manual Smoke Tests (When Required):**
+For critical updates or when automated checks are insufficient:
+- Navigate to preview URLs provided in PR comments
+- Verify core user workflows function correctly
+- Check authentication and authorization flows
+- Validate data operations (create, read, update, delete)
+
+### Operational Guardrails
+
+**Branch Protection:**
+- Force pushes blocked on `main`
+- Required status checks cannot be bypassed
+- At least 1 approval recommended for human-initiated PRs
+- See [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md) for complete settings
+
+**Deployment Safeguards:**
+- Workflow changes trigger full deployment validation (not ignored by `paths-ignore`)
+- Failed deployments block automerge
+- Rollback available via OpenShift deployment history
+- Production deployments only occur after merge to `main`
+
+**Monitoring:**
+- GitHub Actions workflow status notifications
+- Dependabot security alerts monitored
+- OpenShift deployment status tracked
+- Application health monitoring in production
+
+### Periodic Manual Review Checklist
+
+**Weekly (Automated via Renovate):**
+- [x] Dependency update PRs created and processed
+- [x] Automated checks run on all PRs
+- [x] Successful updates automerge
+
+**Monthly Review (Team Responsibility):**
+- [ ] Review failed Renovate PRs and resolve blockers
+- [ ] Check for stale or repeatedly failing dependency updates
+- [ ] Verify production deployment health and logs
+- [ ] Review security scan results (Dependabot, CodeQL, ZAP)
+- [ ] Confirm no manual PRs are stuck or need attention
+
+**Quarterly Review (Team Responsibility):**
+- [ ] Review and update maintenance mode policy if needed
+- [ ] Audit branch protection settings remain correct
+- [ ] Validate Renovate configuration aligns with team standards
+- [ ] Check for outdated dependencies with breaking changes
+- [ ] Review application logs for recurring errors or warnings
+- [ ] Test critical user workflows manually in production
+- [ ] Update runbook/documentation for any new operational procedures
+
+**Annual Review (Team Responsibility):**
+- [ ] Comprehensive security audit of dependencies
+- [ ] Review and update all operational documentation
+- [ ] Validate disaster recovery and backup procedures
+- [ ] Consider lifecycle stage (maintain as Stable or transition to Dormant)
+- [ ] Update team contacts and escalation procedures
+- [ ] Review and renew external service credentials/tokens
+
+**Ad-Hoc (As Needed):**
+- Major version updates that require code changes
+- Security vulnerabilities requiring immediate patching
+- Production incidents or outages
+- Changes to external service dependencies
+- Team structure or ownership changes
+
+For detailed operational procedures, see:
+- [Operations Guide](docs/OPERATIONS.md) - Maintenance mode CI/CD policy and trigger configuration
+- [Branch Protection](docs/BRANCH_PROTECTION.md) - Branch protection settings and Renovate automerge details
+
 # Stack
 
 Here you will find a comprehensive list of all the languages and tools that are
