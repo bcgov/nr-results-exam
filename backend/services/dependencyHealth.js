@@ -8,6 +8,7 @@ let lastSnapshot = null;
 let lastUpdated = 0;
 let refreshPromise = null;
 let minioClient;
+let minioConfigSignature = null;
 
 function formatAxiosError(error) {
   if (error.response) {
@@ -36,7 +37,7 @@ async function checkChes() {
   const started = Date.now();
 
   try {
-    await axios.post('' + tokenUrl, 'grant_type=client_credentials', {
+    await axios.post(tokenUrl, 'grant_type=client_credentials', {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       auth: { username: clientId, password: clientSecret },
       timeout: DEFAULT_TIMEOUT_MS
@@ -57,10 +58,6 @@ async function checkChes() {
 }
 
 function getMinioClient() {
-  if (minioClient) {
-    return minioClient;
-  }
-
   const endPoint = process.env.S3_ENDPOINT;
   const accessKey = process.env.S3_ACCESSKEY;
   const secretKey = process.env.S3_SECRETKEY;
@@ -71,6 +68,11 @@ function getMinioClient() {
 
   const port = process.env.S3_PORT ? Number(process.env.S3_PORT) : undefined;
   const useSSL = process.env.S3_USE_SSL !== 'false';
+  const signature = JSON.stringify({ endPoint, accessKey, secretKey, port, useSSL });
+
+  if (minioClient && minioConfigSignature === signature) {
+    return minioClient;
+  }
 
   minioClient = new Minio.Client({
     endPoint,
@@ -79,8 +81,18 @@ function getMinioClient() {
     useSSL,
     port
   });
+  minioConfigSignature = signature;
 
   return minioClient;
+}
+
+function withTimeout(promise, timeoutMs, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(message ?? 'Operation timed out')), timeoutMs)
+    )
+  ]);
 }
 
 async function checkObjectStore() {
@@ -102,7 +114,11 @@ async function checkObjectStore() {
 
   const started = Date.now();
   try {
-    const exists = await client.bucketExists(bucketName);
+    const exists = await withTimeout(
+      client.bucketExists(bucketName),
+      DEFAULT_TIMEOUT_MS,
+      'Minio bucketExists timeout'
+    );
     if (!exists) {
       return {
         status: 'error',
@@ -155,14 +171,6 @@ async function checkCognito() {
   }
 }
 
-function normalize(dependencies) {
-  return {
-    ches: dependencies.ches,
-    objectStorage: dependencies.objectStorage,
-    federatedAuth: dependencies.federatedAuth
-  };
-}
-
 async function runChecks() {
   const [ches, objectStorage, federatedAuth] = await Promise.all([
     checkChes(),
@@ -182,8 +190,8 @@ function computeOverallStatus(dependencies) {
     return 'error';
   }
 
-  if (statuses.includes('degraded')) {
-    return 'degraded';
+  if (statuses.length === 0) {
+    return 'skipped';
   }
 
   return 'ok';
@@ -197,10 +205,10 @@ async function ensureFresh(forceRefresh = false) {
     return lastSnapshot;
   }
 
-  if (!refreshPromise) {
+  if (forceRefresh || !refreshPromise) {
     refreshPromise = runChecks()
       .then((result) => {
-        lastSnapshot = normalize(result);
+        lastSnapshot = result;
         lastUpdated = Date.now();
         return lastSnapshot;
       })
@@ -219,7 +227,8 @@ async function getHealthStatus({ forceRefresh = false } = {}) {
   return {
     status,
     dependencies,
-    checkedAt: lastUpdated
+    checkedAt: lastUpdated,
+    refreshInProgress: Boolean(refreshPromise)
   };
 }
 

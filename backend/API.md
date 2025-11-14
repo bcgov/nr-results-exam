@@ -49,6 +49,7 @@ Use `GET /health?deep=true` to force a live dependency check instead of the cach
   "uptime": 12345.67,
   "timestamp": 1234567890123,
   "lastCheckedAt": 1234567889000,
+  "refreshInProgress": false,
   "dependencies": {
     "ches": {
       "status": "ok",
@@ -56,6 +57,7 @@ Use `GET /health?deep=true` to force a live dependency check instead of the cach
     },
     "objectStorage": {
       "status": "ok",
+      "latencyMs": 120,
       "bucket": "nr-results-bucket"
     },
     "federatedAuth": {

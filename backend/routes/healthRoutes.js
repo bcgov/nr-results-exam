@@ -13,10 +13,12 @@ router.get('/', async (req, res) => {
       uptime: process.uptime(),
       timestamp: Date.now(),
       lastCheckedAt: health.checkedAt,
+      refreshInProgress: health.refreshInProgress,
       dependencies: health.dependencies
     };
 
-    const httpStatus = health.status === 'error' ? 503 : 200;
+    const httpStatus =
+      health.status === 'error' || health.status === 'degraded' ? 503 : 200;
     res.status(httpStatus).json(payload);
   } catch (error) {
     console.error('Health check error:', error);

@@ -63,7 +63,7 @@ are fully automated:
 - `/health` now includes dependency probes for CHES, the S3/MinIO bucket, and Cognito (FAM).  
   The endpoint caches results for 60 seconds and returns `503` if any dependency reports `status: "error"`.
 - Append `?deep=true` to force a live probe when troubleshooting (synthetic monitors can call the same URL).
-- Responses list each dependency with `status`, the last check timestamp, and error details when something goes down.
+- Responses list each dependency with `status`, latency, and bucket/endpoint metadata. The payload also exposes `lastCheckedAt` and `refreshInProgress` so operators know whether the values are cached.
 
 ### Automerge Expectations
 
