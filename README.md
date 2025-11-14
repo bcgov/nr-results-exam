@@ -89,11 +89,13 @@ The PR Validate workflow ensures changes are safe before automerge:
 - Backend API deployed and health-checked
 - Frontend built and served via Caddy
 
-**Health Checks:**
+**Automated Checks (current coverage):**
 - Backend `/health` endpoint verification
-- Frontend build succeeds and serves correctly
-- Database connectivity (if applicable)
-- External service integrations validated
+- API root (`/api/`) success response
+- Frontend build serves HTML with expected headers
+- Security header enforcement (CSP, Permissions-Policy, HSTS, etc.)
+
+> *Database connectivity and external service integrations are not part of the automated smoke suite today; run manual checks when changes affect those areas.*
 
 **Manual Smoke Tests (When Required):**
 For critical updates or when automated checks are insufficient:
