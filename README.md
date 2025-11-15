@@ -231,7 +231,12 @@ The deployment includes the following network policies:
 
 # Getting started
 
-After cloning the repository install dependencies separately for the frontend and backend:
+After cloning the repository install dependencies separately for the frontend and backend.  
+Use Node.js 24 to match CI/CD runners (an `.nvmrc` is provided for convenience):
+
+```bash
+nvm use
+```
 
 ```bash
 # Frontend
