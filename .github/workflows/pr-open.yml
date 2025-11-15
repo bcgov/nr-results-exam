@@ -84,6 +84,7 @@ jobs:
         working-directory: integration-tests
         run: |
           npm ci
+          fart
           export FRONTEND_URL="https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca"
           npm run smoke
 
