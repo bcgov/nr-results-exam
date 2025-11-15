@@ -19,7 +19,10 @@ router.get('/', async (req, res) => {
 
     const httpStatus =
       health.status === 'error' || health.status === 'degraded' ? 503 : 200;
-    res.status(httpStatus).json(payload);
+    res
+      .status(httpStatus)
+      .type('application/json')
+      .send(`${JSON.stringify(payload, null, 2)}\n`);
   } catch (error) {
     console.error('Health check error:', error);
     res.status(500).json({
