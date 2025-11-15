@@ -89,9 +89,50 @@ jobs:
 
   results:
     name: PR Results
-    if: always() && !failure()
-    # Include all needs that could have failures!
+    if: always()
     needs: [builds, deploys, smoke]
     runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
     steps:
-      - run: echo "Workflow completed successfully!"
+      - name: Evaluate workflow results
+        id: summary
+        uses: ./.github/actions/workflow-results
+        with:
+          jobs: builds,deploys,smoke
+          allow_skipped: "true"
+        env:
+          RESULT_builds: ${{ needs.builds.result }}
+          RESULT_deploys: ${{ needs.deploys.result }}
+          RESULT_smoke: ${{ needs.smoke.result }}
+
+      - name: Comment on failure
+        if: steps.summary.outputs.overall_status != 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failing = JSON.parse(process.env.FAILING_JOBS || '[]');
+            const jobsLine = failing.length
+              ? failing.map((f) => `${f.name} (${f.result})`).join(', ')
+              : 'Unknown';
+            const body = [
+              '⚠️ **PR workflow failed**',
+              '',
+              `Jobs: ${jobsLine}`,
+              `[View run](${process.env.RUN_URL})`
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
+        env:
+          FAILING_JOBS: ${{ steps.summary.outputs.failing_jobs }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Fail workflow when jobs failed
+        if: steps.summary.outputs.overall_status != 'success'
+        run: |
+          echo "At least one job has failed: ${{ steps.summary.outputs.failing_jobs }}"
+          exit 1

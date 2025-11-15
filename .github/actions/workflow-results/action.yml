@@ -1,0 +1,51 @@
+name: Workflow Results
+description: Evaluate prior job results and surface failures
+
+inputs:
+  jobs:
+    description: Comma-separated list of job names to evaluate
+    required: true
+  allow_skipped:
+    description: Treat skipped jobs as success
+    default: "true"
+
+outputs:
+  overall_status:
+    description: success or failure
+    value: ${{ steps.eval.outputs.overall_status }}
+  failing_jobs:
+    description: JSON array describing failing jobs
+    value: ${{ steps.eval.outputs.failing_jobs }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Evaluate job results
+      id: eval
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const jobs = core.getInput('jobs')
+            .split(',')
+            .map((name) => name.trim())
+            .filter(Boolean);
+          const allowSkipped = core.getInput('allow_skipped') === 'true';
+          const failing = [];
+          for (const job of jobs) {
+            const envKey = `RESULT_${job}`;
+            const result = process.env[envKey];
+            if (!result) {
+              continue;
+            }
+            if (result === 'success') {
+              continue;
+            }
+            if (result === 'skipped' && allowSkipped) {
+              continue;
+            }
+            failing.push({ name: job, result });
+          }
+          const status = failing.length ? 'failure' : 'success';
+          core.setOutput('overall_status', status);
+          core.setOutput('failing_jobs', JSON.stringify(failing));
+
