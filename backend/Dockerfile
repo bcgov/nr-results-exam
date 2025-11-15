@@ -1,17 +1,17 @@
 # Build static files
-# Node Bullseye has npm
-FROM node:20.19.5-bullseye-slim AS build
+# Node Bookworm has npm
+FROM node:24.6.0-bookworm-slim AS build
 ENV NODE_ENV=production
 
 # Copy and build
 WORKDIR /app
 COPY . .
-RUN npm i --ignore-scripts --no-update-notifer --omit=dev
+RUN npm i --ignore-scripts --no-update-notifier --omit=dev
 
 
 # Deploy container
 # Distroless has node, but not npm
-FROM gcr.io/distroless/nodejs20-debian11:nonroot AS deploy
+FROM gcr.io/distroless/nodejs24-debian12:nonroot AS deploy
 ENV NODE_ENV=production
 
 # Copy over app
