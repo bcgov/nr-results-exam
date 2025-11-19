@@ -10,13 +10,10 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
-  - name: MOD_ZONE
-    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
-    required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
-  - name: SUBDOMAIN
+  - name: URL
     required: true
   - name: CPU_REQUEST
     value: "25m"
@@ -148,7 +145,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${SUBDOMAIN}.apps.silver.devops.gov.bc.ca"
+      host: "${URL}"
       port:
         targetPort: 3000-tcp
       to:

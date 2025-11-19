@@ -48,6 +48,14 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
+      - name: Get Subdomain
+        id: url
+        run: |
+          echo "subdomain=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+
   deploys:
     name: Deploys
     needs: [builds, init]
@@ -67,11 +75,11 @@ jobs:
           overwrite: true
           parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
-            -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
+            -p URL=${{ needs.init.outputs.url }}
 
   smoke:
     name: Smoke Tests
-    needs: [deploys]
+    needs: [deploys, init]
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -84,7 +92,7 @@ jobs:
         working-directory: integration-tests
         run: |
           npm ci
-          export FRONTEND_URL="https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca"
+          export FRONTEND_URL="https://${{ needs.init.outputs.url }}"
           npm run smoke
 
   results:
