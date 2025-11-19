@@ -99,7 +99,7 @@ objects:
                 - name: VITE_ZONE
                   value: "${ZONE}"
                 - name: REDIRECT_TARGET_URL
-                  value: "https://${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}/"
+                  value: "https://${NAME}-${MOD_ZONE}.${DOMAIN}/"
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:
@@ -153,7 +153,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
+      host: "${NAME}-${MOD_ZONE}.${DOMAIN}"
       port:
         targetPort: 3000-tcp
       to:

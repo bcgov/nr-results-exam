@@ -21,8 +21,8 @@ jobs:
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
-          # Main URL (with -frontend) - consistent with pr-open.yml
-          echo "url=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          # Main URL (without -frontend) - new primary format
+          echo "url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   validate:
     name: Validate PR
