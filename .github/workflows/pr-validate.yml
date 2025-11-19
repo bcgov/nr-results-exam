@@ -9,26 +9,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  init:
-    name: Initialize
+  vars:
+    name: Vars
     outputs:
-      mod-tag: ${{ steps.mod-tag.outputs.mod-tag }}
+      url: ${{ steps.url.outputs.url }}
     runs-on: ubuntu-24.04
     steps:
       - name: Get PR Number Mod 50
-        id: mod-tag
-        run: echo "mod-tag=$(( ${{ github.event.number }} % 50 ))" >> $GITHUB_OUTPUT
+        id: url
+        run: |
+          echo "url=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
 
   validate:
     name: Validate PR
-    needs: [init]
+    needs: [vars]
     permissions:
       pull-requests: write
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v1.0.0
     with:
       markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.mod-tag }}.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.mod-tag }}.apps.silver.devops.gov.bc.ca/health)
+        - [Frontend](https://${{ needs.init.vars.url }})
+        - [Backend](https://${{ needs.init.vars.url }}/health)
 
   results:
     name: Validate Results
