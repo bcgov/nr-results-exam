@@ -113,7 +113,7 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
-                - name: URL
+                - name: FRONTEND_URL
                   value: https://${URL}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
