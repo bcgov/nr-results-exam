@@ -1,0 +1,25 @@
+# OpenShift Route Redirect Template
+# This route redirects the old production URL to the new URL.
+# Deploy this route when the new URL (results-exam.apps.silver.devops.gov.bc.ca) is active.
+# Note: Verify backend FRONTEND_URL env var is updated to use the new URL when deploying new routes.
+apiVersion: template.openshift.io/v1
+kind: Template
+parameters:
+  - name: DOMAIN
+    value: apps.silver.devops.gov.bc.ca
+objects:
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: nr-results-exam-prod-frontend-redirect
+      labels:
+        app: nr-results-exam-prod
+        purpose: url-redirect
+    spec:
+      host: nr-results-exam-prod-frontend.${DOMAIN}
+      redirect:
+        to: https://results-exam.${DOMAIN}/
+        statusCode: 301
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
