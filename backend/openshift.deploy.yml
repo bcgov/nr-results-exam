@@ -16,8 +16,8 @@ parameters:
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
-  - name: DOMAIN
-    value: apps.silver.devops.gov.bc.ca
+  - name: URL
+    required: true
   - name: CPU_REQUEST
     value: "25m"
   - name: MEMORY_REQUEST
@@ -116,8 +116,8 @@ objects:
                     secretKeyRef:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
-                - name: FRONTEND_URL
-                  value: https://${NAME}-${MOD_ZONE}-frontend.${DOMAIN}
+                - name: URL
+                  value: https://${URL}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: VITE_USER_POOLS_ID

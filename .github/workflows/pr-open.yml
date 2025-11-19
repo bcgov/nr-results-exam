@@ -51,9 +51,11 @@ jobs:
         id: url
         run: |
           echo "url=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+          echo "url_legacy=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
 
     outputs:
       url: ${{ steps.url.outputs.url }}
+      url_legacy: ${{ steps.url.outputs.url_legacy }}
 
   deploys:
     name: Deploys
@@ -63,6 +65,9 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
+        include:
+          - name: frontend
+            params: -p URL_LEGACY=${{ needs.init.outputs.url_legacy }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         id: deploys
