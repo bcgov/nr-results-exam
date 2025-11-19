@@ -50,8 +50,11 @@ jobs:
       - name: Get URL
         id: url
         run: |
-          echo "url=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
-          echo "url_legacy=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+          DOMAIN="apps.silver.devops.gov.bc.ca"
+          REPO="${{ github.event.repository.name }}"
+          ZONE="$(( ${{ github.event.number }} % 50 ))"
+          echo "url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "url_legacy=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
 
     outputs:
       url: ${{ steps.url.outputs.url }}
