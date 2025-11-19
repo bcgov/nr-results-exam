@@ -164,15 +164,14 @@ objects:
       labels:
         app: ${NAME}-${ZONE}
         purpose: url-redirect
+      annotations:
+        haproxy.router.openshift.io/redirect: "https://${URL}/"
     spec:
       host: "${URL_LEGACY}"
       to:
         kind: Service
         name: "${NAME}-${ZONE}-${COMPONENT}"
         weight: 100
-      redirect:
-        to: https://${URL}/
-        statusCode: 301
       tls:
         termination: edge
         insecureEdgeTerminationPolicy: Redirect
