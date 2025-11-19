@@ -46,10 +46,9 @@
 	}
 
 	# Redirect old URL format to new URL format
-	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (excludes *-frontend.apps...)
+	# Matches format: *-<number>-frontend.apps.silver.devops.gov.bc.ca
 	@legacy_host {
-		header Host "*.apps.silver.devops.gov.bc.ca"
-		not header Host "*-frontend.apps.silver.devops.gov.bc.ca"
+		header Host "*-frontend.apps.silver.devops.gov.bc.ca"
 	}
 	handle @legacy_host {
 		redir {env.REDIRECT_TARGET_URL} permanent
