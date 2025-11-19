@@ -160,7 +160,7 @@ objects:
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${NAME}-${ZONE}-frontend-legacy-redirect
+      name: ${NAME}-${ZONE}-frontend-redirect
       labels:
         app: ${NAME}-${ZONE}
         purpose: url-redirect
