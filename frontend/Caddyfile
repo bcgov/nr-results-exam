@@ -46,9 +46,7 @@
 	}
 
 	# Redirect old URL format to new URL format
-	# TEMPORARY: Pattern matches URLs WITHOUT -frontend (swapped for testing)
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (excludes *-frontend.apps...)
-	# TODO: Change back to "*-frontend.apps.silver.devops.gov.bc.ca" before merging to production
 	@legacy_host {
 		header Host "*.apps.silver.devops.gov.bc.ca"
 		not header Host "*-frontend.apps.silver.devops.gov.bc.ca"

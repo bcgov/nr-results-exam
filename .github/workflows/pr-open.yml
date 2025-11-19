@@ -53,8 +53,6 @@ jobs:
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
-          # TEMPORARY: Swapped for testing - new URL uses -frontend (works with current whitelist)
-          # TODO: Swap back before merging to production
           echo "url=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
           echo "url_legacy=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
