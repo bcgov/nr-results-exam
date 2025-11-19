@@ -70,7 +70,7 @@ jobs:
         name: [backend, frontend]
         include:
           - name: frontend
-            params: -p URL_LEGACY=${{ needs.init.outputs.url_legacy }}
+            params: -p URL=${{ needs.init.outputs.url }} -p URL_LEGACY=${{ needs.init.outputs.url_legacy }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         id: deploys
@@ -82,7 +82,6 @@ jobs:
           overwrite: true
           parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
-            -p URL=${{ needs.init.outputs.url }}
             ${{ matrix.params }}
 
   smoke:

@@ -35,68 +35,15 @@ const mailRateLimiter = rateLimit({
   legacyHeaders: false
 });
 
-const frontendUrl = process.env.FRONTEND_URL;
-const whitelist = [
-  'http://localhost:3000', // For local development
-  frontendUrl // Frontend URL from environment variable
-].filter(Boolean); // Remove any undefined values
-
 const getCorsOptions = (req) => ({
   origin: function (origin, callback) {
-    // Allow requests with no origin only if they come from the internal proxy
-    // (validated by custom header set by Caddy)
-    if (!origin) {
-      // For server-to-server requests, require the X-Forwarded-By header
-      // This adds defense-in-depth beyond network isolation
-      if (req.headers['x-forwarded-by'] === 'caddy-proxy') {
-        return callback(null, true);
-      }
-      // Deny requests without origin and without the trusted proxy header
-      return callback(new Error('CORS: Requests with no origin must come from trusted proxy'));
+    // All requests must come through Caddy proxy (defense-in-depth)
+    // This validates that requests are proxied by Caddy, not direct access
+    if (req.headers['x-forwarded-by'] === 'caddy-proxy') {
+      return callback(null, true);
     }
-    
-    // Check if origin matches any whitelisted domain (by hostname)
-    try {
-      const originUrl = new URL(origin);
-      const isAllowed = whitelist.some((allowed) => {
-        try {
-          const allowedUrl = new URL(allowed);
-          // Match by hostname (and port if specified in whitelist)
-          // Always compare effective ports (explicit or default)
-          const getEffectivePort = (url) => {
-            if (url.port) return url.port;
-            if (url.protocol === 'http:') return '80';
-            if (url.protocol === 'https:') return '443';
-            return '';
-          };
-          return (
-            originUrl.hostname === allowedUrl.hostname &&
-            getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
-          );
-        } catch (_e) {
-          // If whitelist entry is not a valid URL, fallback to string/host:port comparison
-          // Support 'hostname' or 'hostname:port' in whitelist
-          const [allowedHost, allowedPort] = allowed.split(':');
-          if (allowedPort) {
-            // Compare both hostname and port
-            return (
-              originUrl.hostname === allowedHost &&
-              originUrl.port === allowedPort
-            );
-          } else {
-            // Compare only hostname
-            return originUrl.hostname === allowedHost;
-          }
-        }
-      });
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    } catch (_e) {
-      callback(new Error('Not allowed by CORS'));
-    }
+    // Deny all requests that don't come through the trusted proxy
+    return callback(new Error('Not allowed by CORS: Request must come through Caddy proxy'));
   }
 });
 
