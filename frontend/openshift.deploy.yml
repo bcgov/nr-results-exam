@@ -166,6 +166,10 @@ objects:
         purpose: url-redirect
     spec:
       host: "${URL_LEGACY}"
+      to:
+        kind: Service
+        name: "${NAME}-${ZONE}-${COMPONENT}"
+        weight: 100
       redirect:
         to: https://${URL}/
         statusCode: 301
