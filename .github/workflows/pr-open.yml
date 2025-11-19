@@ -28,7 +28,6 @@ jobs:
           package: ${{ matrix.package }}
           tags: ${{ github.event.number }}
           tag_fallback: latest
-          triggers: ('${{ matrix.triggers }}/')
 
   # https://github.com/bcgov/action-deployer-openshift
   init:
@@ -48,10 +47,10 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
-      - name: Get Subdomain
+      - name: Get URL
         id: url
         run: |
-          echo "subdomain=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+          echo "url=${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 )).apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
 
     outputs:
       url: ${{ steps.url.outputs.url }}
