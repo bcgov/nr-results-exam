@@ -16,8 +16,8 @@ parameters:
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
-  - name: DOMAIN
-    value: apps.silver.devops.gov.bc.ca
+  - name: SUBDOMAIN
+    required: true
   - name: CPU_REQUEST
     value: "25m"
   - name: MEMORY_REQUEST
@@ -148,7 +148,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
+      host: "${SUBDOMAIN}.apps.silver.devops.gov.bc.ca"
       port:
         targetPort: 3000-tcp
       to:
