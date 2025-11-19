@@ -83,6 +83,7 @@ jobs:
           parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
             -p URL=${{ needs.init.outputs.url }}
+            ${{ matrix.params }}
 
   smoke:
     name: Smoke Tests

@@ -22,13 +22,16 @@ jobs:
   validate:
     name: Validate PR
     needs: [init]
+    env:
+      DOMAIN: apps.silver.devops.gov.bc.ca
+      REPO: ${{ github.event.repository.name }}
     permissions:
       pull-requests: write
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v1.0.0
     with:
       markdown_links: |
-        - [Frontend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.mod-tag }}-frontend.apps.silver.devops.gov.bc.ca)
-        - [Backend](https://${{ github.event.repository.name }}-${{ needs.init.outputs.mod-tag }}-frontend.apps.silver.devops.gov.bc.ca/health)
+        - [Frontend](https://${{ env.REPO }}-${{ needs.init.outputs.mod-tag }}.${{ env.DOMAIN }})
+        - [Backend](https://${{ env.REPO }}-${{ needs.init.outputs.mod-tag }}.${{ env.DOMAIN }}/health)
 
   results:
     name: Validate Results
