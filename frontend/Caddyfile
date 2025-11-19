@@ -45,9 +45,12 @@
 		Cross-Origin-Embedder-Policy "credentialless"
 	}
 
-	# Redirect old URL format (-frontend suffix) to new URL format
+	# Redirect old URL format to new URL format
+	# TEMPORARY: Pattern matches URLs WITHOUT -frontend (swapped for testing)
+	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (excludes *-frontend.apps...)
+	# TODO: Change back to "*-frontend.apps.silver.devops.gov.bc.ca" before merging to production
 	@legacy_host {
-		header Host "*-frontend.apps.silver.devops.gov.bc.ca"
+		expression {header.Host} =~ "^.*-\\d+\\.apps\\.silver\\.devops\\.gov\\.bc\\.ca$"
 	}
 	handle @legacy_host {
 		redir {env.REDIRECT_TARGET_URL} permanent
