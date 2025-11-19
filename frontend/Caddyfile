@@ -26,7 +26,7 @@
 		Strict-Transport-Security "max-age=31536000"
 		# Content Security Policy - strict policy with no unsafe directives
 		Content-Security-Policy "base-uri 'self';
-			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
+			connect-src 'self' https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			default-src 'self';
 			font-src 'self';
 			form-action 'self';

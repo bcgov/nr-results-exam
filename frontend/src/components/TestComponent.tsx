@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { env } from '../env';
 import { sendAdminReport, sendUserReport } from '../services/EmailService';
 import { Loading } from "@carbon/react";
 import {
@@ -21,8 +20,6 @@ interface ComponentProps {
 const areAnswersComplete = (answers: Array<number | undefined>): answers is number[] =>
   !answers.some((answer) => answer === undefined);
 
-const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '');
-
 const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileName }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<Array<number | undefined>>([]);
@@ -38,7 +35,7 @@ const TestComponent: React.FC<ComponentProps> = ({ user, testName, questionFileN
   const fetchQuestions = async () => {
     try {
       const token = getAuthIdToken();
-      const requestUrl = `${backendUrl}/api/questions/questions${questionFileName}`;
+      const requestUrl = `/api/questions/questions${questionFileName}`;
       if (!token) {
         console.warn('No authentication token available for questions request');
       }

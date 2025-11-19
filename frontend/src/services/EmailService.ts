@@ -2,8 +2,6 @@ import axios from 'axios'
 import { env } from '../env'
 import { getAuthIdToken } from './AuthService'
 
-const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '')
-
 interface EmailParams {
   fromEmail: string;
   toEmails: string[];
@@ -56,7 +54,7 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
     const config = token
       ? { headers: { Authorization: `Bearer ${token}` } }
       : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
+    await axios.post('/api/mail', emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending user report email:', error)
@@ -139,7 +137,7 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
     const config = token
       ? { headers: { Authorization: `Bearer ${token}` } }
       : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
+    await axios.post('/api/mail', emailParams, config)
     return 'success'
   } catch (error) {
     console.error('Error sending admin report email:', error)

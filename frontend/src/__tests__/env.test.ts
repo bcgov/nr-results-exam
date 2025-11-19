@@ -13,7 +13,6 @@ describe("env runtime configuration extraction", () => {
         data-vite-client-id='client-id'
         data-vite-pool-id='pool-id'
         data-vite-zone='ZONE'
-        data-vite-backend-url='https://example.test/api'
       ></div>
     `;
 
@@ -22,7 +21,6 @@ describe("env runtime configuration extraction", () => {
     expect(env.VITE_USER_POOLS_WEB_CLIENT_ID).toBe("client-id");
     expect(env.VITE_USER_POOLS_ID).toBe("pool-id");
     expect(env.VITE_ZONE).toBe("ZONE");
-    expect(env.VITE_BACKEND_URL).toBe("https://example.test/api");
   });
 
   test("returns import meta values when data attributes contain unresolved placeholders", async () => {
@@ -32,7 +30,6 @@ describe("env runtime configuration extraction", () => {
         data-vite-client-id='{{env "VITE_USER_POOLS_WEB_CLIENT_ID"}}'
         data-vite-pool-id='{{env "VITE_USER_POOLS_ID"}}'
         data-vite-zone='{{env "VITE_ZONE"}}'
-        data-vite-backend-url='{{env "VITE_BACKEND_URL"}}'
       ></div>
     `;
 
@@ -41,6 +38,5 @@ describe("env runtime configuration extraction", () => {
     expect(env.VITE_USER_POOLS_WEB_CLIENT_ID).toBeUndefined();
     expect(env.VITE_USER_POOLS_ID).toBeUndefined();
     expect(env.VITE_ZONE).toBeUndefined();
-    expect(env.VITE_BACKEND_URL).toBeUndefined();
   });
 });
