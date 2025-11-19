@@ -50,7 +50,8 @@
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (excludes *-frontend.apps...)
 	# TODO: Change back to "*-frontend.apps.silver.devops.gov.bc.ca" before merging to production
 	@legacy_host {
-		expression {header.Host} =~ "^.*-\\d+\\.apps\\.silver\\.devops\\.gov\\.bc\\.ca$"
+		header Host "*.apps.silver.devops.gov.bc.ca"
+		not header Host "*-frontend.apps.silver.devops.gov.bc.ca"
 	}
 	handle @legacy_host {
 		redir {env.REDIRECT_TARGET_URL} permanent
