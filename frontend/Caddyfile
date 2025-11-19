@@ -45,6 +45,14 @@
 		Cross-Origin-Embedder-Policy "credentialless"
 	}
 
+	# Redirect old URL format (-frontend suffix) to new URL format
+	@legacy_host {
+		host_regexp ".*-frontend\\.apps\\.silver\\.devops\\.gov\\.bc\\.ca$"
+	}
+	handle @legacy_host {
+		redir {env.REDIRECT_TARGET_URL} permanent
+	}
+
 	# Proxy backend API requests to internal backend service
 	handle /api/* {
 		reverse_proxy {$BACKEND_SERVICE_URL} {

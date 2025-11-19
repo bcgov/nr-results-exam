@@ -94,6 +94,8 @@ objects:
                   value: ${VITE_USER_POOLS_ID}
                 - name: VITE_ZONE
                   value: "${ZONE}"
+                - name: REDIRECT_TARGET_URL
+                  value: "https://${URL}/"
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
               ports:
@@ -160,14 +162,14 @@ objects:
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${NAME}-${ZONE}-frontend-redirect
+      name: ${NAME}-${ZONE}-frontend-legacy
       labels:
         app: ${NAME}-${ZONE}
         purpose: url-redirect
-      annotations:
-        haproxy.router.openshift.io/redirect: "https://${URL}/"
     spec:
       host: "${URL_LEGACY}"
+      port:
+        targetPort: 3000-tcp
       to:
         kind: Service
         name: "${NAME}-${ZONE}-${COMPONENT}"
