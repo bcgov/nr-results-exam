@@ -28,8 +28,8 @@ jobs:
     uses: bcgov/quickstart-openshift-helpers/.github/workflows/.pr-validate.yml@v1.0.0
     with:
       markdown_links: |
-        - [Frontend](https://${{ needs.init.vars.url }})
-        - [Backend](https://${{ needs.init.vars.url }}/health)
+        - [Frontend](https://${{ needs.vars.vars.url }})
+        - [Backend](https://${{ needs.vars.vars.url }}/health)
 
   results:
     name: Validate Results
