@@ -35,6 +35,9 @@ jobs:
     name: Init
     runs-on: ubuntu-24.04
     timeout-minutes: 1
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+      url_legacy: ${{ steps.url.outputs.url_legacy }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -47,6 +50,17 @@ jobs:
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+
+      - name: Calculate URLs
+        id: url
+        run: |
+          DOMAIN="apps.silver.devops.gov.bc.ca"
+          REPO="${{ github.event.repository.name }}"
+          ZONE="$(( ${{ github.event.number }} % 50 ))"
+          # Main URL (with -frontend) - current working format, unchanged
+          echo "url=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          # Legacy URL (without -frontend) - for future redirect support
+          echo "url_legacy=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys
