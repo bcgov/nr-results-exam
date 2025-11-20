@@ -17,6 +17,17 @@
 		level {$LOG_LEVEL}
 	}
 
+	# Redirect legacy URL format to main URL format
+	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
+	# Only redirect if hostname doesn't contain "-frontend" and matches the legacy pattern
+	@legacy_host {
+		header Host *.apps.silver.devops.gov.bc.ca
+		expression `!{http.request.host}.contains("-frontend")`
+	}
+	handle @legacy_host {
+		redir {env.REDIRECT_TARGET_URL} permanent
+	}
+
 	header {
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
