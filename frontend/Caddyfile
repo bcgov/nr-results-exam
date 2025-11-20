@@ -47,11 +47,11 @@
 
 	# Redirect legacy URL format to main URL format
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
-	# Uses host matcher with specific pattern to avoid matching -frontend URLs
-	# Pattern: *-*.apps... matches repo-zone.apps... but we exclude -frontend explicitly
+	# IMPORTANT: This redirect only applies to the legacy route (URL_LEGACY)
+	# Only redirect if hostname doesn't contain "-frontend" and matches the legacy pattern
 	@legacy_host {
-		host *.apps.silver.devops.gov.bc.ca
-		not host *-frontend.apps.silver.devops.gov.bc.ca
+		header Host *.apps.silver.devops.gov.bc.ca
+		expression `!{http.request.host}.contains("-frontend")`
 	}
 	handle @legacy_host {
 		redir {env.REDIRECT_TARGET_URL} permanent
