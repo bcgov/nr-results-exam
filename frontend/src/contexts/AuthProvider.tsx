@@ -55,7 +55,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(undefined);
         setUserRoles(undefined);
       }
-    } catch {
+    } catch (error) {
+      console.error('Error loading user token:', error);
       setUser(undefined);
       setUserRoles(undefined);
     } finally {
@@ -64,6 +65,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check for OAuth callback errors in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    
+    if (error) {
+      console.error('OAuth callback error:', error, errorDescription);
+      // Clear error params from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
     refreshUserState();
     const interval = setInterval(loadUserToken, 3 * 60 * 1000);
     return () => clearInterval(interval);
