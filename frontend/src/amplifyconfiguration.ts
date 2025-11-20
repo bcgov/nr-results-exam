@@ -25,7 +25,10 @@ const amplifyconfig = {
         oauth: {
           domain: env.VITE_AWS_DOMAIN || "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com",
           scopes: [ 'openid' ],
-          redirectSignIn: [ `${window.location.origin}/dashboard` ],
+          redirectSignIn: [ 
+            `${window.location.origin}/dashboard`,
+            `${window.location.origin}/`
+          ],
           redirectSignOut: [ redirectSignOut ],
           responseType: verificationMethods
         }
