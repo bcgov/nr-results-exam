@@ -17,16 +17,16 @@
 		level {$LOG_LEVEL}
 	}
 
-	# Redirect legacy URL format to main URL format
+	# Redirect from URL format to main URL format
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
-	# Only redirect if hostname doesn't contain "-frontend" and matches the legacy pattern
+	# Only redirect if hostname doesn't contain "-frontend" and matches the redirect from pattern
 	# Redirects are logged in Caddy access logs with status 301
-	@legacy_host {
+	@redirect_from_host {
 		header Host *.apps.silver.devops.gov.bc.ca
 		expression `!http.request.host.contains("-frontend")`
 	}
-	handle @legacy_host {
-		redir {env.REDIRECT_TARGET_URL} permanent
+	handle @redirect_from_host {
+		redir {env.REDIRECT_TO_URL} permanent
 	}
 
 	header {

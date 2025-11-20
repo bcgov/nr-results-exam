@@ -48,8 +48,8 @@ parameters:
     value: "ca-central-1_t2HSZBHur"
   - name: VITE_ZONE
     value: PROD
-  - name: URL_LEGACY
-    description: Legacy URL for redirect (without -frontend suffix)
+  - name: REDIRECT_FROM_URL
+    description: Source URL for redirect (without -frontend suffix)
     required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
@@ -100,7 +100,7 @@ objects:
                   value: "${ZONE}"
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
-                - name: REDIRECT_TARGET_URL
+                - name: REDIRECT_TO_URL
                   value: "https://${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}/"
               ports:
                 - containerPort: 3000
@@ -166,12 +166,12 @@ objects:
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${NAME}-${ZONE}-${COMPONENT}-legacy
+      name: ${NAME}-${ZONE}-${COMPONENT}-redirect-from
       labels:
         app: ${NAME}-${ZONE}
         purpose: url-redirect
     spec:
-      host: "${URL_LEGACY}"
+      host: "${REDIRECT_FROM_URL}"
       port:
         targetPort: 3000-tcp
       to:

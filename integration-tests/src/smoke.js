@@ -165,7 +165,7 @@ const checks = [
     }
   },
   {
-    name: "legacy URL redirect",
+    name: "redirect from URL",
     url: frontendUrl.replace("-frontend", ""),
     validate: async (response) => {
       // This check is handled specially in executeCheck for redirect validation
