@@ -20,6 +20,7 @@
 	# Redirect legacy URL format to main URL format
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
 	# Only redirect if hostname doesn't contain "-frontend" and matches the legacy pattern
+	# Redirects are logged in Caddy access logs with status 301
 	@legacy_host {
 		header Host *.apps.silver.devops.gov.bc.ca
 		expression `!{http.request.host}.contains("-frontend")`

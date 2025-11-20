@@ -163,10 +163,102 @@ const checks = [
       }
       return response.status === 200;
     }
+  },
+  {
+    name: "legacy URL redirect",
+    url: frontendUrl.replace("-frontend", ""),
+    validate: async (response) => {
+      // This check is handled specially in executeCheck for redirect validation
+      return true;
+    },
+    checkRedirect: true,
+    expectedRedirect: frontendUrl
   }
 ];
 
 const executeCheck = async (check) => {
+  // Handle redirect checks specially
+  if (check.checkRedirect) {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
+      try {
+        const response = await axios.get(check.url, {
+          maxRedirects: 0,
+          validateStatus: (status) => status >= 200 && status < 400,
+          timeout: timeoutMs,
+          headers: {
+            Origin: origin
+          }
+        });
+        
+        if (response.status !== 301 && response.status !== 308) {
+          throw new Error(`Expected 301 or 308 redirect, got ${response.status}`);
+        }
+        
+        const location = response.headers.location;
+        if (!location) {
+          throw new Error("Redirect response missing Location header");
+        }
+        
+        const expectedLocation = check.expectedRedirect.endsWith('/') 
+          ? check.expectedRedirect 
+          : `${check.expectedRedirect}/`;
+        
+        if (location !== expectedLocation && location !== check.expectedRedirect) {
+          throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${check.expectedRedirect}, got ${location}`);
+        }
+        
+        const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
+        console.info(
+          `✅ ${check.name} redirected ${response.status} from ${check.url} to ${location}${attemptInfo}`
+        );
+        return;
+      } catch (error) {
+        const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 301 || error.response?.status === 308) {
+            // Got redirect, check Location header
+            const location = error.response.headers.location;
+            const expectedLocation = check.expectedRedirect.endsWith('/') 
+              ? check.expectedRedirect 
+              : `${check.expectedRedirect}/`;
+            if (location === expectedLocation || location === check.expectedRedirect) {
+              const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
+              console.info(
+                `✅ ${check.name} redirected ${error.response.status} from ${check.url} to ${location}${attemptInfo}`
+              );
+              return;
+            }
+            throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${check.expectedRedirect}, got ${location}`);
+          }
+          console.error(
+            `${attemptPrefix}: request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
+          );
+          if (error.response?.data) {
+            console.error("Response body:", error.response.data);
+          }
+        } else {
+          console.error(attemptPrefix, error);
+        }
+
+        const retryable = isRetryableError(error);
+        if (!retryable || attempt === MAX_RETRIES) {
+          throw error;
+        }
+
+        const backoffMs = Math.min(
+          RETRY_DELAY_MS * (2 ** (attempt - 1)),
+          MAX_RETRY_DELAY_MS
+        );
+        console.warn(
+          `Retrying ${check.name} in ${backoffMs}ms (retryable error detected)`
+        );
+        await delay(backoffMs);
+      }
+    }
+    return;
+  }
+  
+  // Standard check execution
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
       const response = await axios.get(check.url, {
