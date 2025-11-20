@@ -48,6 +48,9 @@ parameters:
     value: "ca-central-1_t2HSZBHur"
   - name: VITE_ZONE
     value: PROD
+  - name: URL_LEGACY
+    description: Legacy URL for redirect (without -frontend suffix)
+    required: false
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
