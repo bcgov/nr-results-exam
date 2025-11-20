@@ -69,6 +69,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     const errorDescription = urlParams.get('error_description');
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
     
     if (error) {
       console.error('OAuth callback error:', error, errorDescription);
@@ -76,7 +78,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     
-    refreshUserState();
+    // If we have OAuth callback parameters, wait a bit for Amplify to process them
+    // Amplify automatically handles the callback, but we need to give it time
+    if (code || state) {
+      console.log('OAuth callback detected, waiting for Amplify to process...');
+      // Wait a moment for Amplify to process the callback, then refresh user state
+      setTimeout(() => {
+        refreshUserState();
+      }, 500);
+    } else {
+      refreshUserState();
+    }
+    
     const interval = setInterval(loadUserToken, 3 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
