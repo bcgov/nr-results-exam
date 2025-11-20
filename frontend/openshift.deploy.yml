@@ -50,7 +50,7 @@ parameters:
     value: PROD
   - name: URL_LEGACY
     description: Legacy URL for redirect (without -frontend suffix)
-    required: false
+    required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
@@ -154,6 +154,24 @@ objects:
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
       host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
+      port:
+        targetPort: 3000-tcp
+      to:
+        kind: Service
+        name: "${NAME}-${ZONE}-${COMPONENT}"
+        weight: 100
+      tls:
+        termination: edge
+        insecureEdgeTerminationPolicy: Redirect
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: ${NAME}-${ZONE}-${COMPONENT}-legacy
+      labels:
+        app: ${NAME}-${ZONE}
+        purpose: url-redirect
+    spec:
+      host: "${URL_LEGACY}"
       port:
         targetPort: 3000-tcp
       to:
