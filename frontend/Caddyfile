@@ -23,7 +23,7 @@
 	# Redirects are logged in Caddy access logs with status 301
 	@legacy_host {
 		header Host *.apps.silver.devops.gov.bc.ca
-		expression `!{http.request.host.contains("-frontend")}`
+		expression `!http.request.host.contains("-frontend")`
 	}
 	handle @legacy_host {
 		redir {env.REDIRECT_TARGET_URL} permanent
