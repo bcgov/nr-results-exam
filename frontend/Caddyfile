@@ -21,10 +21,10 @@
 	# Match only the specific redirect-from hostname from environment variable
 	# This ensures only the intended redirect-from URL is redirected, not main URLs
 	@redirect_from_host {
-		header Host {env.REDIRECT_FROM_HOST}
+		header Host {$REDIRECT_FROM_HOST}
 	}
 	handle @redirect_from_host {
-		redir {env.URL} permanent
+		redir {$URL} permanent
 	}
 
 	header {

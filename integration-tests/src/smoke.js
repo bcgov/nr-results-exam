@@ -167,10 +167,7 @@ const checks = [
   {
     name: "redirect from URL",
     url: frontendUrl.replace("-frontend", ""),
-    validate: async (response) => {
-      // This check is handled specially in executeCheck for redirect validation
-      return true;
-    },
+    // Redirect validation is handled via checkRedirect in executeCheck
     checkRedirect: true,
     expectedRedirect: frontendUrl
   }
