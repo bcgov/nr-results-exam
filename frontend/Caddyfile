@@ -21,12 +21,8 @@
 	# Only redirect URLs that match *.apps.silver.devops.gov.bc.ca but don't contain "-frontend"
 	# This ensures main URLs (with -frontend) are never redirected
 	@redirect_from_host {
-		header Host {
-			*.apps.silver.devops.gov.bc.ca
-		}
-		not header Host {
-			*-frontend.apps.silver.devops.gov.bc.ca
-		}
+		header Host *.apps.silver.devops.gov.bc.ca
+		not header Host *-frontend.apps.silver.devops.gov.bc.ca
 	}
 	handle @redirect_from_host {
 		redir {env.REDIRECT_TO_URL} permanent
