@@ -49,7 +49,7 @@ parameters:
   - name: VITE_ZONE
     value: PROD
   - name: REDIRECT_FROM_URL
-    description: URL for redirect
+    description: Hostname for the redirect-from URL (without protocol, e.g., nr-results-exam-12.apps.silver.devops.gov.bc.ca)
     required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update

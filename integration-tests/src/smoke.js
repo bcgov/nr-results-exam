@@ -176,7 +176,7 @@ const checks = [
   }
 ];
 
-const validateRedirectLocation = (location, expectedRedirect, checkName) => {
+const validateRedirectLocation = (location, expectedRedirect) => {
   if (!location) {
     throw new Error("Redirect response missing Location header");
   }
@@ -210,31 +210,32 @@ const executeCheck = async (check) => {
           throw new Error(`Expected 301 or 308 redirect, got ${response.status}`);
         }
         
-        const location = validateRedirectLocation(
-          response.headers.location,
-          check.expectedRedirect,
-          check.name
-        );
+        // Extract location and status from response
+        const location = response.headers.location;
+        const status = response.status;
+        
+        // Validate redirect location
+        validateRedirectLocation(location, check.expectedRedirect);
         
         const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
         console.info(
-          `✅ ${check.name} redirected ${response.status} from ${check.url} to ${location}${attemptInfo}`
+          `✅ ${check.name} redirected ${status} from ${check.url} to ${location}${attemptInfo}`
         );
         return;
       } catch (error) {
         const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 301 || error.response?.status === 308) {
-            // Got redirect, check Location header
+            // Got redirect, extract location and status from error response
+            const location = error.response.headers.location;
+            const status = error.response.status;
+            
+            // Validate redirect location (reuse same validation logic)
             try {
-              const location = validateRedirectLocation(
-                error.response.headers.location,
-                check.expectedRedirect,
-                check.name
-              );
+              validateRedirectLocation(location, check.expectedRedirect);
               const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
               console.info(
-                `✅ ${check.name} redirected ${error.response.status} from ${check.url} to ${location}${attemptInfo}`
+                `✅ ${check.name} redirected ${status} from ${check.url} to ${location}${attemptInfo}`
               );
               return;
             } catch (validationError) {
