@@ -17,6 +17,21 @@
 		level {$LOG_LEVEL}
 	}
 
+	# Redirect from URL format to main URL format
+	# Only redirect URLs that match *.apps.silver.devops.gov.bc.ca but don't contain "-frontend"
+	# This ensures main URLs (with -frontend) are never redirected
+	@redirect_from_host {
+		header Host {
+			*.apps.silver.devops.gov.bc.ca
+		}
+		not header Host {
+			*-frontend.apps.silver.devops.gov.bc.ca
+		}
+	}
+	handle @redirect_from_host {
+		redir {env.REDIRECT_TO_URL} permanent
+	}
+
 	header {
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
