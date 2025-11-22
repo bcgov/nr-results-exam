@@ -18,11 +18,10 @@
 	}
 
 	# Redirect from URL format to main URL format
-	# Only redirect URLs that match *.apps.silver.devops.gov.bc.ca but don't contain "-frontend"
-	# This ensures main URLs (with -frontend) are never redirected
+	# Match only the specific redirect-from hostname from environment variable
+	# This ensures only the intended redirect-from URL is redirected, not main URLs
 	@redirect_from_host {
-		header Host *.apps.silver.devops.gov.bc.ca
-		not header Host *-frontend.apps.silver.devops.gov.bc.ca
+		header Host {env.REDIRECT_FROM_HOST}
 	}
 	handle @redirect_from_host {
 		redir {env.REDIRECT_TO_URL} permanent
