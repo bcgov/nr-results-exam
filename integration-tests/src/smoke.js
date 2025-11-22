@@ -176,6 +176,22 @@ const checks = [
   }
 ];
 
+const validateRedirectLocation = (location, expectedRedirect, checkName) => {
+  if (!location) {
+    throw new Error("Redirect response missing Location header");
+  }
+  
+  const expectedLocation = expectedRedirect.endsWith('/') 
+    ? expectedRedirect 
+    : `${expectedRedirect}/`;
+  
+  if (location !== expectedLocation && location !== expectedRedirect) {
+    throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${expectedRedirect}, got ${location}`);
+  }
+  
+  return location;
+};
+
 const executeCheck = async (check) => {
   // Handle redirect checks specially
   if (check.checkRedirect) {
@@ -194,18 +210,11 @@ const executeCheck = async (check) => {
           throw new Error(`Expected 301 or 308 redirect, got ${response.status}`);
         }
         
-        const location = response.headers.location;
-        if (!location) {
-          throw new Error("Redirect response missing Location header");
-        }
-        
-        const expectedLocation = check.expectedRedirect.endsWith('/') 
-          ? check.expectedRedirect 
-          : `${check.expectedRedirect}/`;
-        
-        if (location !== expectedLocation && location !== check.expectedRedirect) {
-          throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${check.expectedRedirect}, got ${location}`);
-        }
+        const location = validateRedirectLocation(
+          response.headers.location,
+          check.expectedRedirect,
+          check.name
+        );
         
         const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
         console.info(
@@ -217,18 +226,20 @@ const executeCheck = async (check) => {
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 301 || error.response?.status === 308) {
             // Got redirect, check Location header
-            const location = error.response.headers.location;
-            const expectedLocation = check.expectedRedirect.endsWith('/') 
-              ? check.expectedRedirect 
-              : `${check.expectedRedirect}/`;
-            if (location === expectedLocation || location === check.expectedRedirect) {
+            try {
+              const location = validateRedirectLocation(
+                error.response.headers.location,
+                check.expectedRedirect,
+                check.name
+              );
               const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
               console.info(
                 `✅ ${check.name} redirected ${error.response.status} from ${check.url} to ${location}${attemptInfo}`
               );
               return;
+            } catch (validationError) {
+              throw validationError;
             }
-            throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${check.expectedRedirect}, got ${location}`);
           }
           console.error(
             `${attemptPrefix}: request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
