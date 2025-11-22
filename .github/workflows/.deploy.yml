@@ -22,6 +22,10 @@ on:
         description: Frontend redirect from URL (optional, for frontend)
         default: ''
         type: string
+      overwrite:
+        description: Whether to overwrite existing resources
+        default: false
+        type: boolean
 
 jobs:
   init:
@@ -59,7 +63,7 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
+          overwrite: ${{ inputs.overwrite }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}

@@ -72,6 +72,7 @@ jobs:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_from_url: ${{ needs.init.outputs.redirect_from_url }}
+      overwrite: true
 
   smoke:
     name: Smoke Tests
