@@ -57,7 +57,7 @@ jobs:
         name: [backend, frontend]
         include:
           - name: frontend
-            params: -p REDIRECT_FROM_URL="results-exam-test.apps.silver.devops.gov.bc.ca"
+            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -74,6 +74,7 @@ jobs:
   smoke-test:
     name: Smoke Tests (TEST)
     needs: [vars, deploys-test]
+    environment: test
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -84,7 +85,7 @@ jobs:
       - name: Verify deployed services
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+          FRONTEND_URL: https://${{ vars.REDIRECT_FROM_URL }}
         run: |
           npm ci
           npm run smoke
@@ -119,7 +120,7 @@ jobs:
         name: [backend, frontend]
         include:
           - name: frontend
-            params: -p REDIRECT_FROM_URL="results-exam.apps.silver.devops.gov.bc.ca"
+            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -135,6 +136,7 @@ jobs:
   smoke-prod:
     name: Smoke Tests (PROD)
     needs: [vars, deploys-prod]
+    environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
@@ -145,7 +147,7 @@ jobs:
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
+          FRONTEND_URL: https://${{ vars.REDIRECT_FROM_URL }}
         run: |
           npm ci
           npm run smoke
