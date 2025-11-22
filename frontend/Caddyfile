@@ -17,20 +17,6 @@
 		level {$LOG_LEVEL}
 	}
 
-	# Redirect from URL format to main URL format
-	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
-	# Only redirect if hostname doesn't contain "-frontend" and matches the redirect from pattern
-	# Redirects are logged in Caddy access logs with status 301
-	# Use header matcher to check Host header and exclude URLs containing "-frontend"
-	# This is more reliable than glob patterns with 'not' directive
-	@redirect_from_host {
-		header Host *.apps.silver.devops.gov.bc.ca
-		not header Host *-frontend*.apps.silver.devops.gov.bc.ca
-	}
-	handle @redirect_from_host {
-		redir {env.REDIRECT_TO_URL} permanent
-	}
-
 	header {
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
