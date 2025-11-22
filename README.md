@@ -226,7 +226,7 @@ The application supports two URL formats for backward compatibility during trans
 - **Redirect From URL** (without `-frontend` suffix): `*-<zone>.apps.silver.devops.gov.bc.ca`
   - This format is maintained for backward compatibility
   - Redirect from URLs automatically redirect (301) to the main URL format
-  - The redirect is handled by Caddy using an expression matcher to ensure only redirect from URLs are redirected
+  - The redirect is handled by Caddy using a header matcher to ensure only redirect from URLs are redirected
 
 **Note:** This redirect infrastructure is temporary and will be removed after the transition period is complete. The main URL format (with `-frontend`) should be used for all new integrations and bookmarks.
 
