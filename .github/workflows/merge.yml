@@ -65,7 +65,6 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
           parameters: -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=test
@@ -85,7 +84,7 @@ jobs:
       - name: Verify deployed services
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://${{ vars.REDIRECT_FROM_URL }}
+          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
@@ -103,7 +102,6 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
           parameters: -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
@@ -147,7 +145,7 @@ jobs:
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://${{ vars.REDIRECT_FROM_URL }}
+          FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
