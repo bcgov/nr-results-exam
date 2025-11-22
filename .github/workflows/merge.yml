@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - "*.md"
       - ".github/**"
-      - ".github/graphics/**"
       - "!.github/workflows/**"
 
 concurrency:
@@ -33,8 +32,6 @@ jobs:
     environment: test
     runs-on: ubuntu-24.04
     timeout-minutes: 1
-    outputs:
-      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -46,15 +43,6 @@ jobs:
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-
-      - name: Calculate URLs
-        id: url
-        run: |
-          DOMAIN="apps.silver.devops.gov.bc.ca"
-          REPO="${{ github.event.repository.name }}"
-          ZONE="test"
-          # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys-test:
     name: Deploys (TEST)
@@ -69,7 +57,7 @@ jobs:
         name: [backend, frontend]
         include:
           - name: frontend
-            params: -p REDIRECT_FROM_URL=${{ needs.init-test.outputs.redirect_from_url }}
+            params: -p REDIRECT_FROM_URL="results-exam-test.apps.silver.devops.gov.bc.ca"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -107,8 +95,6 @@ jobs:
     environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 1
-    outputs:
-      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -122,15 +108,6 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
-      - name: Calculate URLs
-        id: url
-        run: |
-          DOMAIN="apps.silver.devops.gov.bc.ca"
-          REPO="${{ github.event.repository.name }}"
-          ZONE="prod"
-          # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
-
   deploys-prod:
     name: Deploys (PROD)
     needs: [vars, init-prod]
@@ -142,7 +119,7 @@ jobs:
         name: [backend, frontend]
         include:
           - name: frontend
-            params: -p REDIRECT_FROM_URL=${{ needs.init-prod.outputs.redirect_from_url }}
+            params: -p REDIRECT_FROM_URL="results-exam.apps.silver.devops.gov.bc.ca"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
