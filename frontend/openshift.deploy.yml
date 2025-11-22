@@ -49,7 +49,7 @@ parameters:
   - name: VITE_ZONE
     value: PROD
   - name: REDIRECT_FROM_URL
-    description: Source URL for redirect (without -frontend suffix)
+    description: URL for redirect
     required: true
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
