@@ -47,6 +47,8 @@ jobs:
   deploys-test:
     name: Deploys (TEST)
     needs: [vars, init-test]
+    permissions:
+      issues: write
     uses: ./.github/workflows/.deploy.yml
     secrets: inherit
     with:
