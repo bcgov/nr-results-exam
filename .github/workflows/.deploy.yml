@@ -32,6 +32,8 @@ jobs:
     name: Calculate deployment parameters
     runs-on: ubuntu-24.04
     timeout-minutes: 1
+    permissions:
+      contents: read
     outputs:
       mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
     steps:
@@ -52,6 +54,8 @@ jobs:
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
     strategy:
       matrix:
         name: [backend, frontend]
