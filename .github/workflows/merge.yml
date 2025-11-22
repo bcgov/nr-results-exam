@@ -56,8 +56,10 @@ jobs:
       matrix:
         name: [backend, frontend]
         include:
+          - name: backend
+            params: -p FRONTEND_URL="${{ vars.FRONTEND_URL }}"
           - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
+            params: -p URL="${{ vars.FRONTEND_URL }}" -p HOSTNAME="${{ vars.HOSTNAME }}" -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -67,7 +69,6 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           parameters: -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=test
             ${{ matrix.params || '' }}
 
   smoke-test:
@@ -117,8 +118,10 @@ jobs:
       matrix:
         name: [backend, frontend]
         include:
+          - name: backend
+            params: -p FRONTEND_URL="${{ vars.FRONTEND_URL }}"
           - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
+            params: -p URL="${{ vars.FRONTEND_URL }}" -p HOSTNAME="${{ vars.HOSTNAME }}" -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -128,7 +131,6 @@ jobs:
           oc_token: ${{ secrets.OC_TOKEN }}
           parameters: -p ZONE=prod
             -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=prod
             ${{ matrix.params || '' }}
 
   smoke-prod:
