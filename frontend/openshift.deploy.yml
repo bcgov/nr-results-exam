@@ -100,7 +100,7 @@ objects:
                   value: "${ZONE}"
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
-                - name: REDIRECT_TO_URL
+                - name: URL
                   value: "https://${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}/"
                 - name: REDIRECT_FROM_HOST
                   value: "${REDIRECT_FROM_URL}"

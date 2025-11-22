@@ -24,7 +24,7 @@
 		header Host {env.REDIRECT_FROM_HOST}
 	}
 	handle @redirect_from_host {
-		redir {env.REDIRECT_TO_URL} permanent
+		redir {env.URL} permanent
 	}
 
 	header {
