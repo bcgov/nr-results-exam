@@ -1,0 +1,69 @@
+name: .Deploys
+
+on:
+  workflow_call:
+    inputs:
+      ### Required
+      environment:
+        description: GitHub/OpenShift environment; usually PR number, test or prod
+        required: true
+        type: string
+      tag:
+        description: Container tag; usually PR number
+        required: true
+        type: string
+      zone:
+        description: Deployment zone, e.g. pr-###, test or prod
+        required: true
+        type: string
+
+      ### Optional
+      redirect_from_url:
+        description: Frontend redirect from URL (optional, for frontend)
+        default: ''
+        type: string
+
+jobs:
+  init:
+    name: Calculate deployment parameters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    outputs:
+      mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
+    steps:
+      - name: Calculate MOD_ZONE
+        id: mod-zone
+        run: |
+          # For PR deployments (numeric zones), calculate modulo 50
+          # For named environments (test, prod), use the zone as-is
+          if [[ "${{ inputs.zone }}" =~ ^[0-9]+$ ]]; then
+            echo "mod_zone=$(( ${{ inputs.zone }} % 50 ))" >> $GITHUB_OUTPUT
+          else
+            echo "mod_zone=${{ inputs.zone }}" >> $GITHUB_OUTPUT
+          fi
+
+  deploys:
+    name: Deploys (${{ inputs.environment }})
+    needs: [init]
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        name: [backend, frontend]
+        include:
+          - name: frontend
+            params: -p REDIRECT_FROM_URL=${{ inputs.redirect_from_url }}
+    steps:
+      - uses: bcgov/action-deployer-openshift@v4.0.0
+        id: deploys
+        with:
+          file: ${{ matrix.name }}/openshift.deploy.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          overwrite: true
+          parameters: -p ZONE=${{ inputs.zone }}
+            -p TAG=${{ inputs.tag }}
+            -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
+            ${{ matrix.params || '' }}
