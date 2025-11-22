@@ -57,8 +57,8 @@ For custom or vanity URLs in TEST/PROD environments:
 
 PR deployments automatically calculate URLs based on the PR number:
 - Formula: `PR_NUMBER % 50` to determine zone
-- Frontend URL: `https://nr-results-exam-{ZONE}-frontend.apps.silver.devops.gov.bc.ca/`
-- Redirect URL: `https://nr-results-exam-{ZONE}.apps.silver.devops.gov.bc.ca/`
+- Frontend URL: `https://nr-results-exam-<zone>-frontend.apps.silver.devops.gov.bc.ca/`
+- Redirect URL: `https://nr-results-exam-<zone>.apps.silver.devops.gov.bc.ca/`
 
 No environment variables are needed for PR deployments as they are calculated in the workflow.
 
