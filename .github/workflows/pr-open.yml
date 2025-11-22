@@ -37,6 +37,8 @@ jobs:
     timeout-minutes: 1
     outputs:
       url: ${{ steps.url.outputs.url }}
+      hostname: ${{ steps.url.outputs.hostname }}
+      frontend_url: ${{ steps.url.outputs.frontend_url }}
       redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
@@ -57,8 +59,14 @@ jobs:
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
+          # Hostname for Route (without protocol)
+          HOSTNAME="${REPO}-${ZONE}-frontend.${DOMAIN}"
+          # Full URL with protocol for environment variable
+          FRONTEND_URL="https://${HOSTNAME}/"
           # Main URL (with -frontend) - current working format
           echo "url=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "hostname=${HOSTNAME}" >> $GITHUB_OUTPUT
+          echo "frontend_url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
           # Redirect from URL (without -frontend) - will redirect to main
           echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
@@ -71,8 +79,10 @@ jobs:
       matrix:
         name: [backend, frontend]
         include:
+          - name: backend
+            params: -p FRONTEND_URL=${{ needs.init.outputs.frontend_url }}
           - name: frontend
-            params: -p REDIRECT_FROM_URL=${{ needs.init.outputs.redirect_from_url }}
+            params: -p URL=${{ needs.init.outputs.frontend_url }} -p HOSTNAME=${{ needs.init.outputs.hostname }} -p REDIRECT_FROM_URL=${{ needs.init.outputs.redirect_from_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         id: deploys
@@ -84,7 +94,6 @@ jobs:
           overwrite: true
           parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
-            -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
             ${{ matrix.params || '' }}
 
   smoke:

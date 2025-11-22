@@ -10,8 +10,8 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-### or prod
     required: true
-  - name: MOD_ZONE
-    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
+  - name: FRONTEND_URL
+    description: Full URL with protocol for the frontend application (e.g., https://example.com/)
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
@@ -117,7 +117,7 @@ objects:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
                 - name: FRONTEND_URL
-                  value: https://${NAME}-${MOD_ZONE}-frontend.${DOMAIN}
+                  value: ${FRONTEND_URL}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: VITE_USER_POOLS_ID
