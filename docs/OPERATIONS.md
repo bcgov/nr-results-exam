@@ -6,6 +6,62 @@
 
 This repository is in **Stable/Maintenance Mode** as indicated by the lifecycle badge. The CI/CD pipeline is configured to ensure all changes, including infrastructure and workflow modifications, are properly tested and deployed even when active development has slowed.
 
+## GitHub Environment Variables
+
+### Overview
+
+The deployment workflows use GitHub environment variables to configure URLs and hostnames for TEST and PROD environments. These variables allow for flexible URL configuration without modifying workflow code.
+
+### Required Environment Variables
+
+Configure these variables in GitHub repository settings under **Settings → Environments → [environment name] → Environment variables**:
+
+#### Test Environment
+
+Variable Name: `FRONTEND_URL`
+- **Value**: `https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca/`
+- **Description**: Full URL with protocol and trailing slash for the frontend application in TEST environment
+
+Variable Name: `HOSTNAME`
+- **Value**: `nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca`
+- **Description**: Hostname without protocol for the OpenShift Route in TEST environment
+
+Variable Name: `REDIRECT_FROM_URL`
+- **Value**: `nr-results-exam-test.apps.silver.devops.gov.bc.ca`
+- **Description**: Redirect from URL hostname (without protocol) for backward compatibility in TEST environment
+
+#### Production Environment
+
+Variable Name: `FRONTEND_URL`
+- **Value**: `https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca/`
+- **Description**: Full URL with protocol and trailing slash for the frontend application in PROD environment
+
+Variable Name: `HOSTNAME`
+- **Value**: `nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca`
+- **Description**: Hostname without protocol for the OpenShift Route in PROD environment
+
+Variable Name: `REDIRECT_FROM_URL`
+- **Value**: `nr-results-exam-prod.apps.silver.devops.gov.bc.ca`
+- **Description**: Redirect from URL hostname (without protocol) for backward compatibility in PROD environment
+
+### Vanity URLs
+
+For custom or vanity URLs in TEST/PROD environments:
+
+1. Update the `FRONTEND_URL` variable to your custom URL (e.g., `https://results-exam.gov.bc.ca/`)
+2. Update the `HOSTNAME` variable to match (e.g., `results-exam.gov.bc.ca`)
+3. Configure DNS and OpenShift Route accordingly
+4. Ensure trailing slash is included in `FRONTEND_URL`
+
+### PR Deployments
+
+PR deployments automatically calculate URLs based on the PR number:
+- Formula: `PR_NUMBER % 50` to determine zone
+- Frontend URL: `https://nr-results-exam-{ZONE}-frontend.apps.silver.devops.gov.bc.ca/`
+- Redirect URL: `https://nr-results-exam-{ZONE}.apps.silver.devops.gov.bc.ca/`
+
+No environment variables are needed for PR deployments as they are calculated in the workflow.
+
 ### Maintenance Mode Trigger Policy
 
 #### Why Full Deploys Run on Workflow/Config Changes
