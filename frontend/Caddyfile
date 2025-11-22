@@ -21,13 +21,11 @@
 	# Matches format: *-<number>.apps.silver.devops.gov.bc.ca (without -frontend suffix)
 	# Only redirect if hostname doesn't contain "-frontend" and matches the redirect from pattern
 	# Redirects are logged in Caddy access logs with status 301
-	# Match only URLs that match *.apps.silver.devops.gov.bc.ca but explicitly exclude *-frontend.apps.silver.devops.gov.bc.ca
-	# Using a more restrictive pattern to avoid catching main URLs
+	# Use header matcher to check Host header and exclude URLs containing "-frontend"
+	# This is more reliable than glob patterns with 'not' directive
 	@redirect_from_host {
-		host *.apps.silver.devops.gov.bc.ca
-		not {
-			host *-frontend.apps.silver.devops.gov.bc.ca
-		}
+		header Host *.apps.silver.devops.gov.bc.ca
+		not header Host *-frontend*.apps.silver.devops.gov.bc.ca
 	}
 	handle @redirect_from_host {
 		redir {env.REDIRECT_TO_URL} permanent
