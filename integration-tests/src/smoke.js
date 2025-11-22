@@ -225,22 +225,17 @@ const executeCheck = async (check) => {
       } catch (error) {
         const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
         if (axios.isAxiosError(error)) {
+          // Defensive handling: if axios throws despite validateStatus, check for redirect
+          // This should be rare since validateStatus allows 200-399, but kept for robustness
           if (error.response?.status === 301 || error.response?.status === 308) {
-            // Got redirect, extract location and status from error response
             const location = error.response.headers.location;
             const status = error.response.status;
-            
-            // Validate redirect location (reuse same validation logic)
-            try {
-              validateRedirectLocation(location, check.expectedRedirect);
-              const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
-              console.info(
-                `✅ ${check.name} redirected ${status} from ${check.url} to ${location}${attemptInfo}`
-              );
-              return;
-            } catch (validationError) {
-              throw validationError;
-            }
+            validateRedirectLocation(location, check.expectedRedirect);
+            const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
+            console.info(
+              `✅ ${check.name} redirected ${status} from ${check.url} to ${location}${attemptInfo}`
+            );
+            return;
           }
           console.error(
             `${attemptPrefix}: request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
