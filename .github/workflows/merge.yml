@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - "*.md"
       - ".github/**"
-      - ".github/graphics/**"
       - "!.github/workflows/**"
 
 concurrency:
@@ -56,6 +55,9 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
+        include:
+          - name: frontend
+            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -63,14 +65,15 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
           parameters: -p ZONE=test
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=test
+            ${{ matrix.params || '' }}
 
   smoke-test:
     name: Smoke Tests (TEST)
     needs: [vars, deploys-test]
+    environment: test
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -99,7 +102,6 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
           parameters: -p ZONE=prod
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
@@ -114,6 +116,9 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
+        include:
+          - name: frontend
+            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.0
         with:
@@ -124,10 +129,12 @@ jobs:
           parameters: -p ZONE=prod
             -p TAG=${{ needs.vars.outputs.pr }}
             -p MOD_ZONE=prod
+            ${{ matrix.params || '' }}
 
   smoke-prod:
     name: Smoke Tests (PROD)
     needs: [vars, deploys-prod]
+    environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:

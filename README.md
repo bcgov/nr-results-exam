@@ -214,6 +214,23 @@ The application follows a defense-in-depth approach with restricted network acce
   - Frontend Caddy proxy forwards requests to backend Service using internal cluster DNS
   - Network policies ensure pod-to-pod communication is allowed within the namespace
 
+### URL Formats and Redirects
+
+The application supports two URL formats for backward compatibility during transition:
+
+- **Main URL** (with `-frontend` suffix): `*-<zone>-frontend.apps.silver.devops.gov.bc.ca`
+  - This is the current primary URL format
+  - All new deployments use this format
+  - This URL serves the application normally
+
+- **Redirect From URL** (without `-frontend` suffix): `*-<zone>.apps.silver.devops.gov.bc.ca`
+  - This format is maintained for backward compatibility
+  - Redirect from URLs automatically redirect (301 or 308) to the main URL format
+  - Caddy returns a 301 (Moved Permanently) for GET/HEAD requests and a 308 (Permanent Redirect) for other HTTP methods, following standard behavior for permanent redirects
+  - The redirect is handled by Caddy using a header matcher to ensure only redirect from URLs are redirected
+
+**Note:** This redirect infrastructure is temporary and will be removed after the transition period is complete. The main URL format (with `-frontend`) should be used for all new integrations and bookmarks.
+
 ### Security Benefits
 
 - **Reduced Attack Surface**: Backend is not directly reachable from the internet

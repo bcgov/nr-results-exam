@@ -17,6 +17,16 @@
 		level {$LOG_LEVEL}
 	}
 
+	# Redirect from URL format to main URL format
+	# Match only the specific redirect-from hostname from environment variable
+	# This ensures only the intended redirect-from URL is redirected, not main URLs
+	@redirect_from_host {
+		header Host {$REDIRECT_FROM_HOST}
+	}
+	handle @redirect_from_host {
+		redir {$URL} permanent
+	}
+
 	header {
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
