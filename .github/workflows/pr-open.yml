@@ -85,7 +85,7 @@ jobs:
           parameters: -p ZONE=${{ github.event.number }}
             -p TAG=${{ github.event.number }}
             -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
-            ${{ matrix.params }}
+            ${{ matrix.params || '' }}
 
   smoke:
     name: Smoke Tests
