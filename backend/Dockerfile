@@ -1,6 +1,6 @@
 # Build static files
 # Node Bookworm has npm
-FROM node:24.11.0-bookworm-slim AS build
+FROM node:24.11.1-bookworm-slim AS build
 ENV NODE_ENV=production
 
 # Copy and build

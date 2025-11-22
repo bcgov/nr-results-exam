@@ -1,6 +1,6 @@
 ## Use this section once builds are fixed
 
-FROM node:24.11.0-bookworm-slim AS build
+FROM node:24.11.1-bookworm-slim AS build
 
 # Build static files
 WORKDIR /app
