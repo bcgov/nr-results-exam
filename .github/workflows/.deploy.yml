@@ -71,4 +71,4 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
-            ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
+            ${{ matrix.name == 'frontend' && inputs.redirect_from_url != '' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
