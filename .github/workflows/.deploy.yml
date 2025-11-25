@@ -6,7 +6,7 @@ on:
       ### Required
       environment:
         description: GitHub/OpenShift environment; usually PR number, test or prod
-        required: true
+        default: ""
         type: string
       tag:
         description: Container tag; usually PR number
@@ -20,7 +20,7 @@ on:
       ### Optional
       redirect_from_url:
         description: Frontend redirect from URL (optional, for frontend)
-        default: ''
+        default: ""
         type: string
       overwrite:
         description: Whether to overwrite existing resources
