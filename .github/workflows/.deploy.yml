@@ -5,7 +5,7 @@ on:
     inputs:
       ### Required
       redirect_from_url:
-        description: Frontend redirect from URL (optional, for frontend)
+        description: Frontend redirect from URL
         required: true
         type: string
       tag:
@@ -22,6 +22,11 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
+      update_issues:
+        description: Whether to update issues/PRs with deployment status
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   init:
@@ -67,3 +72,39 @@ jobs:
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
+
+  update-pr:
+    name: Update PR/Issue
+    if: ${{ inputs.update_issues }}
+    needs: [deploys]
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const environment = '${{ inputs.environment }}' || '${{ inputs.zone }}';
+            const message = `✅ Deployment to **${environment}** environment completed successfully.`;
+            
+            // Try to find associated PR number from the tag or zone
+            const prNumber = '${{ inputs.tag }}'.match(/^\d+$/) ? parseInt('${{ inputs.tag }}') : null;
+            
+            if (prNumber) {
+              try {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: message
+                });
+                console.log(`Posted comment to PR #${prNumber}`);
+              } catch (error) {
+                console.log(`Could not post comment: ${error.message}`);
+              }
+            } else {
+              console.log('No PR number found, skipping comment');
+            }
+
