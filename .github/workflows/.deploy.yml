@@ -6,7 +6,7 @@ on:
       ### Required
       redirect_from_url:
         description: Frontend redirect from URL (optional, for frontend)
-        required: false
+        required: true
         default: ""
         type: string
       tag:
