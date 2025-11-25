@@ -54,7 +54,7 @@ jobs:
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
       redirect_from_url: ${{ vars.REDIRECT_FROM_URL }}
-      report_failures: true
+      report_issue: true
 
   smoke-test:
     name: Smoke Tests (TEST)

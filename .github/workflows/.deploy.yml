@@ -22,8 +22,8 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
-      report_failures:
-        description: Whether to report deployment failures to issues/PRs
+      report_issue:
+        description: Create an issue when deployment fails
         default: false
         type: boolean
 
@@ -73,48 +73,41 @@ jobs:
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
 
   update-pr:
-    name: Update PR/Issue
-    if: ${{ inputs.report_failures && always() && needs.deploys.result == 'failure' }}
+    name: Create Issue on Failure
+    if: ${{ inputs.report_issue && always() && needs.deploys.result == 'failure' }}
     needs: [deploys]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
-      pull-requests: write
     steps:
-      - name: Comment on PR or Create Issue
+      - name: Create Issue
         uses: actions/github-script@v7
         with:
           script: |
             const environment = '${{ inputs.environment }}' || '${{ inputs.zone }}';
-            const message = `❌ Deployment to **${environment}** environment failed.`;
+            const tag = '${{ inputs.tag }}';
 
-            // Try to find associated PR number from the tag or zone
-            const prNumber = '${{ inputs.tag }}'.match(/^\d+$/) ? parseInt('${{ inputs.tag }}') : null;
+            // Try to detect if this is a PR deployment
+            const prNumber = tag.match(/^\d+$/) ? parseInt(tag) : null;
 
+            // Build issue title and body
+            let title = `Deployment failed: ${environment}`;
+            let body = `❌ Deployment to **${environment}** environment failed.`;
+
+            // If PR number detected, include it in the issue for context
             if (prNumber) {
-              // Comment on PR
-              try {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: message
-                });
-                console.log(`Posted comment to PR #${prNumber}`);
-              } catch (error) {
-                console.log(`Could not post comment: ${error.message}`);
-              }
-            } else {
-              // Create an issue for non-PR deployments
-              try {
-                const issue = await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: `Deployment failed: ${environment}`,
-                  body: message
-                });
-                console.log(`Created issue #${issue.data.number} for deployment failure`);
-              } catch (error) {
-                console.log(`Could not create issue: ${error.message}`);
-              }
+              title = `Deployment failed: PR #${prNumber} (${environment})`;
+              body += `\n\nRelated PR: #${prNumber}`;
+            }
+
+            try {
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body
+              });
+              console.log(`Created issue #${issue.data.number} for deployment failure`);
+            } catch (error) {
+              console.log(`Could not create issue: ${error.message}`);
             }
