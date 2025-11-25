@@ -7,7 +7,6 @@ on:
       redirect_from_url:
         description: Frontend redirect from URL (optional, for frontend)
         required: true
-        default: ""
         type: string
       tag:
         description: Container tag; usually PR number
