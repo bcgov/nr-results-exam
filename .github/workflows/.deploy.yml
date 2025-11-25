@@ -87,7 +87,7 @@ jobs:
           script: |
             const zone = '${{ inputs.zone }}';
             const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const title = `Deployment failed: ${zone}`;
+            const title = `Deployment failed: ${zone} (Run #${context.runId})`;
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             try {
