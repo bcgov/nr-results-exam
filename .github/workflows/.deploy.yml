@@ -4,9 +4,9 @@ on:
   workflow_call:
     inputs:
       ### Required
-      environment:
-        description: GitHub/OpenShift environment; usually PR number, test or prod
-        default: ""
+      redirect_from_url:
+        description: Frontend redirect from URL (optional, for frontend)
+        required: true
         type: string
       tag:
         description: Container tag; usually PR number
@@ -18,8 +18,8 @@ on:
         type: string
 
       ### Optional
-      redirect_from_url:
-        description: Frontend redirect from URL (optional, for frontend)
+      environment:
+        description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
       overwrite:
@@ -71,4 +71,4 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
-            ${{ matrix.name == 'frontend' && inputs.redirect_from_url != '' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
+            ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
