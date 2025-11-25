@@ -46,7 +46,7 @@ jobs:
           fi
 
   deploys:
-    name: Deploys (${{ inputs.environment }})
+    name: Deploys (${{ inputs.environment || github.event.number }})
     needs: [init]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
