@@ -72,33 +72,23 @@ jobs:
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
 
-  update-pr:
-    name: Create Issue on Failure
-    if: ${{ inputs.report_issue && always() && needs.deploys.result == 'failure' }}
-    needs: [deploys]
+  report-failures:
+    name: Deployment Results
+    if: ${{ inputs.report_issue && always() && failure() }}
+    # Include all needs that could have failures!
+    needs: [init, deploys]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
     steps:
-      - name: Create Issue
+      - name: Report Results
         uses: actions/github-script@v7
         with:
           script: |
-            const environment = '${{ inputs.environment }}' || '${{ inputs.zone }}';
-            const tag = '${{ inputs.tag }}';
-
-            // Try to detect if this is a PR deployment
-            const prNumber = tag.match(/^\d+$/) ? parseInt(tag) : null;
-
-            // Build issue title and body
-            let title = `Deployment failed: ${environment}`;
-            let body = `❌ Deployment to **${environment}** environment failed.`;
-
-            // If PR number detected, include it in the issue for context
-            if (prNumber) {
-              title = `Deployment failed: PR #${prNumber} (${environment})`;
-              body += `\n\nRelated PR: #${prNumber}`;
-            }
+            const zone = '${{ inputs.zone }}';
+            const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = `Deployment failed: ${zone}`;
+            const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             try {
               const issue = await github.rest.issues.create({
