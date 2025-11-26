@@ -53,7 +53,7 @@ jobs:
       environment: test
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
-      redirect_from_url: ${{ vars.REDIRECT_FROM_URL }}
+      redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
 
   smoke-test:
@@ -70,7 +70,7 @@ jobs:
       - name: Verify deployed services
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+          FRONTEND_URL: https://results-exam-test.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
@@ -102,7 +102,7 @@ jobs:
       environment: prod
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
-      redirect_from_url: ${{ vars.REDIRECT_FROM_URL }}
+      redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
 
   smoke-prod:
     name: Smoke Tests (PROD)
@@ -118,7 +118,7 @@ jobs:
       - name: Verify PROD deployment
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
+          FRONTEND_URL: https://results-exam.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
