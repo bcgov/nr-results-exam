@@ -50,7 +50,7 @@ parameters:
     value: PROD
   - name: REDIRECT_FROM_URL
     description: Hostname for the redirect-from URL (without protocol, e.g., nr-results-exam-12.apps.silver.devops.gov.bc.ca)
-    required: true
+    value: ""
   - name: RANDOM_EXPRESSION
     description: Random expression to make sure deployments update
     from: "[a-zA-Z0-9]{32}"
