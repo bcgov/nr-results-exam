@@ -80,24 +80,46 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       issues: write
+      contents: read
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      
       - name: Report Results
         uses: actions/github-script@v8
         with:
           script: |
+            const fs = require('fs');
             const zone = '${{ inputs.zone }}';
             const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const title = `Deployment failed: ${zone} (Run #${context.runId})`;
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
+
+            // Read CODEOWNERS file to get assignees
+            let assignees = [];
+            try {
+              const codeownersPath = '.github/CODEOWNERS';
+              if (fs.existsSync(codeownersPath)) {
+                const codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
+                // Extract usernames from CODEOWNERS (format: * @username or path @username)
+                const usernameMatches = codeownersContent.match(/@(\w+)/g);
+                if (usernameMatches) {
+                  assignees = [...new Set(usernameMatches.map(m => m.substring(1)))];
+                }
+              }
+            } catch (error) {
+              console.log(`Could not read CODEOWNERS: ${error.message}`);
+            }
 
             try {
               const issue = await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: title,
-                body: body
+                body: body,
+                assignees: assignees
               });
-              console.log(`Created issue #${issue.data.number} for deployment failure`);
+              console.log(`Created issue #${issue.data.number} for deployment failure${assignees.length > 0 ? ` (assigned to: ${assignees.join(', ')})` : ''}`);
             } catch (error) {
               core.error(`Could not create issue: ${error.message}`);
             }
