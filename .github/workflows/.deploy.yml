@@ -173,7 +173,7 @@ jobs:
               console.log(`Created issue #${issue.data.number} for deployment failure${assigneesToUse.length > 0 ? ` (assigned to: ${assigneesToUse.join(', ')})` : ''}`);
             } catch (error) {
               // If assignment fails due to permissions, retry without assignees but mention them
-              if (error.message && error.message.includes('assignees')) {
+              if (error.status === 422 || (error.response && error.response.status === 422)) {
                 const bodyWithMentions = `${body}\n\ncc: ${assigneesToUse.map(u => `@${u}`).join(' ')}`;
                 try {
                   const issue = await github.rest.issues.create({
