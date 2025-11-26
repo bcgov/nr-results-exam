@@ -84,6 +84,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 1  # Shallow clone since we only need CODEOWNERS
 
       - name: Report Results
         uses: actions/github-script@v8
@@ -101,8 +103,14 @@ jobs:
               const codeownersPath = '.github/CODEOWNERS';
               if (fs.existsSync(codeownersPath)) {
                 const codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
+                // Filter out comment lines (lines starting with #) and empty lines
+                const lines = codeownersContent.split('\n')
+                  .map(line => line.trim())
+                  .filter(line => line && !line.startsWith('#'));
+                
                 // Extract usernames from CODEOWNERS (format: * @username or path @username)
-                const usernameMatches = codeownersContent.match(/@(\w+)/g);
+                // GitHub usernames can contain letters, numbers, hyphens, and underscores
+                const usernameMatches = lines.join('\n').match(/@([a-zA-Z0-9_-]+)/g);
                 if (usernameMatches) {
                   assignees = [...new Set(usernameMatches.map(m => m.substring(1)))];
                 }
