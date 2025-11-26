@@ -134,6 +134,8 @@ jobs:
               } catch (error) {
                 console.log(`Could not read or parse CODEOWNERS: ${error.message}`);
               }
+            } else {
+              console.log('No CODEOWNERS file found - issue will be created without assignees');
             }
 
             try {
