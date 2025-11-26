@@ -38,7 +38,7 @@ jobs:
       url: ${{ steps.url.outputs.url }}
       redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}

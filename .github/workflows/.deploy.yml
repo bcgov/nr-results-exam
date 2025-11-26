@@ -60,7 +60,7 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml

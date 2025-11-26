@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
