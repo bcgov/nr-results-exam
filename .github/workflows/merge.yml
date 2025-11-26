@@ -47,28 +47,14 @@ jobs:
   deploys-test:
     name: Deploys (TEST)
     needs: [vars, init-test]
-    environment: test
-    permissions:
-      issues: write
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
-        with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=test
-            -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=test
-            ${{ matrix.params || '' }}
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      environment: test
+      tag: ${{ needs.vars.outputs.pr }}
+      zone: test
+      redirect_from_url: ${{ vars.REDIRECT_FROM_URL }}
+      report_issue: true
 
   smoke-test:
     name: Smoke Tests (TEST)
@@ -110,26 +96,13 @@ jobs:
   deploys-prod:
     name: Deploys (PROD)
     needs: [vars, init-prod]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
-        with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=prod
-            -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=prod
-            ${{ matrix.params || '' }}
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      environment: prod
+      tag: ${{ needs.vars.outputs.pr }}
+      zone: prod
+      redirect_from_url: ${{ vars.REDIRECT_FROM_URL }}
 
   smoke-prod:
     name: Smoke Tests (PROD)

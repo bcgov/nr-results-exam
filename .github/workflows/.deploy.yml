@@ -1,0 +1,103 @@
+name: .Deploys
+
+on:
+  workflow_call:
+    inputs:
+      ### Required
+      redirect_from_url:
+        description: Frontend redirect from URL
+        required: true
+        type: string
+      tag:
+        description: Container tag; usually PR number
+        required: true
+        type: string
+      zone:
+        description: Deployment zone, e.g. pr-###, test or prod
+        required: true
+        type: string
+
+      ### Optional
+      environment:
+        description: GitHub/OpenShift environment; usually PR number, test or prod
+        default: ""
+        type: string
+      report_issue:
+        description: Create an issue when deployment fails
+        default: false
+        type: boolean
+
+jobs:
+  init:
+    name: Calculate deployment parameters
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    permissions:
+      contents: read
+    outputs:
+      mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
+    steps:
+      - name: Calculate MOD_ZONE
+        id: mod-zone
+        run: |
+          # For PR deployments (numeric zones), calculate modulo 50
+          # For named environments (test, prod), use the zone as-is
+          if [[ "${{ inputs.zone }}" =~ ^[0-9]+$ ]]; then
+            echo "mod_zone=$(( ${{ inputs.zone }} % 50 ))" >> $GITHUB_OUTPUT
+          else
+            echo "mod_zone=${{ inputs.zone }}" >> $GITHUB_OUTPUT
+          fi
+
+  deploys:
+    name: Deploy
+    needs: [init]
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        name: [backend, frontend]
+    steps:
+      - uses: bcgov/action-deployer-openshift@v4.0.0
+        id: deploys
+        with:
+          file: ${{ matrix.name }}/openshift.deploy.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
+          parameters: -p ZONE=${{ inputs.zone }}
+            -p TAG=${{ inputs.tag }}
+            -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
+            ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
+
+  report-failures:
+    name: Deployment Results
+    if: ${{ inputs.report_issue && always() && failure() }}
+    # Include all needs that could have failures!
+    needs: [init, deploys]
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+    steps:
+      - name: Report Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const zone = '${{ inputs.zone }}';
+            const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const title = `Deployment failed: ${zone} (Run #${context.runId})`;
+            const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
+
+            try {
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body
+              });
+              console.log(`Created issue #${issue.data.number} for deployment failure`);
+            } catch (error) {
+              core.error(`Could not create issue: ${error.message}`);
+            }
