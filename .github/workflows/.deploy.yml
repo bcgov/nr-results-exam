@@ -98,29 +98,42 @@ jobs:
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             // Read CODEOWNERS file to get assignees
-            // Check common CODEOWNERS locations (in order of precedence)
-            const codeownersPaths = [
-              '.github/CODEOWNERS',  // Most common location
-              'CODEOWNERS',          // Root of repository
-              'docs/CODEOWNERS'      // Sometimes in docs
+            // Check common CODEOWNERS locations and case variations
+            // GitHub officially uses "CODEOWNERS" (all caps), but check variations for robustness
+            const codeownersBasePaths = [
+              '.github/',  // Most common location
+              '',          // Root of repository
+              'docs/'      // Sometimes in docs
+            ];
+            
+            const codeownersFilenames = [
+              'CODEOWNERS',    // Official (all caps)
+              'codeowners',    // Lowercase
+              'CodeOwners',    // Mixed case
+              'codeowners.txt' // With extension (less common)
             ];
             
             let assignees = [];
             let codeownersContent = null;
             
-            for (const codeownersPath of codeownersPaths) {
-              try {
-                if (fs.existsSync(codeownersPath)) {
-                  codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
-                  console.log(`Found CODEOWNERS at: ${codeownersPath}`);
-                  break;
+            // Check each base path with each filename variation
+            for (const basePath of codeownersBasePaths) {
+              for (const filename of codeownersFilenames) {
+                const codeownersPath = basePath + filename;
+                try {
+                  if (fs.existsSync(codeownersPath)) {
+                    codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
+                    console.log(`Found CODEOWNERS at: ${codeownersPath}`);
+                    break;
+                  }
+                } catch (error) {
+                  // Continue to next path/filename combination
+                  continue;
                 }
-              } catch (error) {
-                // Continue to next path
-                continue;
               }
+              if (codeownersContent) break; // Found file, stop searching
             }
-            
+
             if (codeownersContent) {
               try {
                 // Filter out comment lines (lines starting with #) and empty lines
