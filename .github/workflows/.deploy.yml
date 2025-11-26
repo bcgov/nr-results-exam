@@ -124,7 +124,7 @@ jobs:
 
             // Read CODEOWNERS file to get assignees
             let assignees = [];
-            const codeownersPath = '${{ steps.find-codeowners.outputs.path }}';
+            const codeownersPath = `${{ steps.find-codeowners.outputs.path }}`.trim();
 
             if (codeownersPath) {
               try {
@@ -136,8 +136,10 @@ jobs:
                 
                 // Extract usernames from CODEOWNERS (format: * @username or path @username)
                 // Match both users (@username) and teams (@org/team-name)
-                // GitHub usernames can contain letters, numbers, hyphens, and underscores
-                const usernameMatches = lines.join('\n').match(/@([a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)?)/g);
+                // GitHub usernames must start/end with alphanumeric, can contain hyphens/underscores in middle
+                // NOTE: This intentionally extracts all usernames across all lines, regardless of path patterns.
+                // This ensures deployment failures are visible to all repository maintainers, not just path-specific owners.
+                const usernameMatches = lines.join('\n').match(/@([a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?(?:\/[a-zA-Z0-9](?:[a-zA-Z0-9_-]*[a-zA-Z0-9])?)?)/g);
                 if (usernameMatches) {
                   // Remove '@', filter out team references (those containing '/')
                   // Teams cannot be assigned to issues, only individual users
@@ -170,5 +172,21 @@ jobs:
               });
               console.log(`Created issue #${issue.data.number} for deployment failure${assigneesToUse.length > 0 ? ` (assigned to: ${assigneesToUse.join(', ')})` : ''}`);
             } catch (error) {
-              core.error(`Could not create issue: ${error.message}`);
+              // If assignment fails due to permissions, retry without assignees but mention them
+              if (error.message && error.message.includes('assignees')) {
+                const bodyWithMentions = `${body}\n\ncc: ${assigneesToUse.map(u => `@${u}`).join(' ')}`;
+                try {
+                  const issue = await github.rest.issues.create({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: title,
+                    body: bodyWithMentions
+                  });
+                  console.log(`Created issue #${issue.data.number} (mentioned: ${assigneesToUse.join(', ')})`);
+                } catch (retryError) {
+                  core.error(`Could not create issue: ${retryError.message}`);
+                }
+              } else {
+                core.error(`Could not create issue: ${error.message}`);
+              }
             }
