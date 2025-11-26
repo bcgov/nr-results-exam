@@ -105,17 +105,17 @@ jobs:
               '',          // Root of repository
               'docs/'      // Sometimes in docs
             ];
-            
+
             const codeownersFilenames = [
               'CODEOWNERS',    // Official (all caps)
               'codeowners',    // Lowercase
               'CodeOwners',    // Mixed case
               'codeowners.txt' // With extension (less common)
             ];
-            
+
             let assignees = [];
             let codeownersContent = null;
-            
+
             // Check each base path with each filename variation
             for (const basePath of codeownersBasePaths) {
               for (const filename of codeownersFilenames) {
