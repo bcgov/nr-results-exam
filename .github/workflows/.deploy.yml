@@ -90,11 +90,20 @@ jobs:
       - name: Find CODEOWNERS file
         id: find-codeowners
         run: |
-          # Find CODEOWNERS file case-insensitively, prefer .github/CODEOWNERS
-          # First try .github/ directory, then search everywhere
-          CODEOWNERS_PATH=$(find .github -type f -iname "codeowners*" 2>/dev/null | head -1)
+          # Find CODEOWNERS file case-insensitively in GitHub-recognized locations
+          # GitHub searches in order: root, .github/, docs/ (use first found)
+          CODEOWNERS_PATH=""
+          # Check root first
           if [ -z "$CODEOWNERS_PATH" ]; then
-            CODEOWNERS_PATH=$(find . -type f -iname "codeowners*" -not -path "*/\.git/*" | head -1)
+            CODEOWNERS_PATH=$(find . -maxdepth 1 -type f -iname "codeowners*" -not -path "*/\.git/*" 2>/dev/null | head -1)
+          fi
+          # Then .github/
+          if [ -z "$CODEOWNERS_PATH" ]; then
+            CODEOWNERS_PATH=$(find .github -maxdepth 1 -type f -iname "codeowners*" 2>/dev/null | head -1)
+          fi
+          # Finally docs/
+          if [ -z "$CODEOWNERS_PATH" ]; then
+            CODEOWNERS_PATH=$(find docs -maxdepth 1 -type f -iname "codeowners*" 2>/dev/null | head -1)
           fi
           if [ -n "$CODEOWNERS_PATH" ]; then
             echo "path=$CODEOWNERS_PATH" >> $GITHUB_OUTPUT
