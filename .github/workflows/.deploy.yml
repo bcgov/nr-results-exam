@@ -85,7 +85,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1  # Shallow clone since we only need CODEOWNERS
+          fetch-depth: 1 # Shallow clone since we only need CODEOWNERS
 
       - name: Report Results
         uses: actions/github-script@v8
@@ -98,11 +98,31 @@ jobs:
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             // Read CODEOWNERS file to get assignees
+            // Check common CODEOWNERS locations (in order of precedence)
+            const codeownersPaths = [
+              '.github/CODEOWNERS',  // Most common location
+              'CODEOWNERS',          // Root of repository
+              'docs/CODEOWNERS'      // Sometimes in docs
+            ];
+            
             let assignees = [];
-            try {
-              const codeownersPath = '.github/CODEOWNERS';
-              if (fs.existsSync(codeownersPath)) {
-                const codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
+            let codeownersContent = null;
+            
+            for (const codeownersPath of codeownersPaths) {
+              try {
+                if (fs.existsSync(codeownersPath)) {
+                  codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
+                  console.log(`Found CODEOWNERS at: ${codeownersPath}`);
+                  break;
+                }
+              } catch (error) {
+                // Continue to next path
+                continue;
+              }
+            }
+            
+            if (codeownersContent) {
+              try {
                 // Filter out comment lines (lines starting with #) and empty lines
                 const lines = codeownersContent.split('\n')
                   .map(line => line.trim())
@@ -114,9 +134,9 @@ jobs:
                 if (usernameMatches) {
                   assignees = [...new Set(usernameMatches.map(m => m.substring(1)))];
                 }
+              } catch (error) {
+                console.log(`Could not parse CODEOWNERS: ${error.message}`);
               }
-            } catch (error) {
-              console.log(`Could not read CODEOWNERS: ${error.message}`);
             }
 
             try {
