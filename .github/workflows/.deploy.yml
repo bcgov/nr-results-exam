@@ -87,6 +87,22 @@ jobs:
         with:
           fetch-depth: 1 # Shallow clone since we only need CODEOWNERS
 
+      - name: Find CODEOWNERS file
+        id: find-codeowners
+        run: |
+          # Find CODEOWNERS file case-insensitively, prefer .github/CODEOWNERS
+          # First try .github/ directory, then search everywhere
+          CODEOWNERS_PATH=$(find .github -type f -iname "codeowners*" 2>/dev/null | head -1)
+          if [ -z "$CODEOWNERS_PATH" ]; then
+            CODEOWNERS_PATH=$(find . -type f -iname "codeowners*" -not -path "*/\.git/*" | head -1)
+          fi
+          if [ -n "$CODEOWNERS_PATH" ]; then
+            echo "path=$CODEOWNERS_PATH" >> $GITHUB_OUTPUT
+            echo "Found CODEOWNERS at: $CODEOWNERS_PATH"
+          else
+            echo "No CODEOWNERS file found"
+          fi
+
       - name: Report Results
         uses: actions/github-script@v8
         with:
@@ -98,44 +114,12 @@ jobs:
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             // Read CODEOWNERS file to get assignees
-            // Check common CODEOWNERS locations and case variations
-            // GitHub officially uses "CODEOWNERS" (all caps), but check variations for robustness
-            const codeownersBasePaths = [
-              '.github/',  // Most common location
-              '',          // Root of repository
-              'docs/'      // Sometimes in docs
-            ];
-
-            const codeownersFilenames = [
-              'CODEOWNERS',    // Official (all caps)
-              'codeowners',    // Lowercase
-              'CodeOwners',    // Mixed case
-              'codeowners.txt' // With extension (less common)
-            ];
-
             let assignees = [];
-            let codeownersContent = null;
+            const codeownersPath = '${{ steps.find-codeowners.outputs.path }}';
 
-            // Check each base path with each filename variation
-            for (const basePath of codeownersBasePaths) {
-              for (const filename of codeownersFilenames) {
-                const codeownersPath = basePath + filename;
-                try {
-                  if (fs.existsSync(codeownersPath)) {
-                    codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
-                    console.log(`Found CODEOWNERS at: ${codeownersPath}`);
-                    break;
-                  }
-                } catch (error) {
-                  // Continue to next path/filename combination
-                  continue;
-                }
-              }
-              if (codeownersContent) break; // Found file, stop searching
-            }
-
-            if (codeownersContent) {
+            if (codeownersPath) {
               try {
+                const codeownersContent = fs.readFileSync(codeownersPath, 'utf8');
                 // Filter out comment lines (lines starting with #) and empty lines
                 const lines = codeownersContent.split('\n')
                   .map(line => line.trim())
@@ -148,7 +132,7 @@ jobs:
                   assignees = [...new Set(usernameMatches.map(m => m.substring(1)))];
                 }
               } catch (error) {
-                console.log(`Could not parse CODEOWNERS: ${error.message}`);
+                console.log(`Could not read or parse CODEOWNERS: ${error.message}`);
               }
             }
 
