@@ -84,7 +84,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Report Results
         uses: actions/github-script@v8
         with:
@@ -92,7 +92,7 @@ jobs:
             const fs = require('fs');
             const zone = '${{ inputs.zone }}';
             const workflowUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const title = `Deployment failed: ${zone} (Run #${context.runId})`;
+            const title = `ci(deploy): deployment failed in ${zone}`;
             const body = `❌ Deployment to **${zone}** zone failed.\n\n[View workflow run](${workflowUrl})`;
 
             // Read CODEOWNERS file to get assignees
