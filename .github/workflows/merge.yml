@@ -70,7 +70,7 @@ jobs:
       - name: Verify deployed services
         working-directory: integration-tests
         env:
-          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca/
+          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
