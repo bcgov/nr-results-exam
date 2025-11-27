@@ -27,8 +27,8 @@ on:
         required: false
         type: string
       frontend_url:
-        description: Frontend URL for smoke tests (auto-calculated if not provided)
-        required: false
+        description: Full frontend URL
+        required: true
         type: string
 
     secrets:
@@ -44,14 +44,12 @@ on:
 
 jobs:
   init:
-    name: Init and calculate deployment parameters
+    name: Init
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     permissions:
       contents: read
-    outputs:
-      mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
     steps:
       - name: Deploy OpenShift init resources
         uses: bcgov/action-deployer-openshift@v4.0.1
@@ -65,17 +63,6 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
-      - name: Calculate MOD_ZONE
-        id: mod-zone
-        run: |
-          # For PR deployments (numeric zones), calculate modulo 50
-          # For named environments (test, prod), use the zone as-is
-          if [[ "${{ inputs.zone }}" =~ ^[0-9]+$ ]]; then
-            echo "mod_zone=$(( ${{ inputs.zone }} % 50 ))" >> $GITHUB_OUTPUT
-          else
-            echo "mod_zone=${{ inputs.zone }}" >> $GITHUB_OUTPUT
-          fi
-
   deploys:
     name: Deploy
     needs: [init]
@@ -88,6 +75,12 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
+      - name: Extract hostname for frontend
+        if: matrix.name == 'frontend'
+        id: hostname
+        run: |
+          echo "hostname=$(echo '${{ inputs.frontend_url }}' | sed -E 's|https?://||' | sed -E 's|/.*||')" >> $GITHUB_OUTPUT
+
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
         with:
@@ -97,8 +90,9 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
+            ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', steps.hostname.outputs.hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
+            ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', inputs.frontend_url) || '' }}
 
   smoke:
     name: Smoke Tests
@@ -107,19 +101,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Calculate frontend URL
+      - name: Set frontend URL for smoke tests
         id: frontend-url
         run: |
-          if [ -n "${{ inputs.frontend_url }}" ]; then
-            # Use provided frontend URL
-            echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
-          else
-            # Calculate from zone (for PRs)
-            DOMAIN="apps.silver.devops.gov.bc.ca"
-            REPO="nr-results-exam"
-            MOD_ZONE="${{ needs.init.outputs.mod_zone }}"
-            echo "url=https://${REPO}-${MOD_ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
-          fi
+          echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v6
 

@@ -10,8 +10,8 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
-  - name: MOD_ZONE
-    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
+  - name: HOSTNAME
+    description: Hostname for the Route, e.g. example.com
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
@@ -101,7 +101,7 @@ objects:
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: URL
-                  value: "https://${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}/"
+                  value: "https://${HOSTNAME}/"
                 - name: REDIRECT_FROM_HOST
                   value: "${REDIRECT_URL}"
               ports:
@@ -155,7 +155,7 @@ objects:
         app: "${NAME}-${ZONE}"
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
-      host: "${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}"
+      host: "${HOSTNAME}"
       port:
         targetPort: 3000-tcp
       to:
