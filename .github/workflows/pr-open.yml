@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
+      redirect_url: ${{ steps.url.outputs.redirect_url }}
     steps:
       - name: Calculate redirect URL
         id: url
@@ -26,7 +26,7 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
           # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   builds:
     name: Builds
@@ -57,7 +57,7 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       zone: ${{ github.event.number }}
-      redirect_from_url: ${{ needs.vars.outputs.redirect_from_url }}
+      redirect_url: ${{ needs.vars.outputs.redirect_url }}
 
   smoke:
     name: Smoke Tests
