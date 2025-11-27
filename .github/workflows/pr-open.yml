@@ -58,7 +58,6 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       oc_namespace: ${{ vars.OC_NAMESPACE }}
-      oc_server: ${{ vars.OC_SERVER }}
       tag: ${{ github.event.number }}
       vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
       zone: ${{ github.event.number }}

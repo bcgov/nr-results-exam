@@ -22,14 +22,6 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
-      oc_namespace:
-        description: OpenShift namespace
-        required: true
-        type: string
-      oc_server:
-        description: OpenShift server URL
-        required: true
-        type: string
       report_issue:
         description: Create an issue when deployment fails
         default: false
@@ -65,10 +57,11 @@ jobs:
         uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
-          oc_namespace: ${{ inputs.oc_namespace }}
-          oc_server: ${{ inputs.oc_server }}
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
           oc_token: ${{ secrets.oc_token }}
-          parameters: -p ZONE=${{ inputs.zone }}
+          parameters: |
+            -p ZONE=${{ inputs.zone }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ inputs.vite_user_pools_web_client_id }}
@@ -100,10 +93,11 @@ jobs:
         id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ inputs.oc_namespace }}
-          oc_server: ${{ inputs.oc_server }}
+          oc_namespace: ${{ vars.oc_namespace }}
+          oc_server: ${{ vars.oc_server }}
           oc_token: ${{ secrets.oc_token }}
-          parameters: -p ZONE=${{ inputs.zone }}
+          parameters: |
+            -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}

@@ -36,8 +36,6 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
-      oc_namespace: ${{ vars.OC_NAMESPACE }}
-      oc_server: ${{ vars.OC_SERVER }}
       tag: ${{ needs.vars.outputs.pr }}
       vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
       zone: test
@@ -74,8 +72,6 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
-      oc_namespace: ${{ vars.OC_NAMESPACE }}
-      oc_server: ${{ vars.OC_SERVER }}
       tag: ${{ needs.vars.outputs.pr }}
       vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
       zone: prod
