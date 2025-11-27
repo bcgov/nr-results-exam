@@ -19,6 +19,17 @@ on:
         default: ""
         type: string
 
+    secrets:
+      ches_client_secret:
+        description: CHES client secret
+        required: true
+      oc_token:
+        description: OpenShift token
+        required: true
+      s3_secretkey:
+        description: S3 secret key
+        required: true
+
 jobs:
   init:
     name: Initialize deployment

@@ -53,8 +53,9 @@ jobs:
     needs: [builds, vars]
     uses: ./.github/workflows/.deploy.yml
     secrets:
-      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
-      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
+      CHES_CLIENT_SECRET: ${{ secrets.CHES_CLIENT_SECRET }}
+      OC_TOKEN: ${{ secrets.OC_TOKEN }}
+      S3_SECRETKEY: ${{ secrets.S3_SECRETKEY }}
     with:
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
