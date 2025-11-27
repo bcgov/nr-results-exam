@@ -23,14 +23,6 @@ on:
         default: false
         type: boolean
 
-    secrets:
-      ches_client_secret:
-        description: CHES client secret
-        required: true
-      s3_secretkey:
-        description: S3 secret key
-        required: true
-
 jobs:
   init:
     name: Initialize deployment
