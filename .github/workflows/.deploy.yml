@@ -95,7 +95,6 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            ${{ matrix.name == 'frontend' && format('-p URL={0}/', needs.init.outputs.frontend_url) || '' }}
             ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', steps.hostname.outputs.hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
             ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', needs.init.outputs.frontend_url) || '' }}

@@ -10,11 +10,8 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-###, test or prod
     required: true
-  - name: URL
-    description: Full frontend URL with protocol and trailing slash, e.g. https://example.com/
-    required: true
   - name: HOSTNAME
-    description: Hostname extracted from URL for the Route (automatically derived from URL in workflow)
+    description: Hostname for the Route and URL construction, e.g. example.com
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
@@ -104,7 +101,7 @@ objects:
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: URL
-                  value: "${URL}"
+                  value: "https://${HOSTNAME}/"
                 - name: REDIRECT_FROM_HOST
                   value: "${REDIRECT_URL}"
               ports:
