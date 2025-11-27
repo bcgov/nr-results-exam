@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 1
     outputs:
       redirect_url: ${{ steps.url.outputs.redirect_url }}
-      frontend_url: ${{ steps.url.outputs.frontend_url }}
+      hostname: ${{ steps.url.outputs.hostname }}
     steps:
       - name: Calculate URLs
         id: url
@@ -44,7 +44,7 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
           echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
-          echo "frontend_hostname=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "hostname=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -58,7 +58,7 @@ jobs:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
-      frontend_hostname: ${{ needs.vars.outputs.frontend_hostname }}
+      hostname: ${{ needs.vars.outputs.hostname }}
       pr_number: ${{ github.event.number }}
 
   results:

@@ -26,8 +26,8 @@ on:
         description: PR number if this is a PR deployment (empty for non-PRs)
         required: false
         type: string
-      frontend_hostname:
-        description: Frontend hostname (without protocol)
+      hostname:
+        description: Hostname (without protocol)
         required: true
         type: string
 
@@ -75,9 +75,9 @@ jobs:
       matrix:
         include:
           - name: backend
-            params: -p HOSTNAME=${{ inputs.frontend_hostname }}
+            params: -p HOSTNAME=${{ inputs.hostname }}
           - name: frontend
-            params: -p HOSTNAME=${{ inputs.frontend_hostname }} -p REDIRECT_URL=${{ inputs.redirect_url }}
+            params: -p HOSTNAME=${{ inputs.hostname }} -p REDIRECT_URL=${{ inputs.redirect_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
@@ -100,7 +100,7 @@ jobs:
       - name: Set frontend URL for smoke tests
         id: frontend-url
         run: |
-          echo "url=https://${{ inputs.frontend_hostname }}" >> $GITHUB_OUTPUT
+          echo "url=https://${{ inputs.hostname }}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v6
 
