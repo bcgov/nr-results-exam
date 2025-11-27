@@ -75,9 +75,9 @@ jobs:
       matrix:
         include:
           - name: backend
-            params: -p FRONTEND_HOSTNAME=${{ inputs.frontend_hostname }}
+            params: -p HOSTNAME=${{ inputs.frontend_hostname }}
           - name: frontend
-            params: -p FRONTEND_HOSTNAME=${{ inputs.frontend_hostname }} -p REDIRECT_URL=${{ inputs.redirect_url }}
+            params: -p HOSTNAME=${{ inputs.frontend_hostname }} -p REDIRECT_URL=${{ inputs.redirect_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys

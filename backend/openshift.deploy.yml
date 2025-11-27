@@ -10,7 +10,7 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-### or prod
     required: true
-  - name: FRONTEND_HOSTNAME
+  - name: HOSTNAME
     description: Frontend hostname, e.g. example.com
     required: true
   - name: TAG
@@ -117,7 +117,7 @@ objects:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
                 - name: FRONTEND_URL
-                  value: "https://${FRONTEND_HOSTNAME}"
+                  value: "https://${HOSTNAME}"
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: VITE_USER_POOLS_ID
