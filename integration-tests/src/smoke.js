@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+const redirectFromUrl = process.env.REDIRECT_FROM_URL?.replace(/\/$/, "");
 const origin = process.env.SMOKE_ORIGIN ?? frontendUrl;
 const DEFAULT_TIMEOUT_MS = 5000;
 const MIN_TIMEOUT_MS = 1000;
@@ -164,13 +165,13 @@ const checks = [
       return response.status === 200;
     }
   },
-  {
+  // Only add redirect check if REDIRECT_FROM_URL is configured
+  ...(redirectFromUrl ? [{
     name: "redirect from URL",
-    url: frontendUrl.replace("-frontend", ""),
-    // Redirect validation is handled via checkRedirect in executeCheck
+    url: redirectFromUrl,
     checkRedirect: true,
     expectedRedirect: frontendUrl
-  }
+  }] : [])
 ];
 
 const validateRedirectLocation = (location, expectedRedirect) => {

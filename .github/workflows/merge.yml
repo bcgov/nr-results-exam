@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -47,28 +47,14 @@ jobs:
   deploys-test:
     name: Deploys (TEST)
     needs: [vars, init-test]
-    environment: test
-    permissions:
-      issues: write
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
-        with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=test
-            -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=test
-            ${{ matrix.params || '' }}
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      environment: test
+      tag: ${{ needs.vars.outputs.pr }}
+      zone: test
+      redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
+      report_issue: true
 
   smoke-test:
     name: Smoke Tests (TEST)
@@ -85,6 +71,7 @@ jobs:
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+          REDIRECT_FROM_URL: https://results-exam-test.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke
@@ -96,7 +83,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
@@ -110,26 +97,13 @@ jobs:
   deploys-prod:
     name: Deploys (PROD)
     needs: [vars, init-prod]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            params: -p REDIRECT_FROM_URL="${{ vars.REDIRECT_FROM_URL }}"
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
-        with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=prod
-            -p TAG=${{ needs.vars.outputs.pr }}
-            -p MOD_ZONE=prod
-            ${{ matrix.params || '' }}
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      environment: prod
+      tag: ${{ needs.vars.outputs.pr }}
+      zone: prod
+      redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
 
   smoke-prod:
     name: Smoke Tests (PROD)
@@ -146,6 +120,7 @@ jobs:
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
+          REDIRECT_FROM_URL: https://results-exam.apps.silver.devops.gov.bc.ca
         run: |
           npm ci
           npm run smoke

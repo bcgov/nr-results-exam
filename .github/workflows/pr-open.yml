@@ -24,7 +24,6 @@ jobs:
     steps:
       - uses: bcgov/action-builder-ghcr@v4.2.1
         with:
-          keep_versions: 50
           package: ${{ matrix.package }}
           tags: ${{ github.event.number }}
           tag_fallback: latest
@@ -39,13 +38,12 @@ jobs:
       url: ${{ steps.url.outputs.url }}
       redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
+      - uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
           parameters: -p ZONE=${{ github.event.number }}
             -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
             -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
@@ -63,29 +61,14 @@ jobs:
           echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
-    name: Deploys
+    name: Deploys (${{ github.event.number }})
     needs: [builds, init]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            params: -p REDIRECT_FROM_URL=${{ needs.init.outputs.redirect_from_url }}
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.0
-        id: deploys
-        with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          overwrite: true
-          parameters: -p ZONE=${{ github.event.number }}
-            -p TAG=${{ github.event.number }}
-            -p MOD_ZONE=$(( ${{ github.event.number }} % 50))
-            ${{ matrix.params || '' }}
+    uses: ./.github/workflows/.deploy.yml
+    secrets: inherit
+    with:
+      tag: ${{ github.event.number }}
+      zone: ${{ github.event.number }}
+      redirect_from_url: ${{ needs.init.outputs.redirect_from_url }}
 
   smoke:
     name: Smoke Tests
