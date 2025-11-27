@@ -27,15 +27,7 @@ on:
         required: false
         type: string
       frontend_url:
-        description: Frontend URL for smoke tests (auto-calculated if not provided)
-        required: false
-        type: string
-      url:
-        description: Full frontend URL with protocol and trailing slash (auto-calculated if not provided)
-        required: false
-        type: string
-      backend_frontend_url:
-        description: Full frontend URL for backend to reference (auto-calculated if not provided)
+        description: Full frontend URL with protocol (auto-calculated if not provided)
         required: false
         type: string
 
@@ -59,9 +51,9 @@ jobs:
     permissions:
       contents: read
     outputs:
-      url: ${{ steps.urls.outputs.url }}
+      frontend_url: ${{ steps.urls.outputs.frontend_url }}
+      frontend_url_with_slash: ${{ steps.urls.outputs.frontend_url_with_slash }}
       frontend_hostname: ${{ steps.urls.outputs.frontend_hostname }}
-      backend_frontend_url: ${{ steps.urls.outputs.backend_frontend_url }}
     steps:
       - name: Deploy OpenShift init resources
         uses: bcgov/action-deployer-openshift@v4.0.1
@@ -80,10 +72,10 @@ jobs:
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="nr-results-exam"
-
+          
           # Calculate frontend URL if not provided
-          if [ -n "${{ inputs.url }}" ]; then
-            FRONTEND_URL="${{ inputs.url }}"
+          if [ -n "${{ inputs.frontend_url }}" ]; then
+            FRONTEND_URL="${{ inputs.frontend_url }}"
           else
             # Calculate from zone (for PRs)
             if [[ "${{ inputs.zone }}" =~ ^[0-9]+$ ]]; then
@@ -91,28 +83,21 @@ jobs:
             else
               ZONE="${{ inputs.zone }}"
             fi
-            FRONTEND_URL="https://${REPO}-${ZONE}-frontend.${DOMAIN}/"
+            FRONTEND_URL="https://${REPO}-${ZONE}-frontend.${DOMAIN}"
           fi
-
-          # Ensure URL has trailing slash
-          if [[ ! "$FRONTEND_URL" =~ /$ ]]; then
-            FRONTEND_URL="${FRONTEND_URL}/"
-          fi
-
+          
+          # Remove trailing slash for base URL (backend uses this)
+          FRONTEND_URL_CLEAN="${FRONTEND_URL%/}"
+          
+          # Add trailing slash for frontend template (URL env var needs it)
+          FRONTEND_URL_WITH_SLASH="${FRONTEND_URL_CLEAN}/"
+          
           # Extract hostname from URL (remove protocol and path)
-          FRONTEND_HOSTNAME=$(echo "$FRONTEND_URL" | sed -E 's|https?://||' | sed -E 's|/.*||')
-
-          # Calculate backend FRONTEND_URL if not provided
-          if [ -n "${{ inputs.backend_frontend_url }}" ]; then
-            BACKEND_FRONTEND_URL="${{ inputs.backend_frontend_url }}"
-          else
-            # Use the same URL but without trailing slash for backend
-            BACKEND_FRONTEND_URL="${FRONTEND_URL%/}"
-          fi
-
-          echo "url=${FRONTEND_URL}" >> $GITHUB_OUTPUT
+          FRONTEND_HOSTNAME=$(echo "$FRONTEND_URL_CLEAN" | sed -E 's|https?://||' | sed -E 's|/.*||')
+          
+          echo "frontend_url=${FRONTEND_URL_CLEAN}" >> $GITHUB_OUTPUT
+          echo "frontend_url_with_slash=${FRONTEND_URL_WITH_SLASH}" >> $GITHUB_OUTPUT
           echo "frontend_hostname=${FRONTEND_HOSTNAME}" >> $GITHUB_OUTPUT
-          echo "backend_frontend_url=${BACKEND_FRONTEND_URL}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploy
@@ -135,10 +120,10 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            ${{ matrix.name == 'frontend' && format('-p URL={0}', needs.init.outputs.url) || '' }}
+            ${{ matrix.name == 'frontend' && format('-p URL={0}', needs.init.outputs.frontend_url_with_slash) || '' }}
             ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', needs.init.outputs.frontend_hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
-            ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', needs.init.outputs.backend_frontend_url) || '' }}
+            ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', needs.init.outputs.frontend_url) || '' }}
 
   smoke:
     name: Smoke Tests
@@ -155,7 +140,7 @@ jobs:
             echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
           else
             # Use the calculated URL from init step
-            echo "url=${{ needs.init.outputs.url }}" >> $GITHUB_OUTPUT
+            echo "url=${{ needs.init.outputs.frontend_url }}" >> $GITHUB_OUTPUT
           fi
 
       - uses: actions/checkout@v6
