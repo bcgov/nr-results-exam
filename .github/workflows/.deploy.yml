@@ -52,7 +52,6 @@ jobs:
       contents: read
     outputs:
       frontend_url: ${{ inputs.frontend_url }}
-      frontend_hostname: ${{ steps.hostname.outputs.hostname }}
     steps:
       - name: Deploy OpenShift init resources
         uses: bcgov/action-deployer-openshift@v4.0.1
@@ -66,14 +65,6 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
-      - name: Extract hostname from frontend URL
-        id: hostname
-        run: |
-          FRONTEND_URL="${{ inputs.frontend_url }}"
-          # Remove protocol and path to get hostname
-          HOSTNAME=$(echo "$FRONTEND_URL" | sed -E 's|https?://||' | sed -E 's|/.*||')
-          echo "hostname=${HOSTNAME}" >> $GITHUB_OUTPUT
-
   deploys:
     name: Deploy
     needs: [init]
@@ -86,6 +77,15 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
+      - name: Extract hostname for frontend
+        if: matrix.name == 'frontend'
+        id: hostname
+        run: |
+          FRONTEND_URL="${{ needs.init.outputs.frontend_url }}"
+          # Remove protocol and path to get hostname
+          HOSTNAME=$(echo "$FRONTEND_URL" | sed -E 's|https?://||' | sed -E 's|/.*||')
+          echo "hostname=${HOSTNAME}" >> $GITHUB_OUTPUT
+
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
         with:
@@ -96,7 +96,7 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             ${{ matrix.name == 'frontend' && format('-p URL={0}/', needs.init.outputs.frontend_url) || '' }}
-            ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', needs.init.outputs.frontend_hostname) || '' }}
+            ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', steps.hostname.outputs.hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
             ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', needs.init.outputs.frontend_url) || '' }}
 
