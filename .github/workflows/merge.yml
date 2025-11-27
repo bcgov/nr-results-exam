@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - "*.md"
       - ".github/**"
-      - "!.github/workflows/**"
+  workflow_dispatch:
 
 concurrency:
   # Do not interrupt previous workflows
