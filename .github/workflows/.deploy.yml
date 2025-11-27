@@ -26,6 +26,14 @@ on:
         description: Create an issue when deployment fails
         default: false
         type: boolean
+      run_smoke_tests:
+        description: Run smoke tests after deployment
+        default: true
+        type: boolean
+      frontend_url:
+        description: Frontend URL for smoke tests (auto-calculated if not provided)
+        required: false
+        type: string
 
     secrets:
       ches_client_secret:
@@ -96,11 +104,50 @@ jobs:
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
 
+  smoke:
+    name: Smoke Tests
+    if: inputs.run_smoke_tests == true
+    needs: [init, deploys]
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Calculate frontend URL
+        id: frontend-url
+        run: |
+          if [ -n "${{ inputs.frontend_url }}" ]; then
+            # Use provided frontend URL
+            echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
+          else
+            # Calculate from zone (for PRs)
+            DOMAIN="apps.silver.devops.gov.bc.ca"
+            REPO="nr-results-exam"
+            MOD_ZONE="${{ needs.init.outputs.mod_zone }}"
+            echo "url=https://${REPO}-${MOD_ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/checkout@v6
+      
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Run smoke tests
+        working-directory: integration-tests
+        env:
+          FRONTEND_URL: ${{ steps.frontend-url.outputs.url }}
+          REDIRECT_URL: ${{ inputs.redirect_url && format('https://{0}', inputs.redirect_url) || '' }}
+        run: |
+          npm ci
+          npm run smoke
+
   report-failures:
     name: Failure Reporting
-    if: ${{ inputs.report_issue && always() && failure() }}
+    if: ${{ inputs.report_issue && always() && (needs.init.result == 'failure' || needs.deploys.result == 'failure' || (inputs.run_smoke_tests && needs.smoke.result == 'failure')) }}
     # Include all needs that could have failures!
-    needs: [init, deploys]
+    # Note: smoke is conditional - if skipped, report-failures will also be skipped
+    # but we check smoke result only if run_smoke_tests is true
+    needs: [init, deploys, smoke]
     runs-on: ubuntu-24.04
     permissions:
       issues: write

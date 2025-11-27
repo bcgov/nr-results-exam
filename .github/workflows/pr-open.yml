@@ -58,29 +58,12 @@ jobs:
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
 
-  smoke:
-    name: Smoke Tests
-    needs: [deploys]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-
-      - name: Run smoke checks against PR deployment
-        working-directory: integration-tests
-        run: |
-          npm ci
-          export FRONTEND_URL="https://nr-results-exam-$(( ${{ github.event.number }} % 50 ))-frontend.apps.silver.devops.gov.bc.ca"
-          npm run smoke
-
   results:
     name: PR Results
     if: always() && !failure()
     # Include all needs that could have failures!
-    needs: [builds, deploys, smoke]
+    # Note: deploys now includes smoke tests
+    needs: [builds, deploys]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Workflow completed successfully!"

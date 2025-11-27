@@ -40,30 +40,11 @@ jobs:
       zone: test
       redirect_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
-
-  smoke-test:
-    name: Smoke Tests (TEST)
-    needs: [vars, deploys-test]
-    environment: test
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      - name: Verify deployed services
-        working-directory: integration-tests
-        env:
-          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
-          REDIRECT_URL: https://results-exam-test.apps.silver.devops.gov.bc.ca
-        run: |
-          npm ci
-          npm run smoke
+      frontend_url: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
 
   deploys-prod:
     name: Deploys (PROD)
-    needs: [vars, smoke-test]
+    needs: [vars, deploys-test]
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
@@ -74,30 +55,11 @@ jobs:
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
       redirect_url: results-exam.apps.silver.devops.gov.bc.ca
-
-  smoke-prod:
-    name: Smoke Tests (PROD)
-    needs: [vars, deploys-prod]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      - name: Verify PROD deployment
-        working-directory: integration-tests
-        env:
-          FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
-          REDIRECT_URL: https://results-exam.apps.silver.devops.gov.bc.ca
-        run: |
-          npm ci
-          npm run smoke
+      frontend_url: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
 
   image-promotions:
     name: Promote images
-    needs: [vars, smoke-prod]
+    needs: [vars, deploys-prod]
     permissions:
       packages: write
     runs-on: ubuntu-24.04
