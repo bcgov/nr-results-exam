@@ -28,7 +28,7 @@ on:
         type: boolean
       vite_user_pools_web_client_id:
         description: VITE_USER_POOLS_WEB_CLIENT_ID variable
-        required: false
+        required: true
         type: string
 
     secrets:
@@ -63,7 +63,7 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-            ${{ inputs.vite_user_pools_web_client_id && format('-p VITE_USER_POOLS_WEB_CLIENT_ID={0}', inputs.vite_user_pools_web_client_id) || '' }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ inputs.vite_user_pools_web_client_id }}
 
       - name: Calculate MOD_ZONE
         id: mod-zone
