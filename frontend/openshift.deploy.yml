@@ -14,7 +14,7 @@ parameters:
     description: Full frontend URL with protocol and trailing slash, e.g. https://example.com/
     required: true
   - name: HOSTNAME
-    description: Hostname for the Route (without protocol), e.g. example.com
+    description: Hostname extracted from URL for the Route (automatically derived from URL in workflow)
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
