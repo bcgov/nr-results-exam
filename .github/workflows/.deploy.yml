@@ -20,13 +20,13 @@ on:
         type: string
 
     secrets:
-      ches_client_secret:
+      CHES_CLIENT_SECRET:
         description: CHES client secret
         required: true
-      oc_token:
+      OC_TOKEN:
         description: OpenShift token
         required: true
-      s3_secretkey:
+      S3_SECRETKEY:
         description: S3 secret key
         required: true
 
