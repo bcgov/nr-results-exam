@@ -39,7 +39,6 @@ jobs:
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
       redirect_url: results-exam-test.apps.silver.devops.gov.bc.ca
-      report_issue: true
       frontend_url: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
 
   deploys-prod:

@@ -22,10 +22,10 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
-      report_issue:
-        description: Create an issue when deployment fails
-        default: false
-        type: boolean
+      pr_number:
+        description: PR number if this is a PR deployment (empty for non-PRs)
+        required: false
+        type: string
       frontend_url:
         description: Frontend URL for smoke tests (auto-calculated if not provided)
         required: false
@@ -138,8 +138,9 @@ jobs:
 
   report-failures:
     name: Failure Reporting
-    if: ${{ inputs.report_issue && always() && (needs.init.result == 'failure' || needs.deploys.result == 'failure' || needs.smoke.result == 'failure') }}
-    # Include all needs that could have failures!
+    if: failure() && !inputs.pr_number
+    # Create issues for non-PR deployments (test/prod)
+    # PRs don't need issues since failures are visible in the PR checks
     needs: [init, deploys, smoke]
     runs-on: ubuntu-24.04
     permissions:

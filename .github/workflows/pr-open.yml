@@ -57,6 +57,7 @@ jobs:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
+      pr_number: ${{ github.event.number }}
 
   results:
     name: PR Results
