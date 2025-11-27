@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
-const redirectFromUrl = process.env.REDIRECT_FROM_URL?.replace(/\/$/, "");
+const redirectFromUrl = process.env.REDIRECT_URL?.replace(/\/$/, "");
 const origin = process.env.SMOKE_ORIGIN ?? frontendUrl;
 const DEFAULT_TIMEOUT_MS = 5000;
 const MIN_TIMEOUT_MS = 1000;
@@ -121,7 +121,7 @@ const checks = [
       }
       // Verify that key security features are disabled
       const requiredPolicies = ['camera=()', 'microphone=()', 'geolocation=()'];
-      const hasAllPolicies = requiredPolicies.every(policy => 
+      const hasAllPolicies = requiredPolicies.every(policy =>
         permissionsPolicy.includes(policy)
       );
       if (!hasAllPolicies) {
@@ -165,7 +165,7 @@ const checks = [
       return response.status === 200;
     }
   },
-  // Only add redirect check if REDIRECT_FROM_URL is configured
+  // Only add redirect check if REDIRECT_URL is configured
   ...(redirectFromUrl ? [{
     name: "redirect from URL",
     url: redirectFromUrl,
@@ -178,15 +178,15 @@ const validateRedirectLocation = (location, expectedRedirect) => {
   if (!location) {
     throw new Error("Redirect response missing Location header");
   }
-  
-  const expectedLocation = expectedRedirect.endsWith('/') 
-    ? expectedRedirect 
+
+  const expectedLocation = expectedRedirect.endsWith('/')
+    ? expectedRedirect
     : `${expectedRedirect}/`;
-  
+
   if (location !== expectedLocation && location !== expectedRedirect) {
     throw new Error(`Redirect location mismatch: expected ${expectedLocation} or ${expectedRedirect}, got ${location}`);
   }
-  
+
   return location;
 };
 
@@ -203,18 +203,18 @@ const executeCheck = async (check) => {
             Origin: origin
           }
         });
-        
+
         if (response.status !== 301 && response.status !== 308) {
           throw new Error(`Expected 301 or 308 redirect, got ${response.status}`);
         }
-        
+
         // Extract location and status from response
         const location = response.headers.location;
         const status = response.status;
-        
+
         // Validate redirect location
         validateRedirectLocation(location, check.expectedRedirect);
-        
+
         const attemptInfo = attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : "";
         console.info(
           `✅ ${check.name} redirected ${status} from ${check.url} to ${location}${attemptInfo}`
@@ -262,7 +262,7 @@ const executeCheck = async (check) => {
     }
     return;
   }
-  
+
   // Standard check execution
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {

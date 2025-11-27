@@ -26,108 +26,39 @@ jobs:
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
 
-  init-test:
-    name: Init (TEST)
-    needs: vars
-    environment: test
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=test
-            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-
   deploys-test:
     name: Deploys (TEST)
-    needs: [vars, init-test]
+    needs: [vars]
     uses: ./.github/workflows/.deploy.yml
-    secrets: inherit
+    secrets:
+      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
-      redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
-      report_issue: true
-
-  smoke-test:
-    name: Smoke Tests (TEST)
-    needs: [vars, deploys-test]
-    environment: test
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      - name: Verify deployed services
-        working-directory: integration-tests
-        env:
-          FRONTEND_URL: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
-          REDIRECT_FROM_URL: https://results-exam-test.apps.silver.devops.gov.bc.ca
-        run: |
-          npm ci
-          npm run smoke
-
-  init-prod:
-    name: Init (PROD)
-    needs: [vars, smoke-test]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=prod
-            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
+      redirect_url: results-exam-test.apps.silver.devops.gov.bc.ca
+      frontend_url: https://nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
 
   deploys-prod:
     name: Deploys (PROD)
-    needs: [vars, init-prod]
+    needs: [vars, deploys-test]
     uses: ./.github/workflows/.deploy.yml
-    secrets: inherit
+    secrets:
+      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
-      redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
-
-  smoke-prod:
-    name: Smoke Tests (PROD)
-    needs: [vars, deploys-prod]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-      - name: Verify PROD deployment
-        working-directory: integration-tests
-        env:
-          FRONTEND_URL: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
-          REDIRECT_FROM_URL: https://results-exam.apps.silver.devops.gov.bc.ca
-        run: |
-          npm ci
-          npm run smoke
+      redirect_url: results-exam.apps.silver.devops.gov.bc.ca
+      frontend_url: https://nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
 
   image-promotions:
     name: Promote images
-    needs: [vars, smoke-prod]
+    needs: [vars, deploys-prod]
     permissions:
       packages: write
     runs-on: ubuntu-24.04
