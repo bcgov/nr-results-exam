@@ -26,17 +26,10 @@ on:
         description: Create an issue when deployment fails
         default: false
         type: boolean
-      vite_user_pools_web_client_id:
-        description: Vite user pools web client ID
-        required: true
-        type: string
 
     secrets:
       ches_client_secret:
         description: CHES client secret
-        required: true
-      oc_token:
-        description: OpenShift token
         required: true
       s3_secretkey:
         description: S3 secret key
@@ -64,7 +57,7 @@ jobs:
             -p ZONE=${{ inputs.zone }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ inputs.vite_user_pools_web_client_id }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
       - name: Calculate MOD_ZONE
         id: mod-zone
