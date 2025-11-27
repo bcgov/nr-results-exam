@@ -26,10 +26,6 @@ on:
         description: Create an issue when deployment fails
         default: false
         type: boolean
-      run_smoke_tests:
-        description: Run smoke tests after deployment
-        default: true
-        type: boolean
       frontend_url:
         description: Frontend URL for smoke tests (auto-calculated if not provided)
         required: false
@@ -106,7 +102,6 @@ jobs:
 
   smoke:
     name: Smoke Tests
-    if: inputs.run_smoke_tests == true
     needs: [init, deploys]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
@@ -143,10 +138,8 @@ jobs:
 
   report-failures:
     name: Failure Reporting
-    if: ${{ inputs.report_issue && always() && (needs.init.result == 'failure' || needs.deploys.result == 'failure' || (inputs.run_smoke_tests && needs.smoke.result == 'failure')) }}
+    if: ${{ inputs.report_issue && always() && (needs.init.result == 'failure' || needs.deploys.result == 'failure' || needs.smoke.result == 'failure') }}
     # Include all needs that could have failures!
-    # Note: smoke is conditional - if skipped, report-failures will also be skipped
-    # but we check smoke result only if run_smoke_tests is true
     needs: [init, deploys, smoke]
     runs-on: ubuntu-24.04
     permissions:
