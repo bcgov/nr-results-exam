@@ -17,14 +17,25 @@ jobs:
   vars:
     name: Variables
     outputs:
-      pr: ${{ steps.pr.outputs.pr }}
+      pr: ${{ steps.tag.outputs.tag }}
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     steps:
-      # Get PR number for squash merges to main
+      # Get PR number for squash merges to main, or use commit SHA as fallback
       - name: PR Number
         id: pr
+        continue-on-error: true
         uses: bcgov/action-get-pr@v0.0.1
+      
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ -n "${{ steps.pr.outputs.pr }}" ]; then
+            echo "tag=${{ steps.pr.outputs.pr }}" >> $GITHUB_OUTPUT
+          else
+            # Use short commit SHA for direct pushes
+            echo "tag=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
 
   deploys-test:
     name: Deploys (TEST)
