@@ -56,7 +56,6 @@ jobs:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
-      tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_from_url: ${{ needs.vars.outputs.redirect_from_url }}
 

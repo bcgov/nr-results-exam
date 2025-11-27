@@ -14,35 +14,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  vars:
-    name: Variables
-    outputs:
-      pr: ${{ steps.pr.outputs.pr }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    steps:
-      # Get PR number for squash merges to main
-      - name: PR Number
-        id: pr
-        uses: bcgov/action-get-pr@v0.0.1
-
   deploys-test:
     name: Deploys (TEST)
-    needs: vars
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
-      tag: ${{ needs.vars.outputs.pr }}
       zone: test
       redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
 
   smoke-test:
     name: Smoke Tests (TEST)
-    needs: [vars, deploys-test]
+    needs: [deploys-test]
     environment: test
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -62,20 +48,19 @@ jobs:
 
   deploys-prod:
     name: Deploys (PROD)
-    needs: [vars, smoke-test]
+    needs: [smoke-test]
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
-      tag: ${{ needs.vars.outputs.pr }}
       zone: prod
       redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
 
   smoke-prod:
     name: Smoke Tests (PROD)
-    needs: [vars, deploys-prod]
+    needs: [deploys-prod]
     environment: prod
     runs-on: ubuntu-24.04
     timeout-minutes: 3
@@ -95,7 +80,7 @@ jobs:
 
   image-promotions:
     name: Promote images
-    needs: [vars, smoke-prod]
+    needs: [smoke-prod]
     permissions:
       packages: write
     runs-on: ubuntu-24.04
@@ -104,9 +89,14 @@ jobs:
         component: [backend, frontend]
     timeout-minutes: 1
     steps:
+      # Get PR number for squash merges to main
+      - name: PR Number
+        id: pr
+        uses: bcgov/action-get-pr@v0.0.1
+
       - uses: shrink/actions-docker-registry-tag@v4
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.component }}
-          target: ${{ needs.vars.outputs.pr }}
+          target: ${{ steps.pr.outputs.pr }}
           tags: prod

@@ -8,10 +8,6 @@ on:
         description: Frontend redirect from URL
         required: true
         type: string
-      tag:
-        description: Container tag; usually PR number
-        required: true
-        type: string
       zone:
         description: Deployment zone, e.g. pr-###, test or prod
         required: true
@@ -45,18 +41,19 @@ jobs:
       contents: read
     outputs:
       mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
+      tag: ${{ github.event.number || steps.pr.outputs.pr }}
     steps:
       - name: Deploy init resources
         uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
-          oc_namespace: ${{ vars.oc_namespace }}
-          oc_server: ${{ vars.oc_server }}
-          oc_token: ${{ secrets.oc_token }}
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
           parameters: |
             -p ZONE=${{ inputs.zone }}
-            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
-            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
+            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
+            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
       - name: Calculate MOD_ZONE
@@ -69,6 +66,12 @@ jobs:
           else
             echo "mod_zone=${{ inputs.zone }}" >> $GITHUB_OUTPUT
           fi
+
+      # Get PR number for squash merges to main
+      - name: PR Number
+        id: pr
+        if: ! github.event.number
+        uses: bcgov/action-get-pr@v0.0.1
 
   deploys:
     name: Deploy
@@ -86,12 +89,12 @@ jobs:
         id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.oc_namespace }}
-          oc_server: ${{ vars.oc_server }}
-          oc_token: ${{ secrets.oc_token }}
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.OC_TOKEN }}
           parameters: |
             -p ZONE=${{ inputs.zone }}
-            -p TAG=${{ inputs.tag }}
+            -p TAG=${{ needs.init.outputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_FROM_URL={0}', inputs.redirect_from_url) || '' }}
 
