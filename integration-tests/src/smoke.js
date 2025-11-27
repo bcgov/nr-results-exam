@@ -71,8 +71,8 @@ const checks = [
 
       const dependencies = data.dependencies ?? {};
       const failingDependencies = Object.entries(dependencies)
-        .filter(([ , dependency ]) => dependency?.status === "error")
-        .map(([ name ]) => name);
+        .filter(([, dependency]) => dependency?.status === "error")
+        .map(([name]) => name);
 
       if (failingDependencies.length > 0) {
         throw new Error(
@@ -96,7 +96,7 @@ const checks = [
       if (response.status !== 200) {
         return false;
       }
-      const contentType = response.headers[ "content-type" ] ?? "";
+      const contentType = response.headers["content-type"] ?? "";
       if (!contentType.includes("text/html")) {
         throw new Error("Frontend response is not HTML content");
       }
@@ -115,23 +115,23 @@ const checks = [
     url: frontendUrl,
     validate: (response) => {
       const headers = response.headers;
-      const permissionsPolicy = headers[ 'permissions-policy' ];
+      const permissionsPolicy = headers['permissions-policy'];
       if (!permissionsPolicy) {
         throw new Error('Permissions-Policy header is missing');
       }
       // Verify that key security features are disabled
-      const requiredPolicies = [ 'camera=()', 'microphone=()', 'geolocation=()' ];
+      const requiredPolicies = ['camera=()', 'microphone=()', 'geolocation=()'];
       const hasAllPolicies = requiredPolicies.every(policy =>
         permissionsPolicy.includes(policy)
       );
       if (!hasAllPolicies) {
         throw new Error(`Permissions-Policy header missing required policies. Got: ${permissionsPolicy}`);
       }
-      const contentSecurityPolicy = headers[ 'content-security-policy' ];
+      const contentSecurityPolicy = headers['content-security-policy'];
       if (!contentSecurityPolicy) {
         throw new Error('Content-Security-Policy header is missing');
       }
-      const requiredDirectives = [ "default-src 'self'", "connect-src 'self'" ];
+      const requiredDirectives = ["default-src 'self'", "connect-src 'self'"];
       const hasDirectives = requiredDirectives.every((directive) =>
         contentSecurityPolicy.includes(directive)
       );
@@ -157,7 +157,7 @@ const checks = [
       ];
 
       for (const { name, validator, message } of requiredHeaderChecks) {
-        const headerValue = headers[ name ];
+        const headerValue = headers[name];
         if (!validator(headerValue)) {
           throw new Error(message);
         }
@@ -166,12 +166,12 @@ const checks = [
     }
   },
   // Only add redirect check if REDIRECT_URL is configured
-  ...(redirectFromUrl ? [ {
+  ...(redirectFromUrl ? [{
     name: "redirect from URL",
     url: redirectFromUrl,
     checkRedirect: true,
     expectedRedirect: frontendUrl
-  } ] : [])
+  }] : [])
 ];
 
 const validateRedirectLocation = (location, expectedRedirect) => {
