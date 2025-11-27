@@ -14,6 +14,8 @@ jobs:
     name: Variables
     runs-on: ubuntu-24.04
     timeout-minutes: 1
+    permissions:
+      contents: read
     outputs:
       redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
     steps:
