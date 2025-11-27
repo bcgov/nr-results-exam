@@ -26,8 +26,8 @@ on:
         description: PR number if this is a PR deployment (empty for non-PRs)
         required: false
         type: string
-      frontend_url:
-        description: Full frontend URL
+      frontend_hostname:
+        description: Frontend hostname (without protocol)
         required: true
         type: string
 
@@ -75,12 +75,6 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
-      - name: Extract hostname for frontend
-        if: matrix.name == 'frontend'
-        id: hostname
-        run: |
-          echo "hostname=$(echo '${{ inputs.frontend_url }}' | sed -E 's|https?://||' | sed -E 's|/.*||')" >> $GITHUB_OUTPUT
-
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
         with:
@@ -90,9 +84,9 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', steps.hostname.outputs.hostname) || '' }}
+            ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', inputs.frontend_hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
-            ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', inputs.frontend_url) || '' }}
+            ${{ matrix.name == 'backend' && format('-p FRONTEND_HOSTNAME={0}', inputs.frontend_hostname) || '' }}
 
   smoke:
     name: Smoke Tests
@@ -104,7 +98,7 @@ jobs:
       - name: Set frontend URL for smoke tests
         id: frontend-url
         run: |
-          echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
+          echo "url=https://${{ inputs.frontend_hostname }}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v6
 

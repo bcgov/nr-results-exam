@@ -44,7 +44,7 @@ jobs:
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
           echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
-          echo "frontend_url=https://${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "frontend_hostname=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -58,7 +58,7 @@ jobs:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
-      frontend_url: ${{ needs.vars.outputs.frontend_url }}
+      frontend_hostname: ${{ needs.vars.outputs.frontend_hostname }}
       pr_number: ${{ github.event.number }}
 
   results:
