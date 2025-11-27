@@ -97,9 +97,9 @@ jobs:
         id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_namespace: ${{ secrets.oc_namespace }}
+          oc_server: ${{ secrets.oc_server }}
+          oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
