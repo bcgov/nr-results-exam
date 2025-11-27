@@ -73,11 +73,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        include:
-          - name: backend
-            params: -p HOSTNAME=${{ inputs.hostname }}
-          - name: frontend
-            params: -p HOSTNAME=${{ inputs.hostname }} -p REDIRECT_URL=${{ inputs.redirect_url }}
+        name: [frontend, backend]
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
@@ -86,9 +82,11 @@ jobs:
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.oc_token }}
-          parameters: -p ZONE=${{ inputs.zone }}
+          parameters: |
+            -p HOSTNAME=${{ inputs.hostname }}
             -p TAG=${{ inputs.tag }}
-            ${{ matrix.params }}
+            -p ZONE=${{ inputs.zone }}
+            ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
 
   smoke:
     name: Smoke Tests
