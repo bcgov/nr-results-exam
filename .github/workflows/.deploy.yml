@@ -52,7 +52,6 @@ jobs:
       contents: read
     outputs:
       frontend_url: ${{ steps.urls.outputs.frontend_url }}
-      frontend_url_with_slash: ${{ steps.urls.outputs.frontend_url_with_slash }}
       frontend_hostname: ${{ steps.urls.outputs.frontend_hostname }}
     steps:
       - name: Deploy OpenShift init resources
@@ -72,7 +71,7 @@ jobs:
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="nr-results-exam"
-          
+
           # Calculate frontend URL if not provided
           if [ -n "${{ inputs.frontend_url }}" ]; then
             FRONTEND_URL="${{ inputs.frontend_url }}"
@@ -85,18 +84,14 @@ jobs:
             fi
             FRONTEND_URL="https://${REPO}-${ZONE}-frontend.${DOMAIN}"
           fi
-          
-          # Remove trailing slash for base URL (backend uses this)
+
+          # Remove trailing slash for base URL
           FRONTEND_URL_CLEAN="${FRONTEND_URL%/}"
-          
-          # Add trailing slash for frontend template (URL env var needs it)
-          FRONTEND_URL_WITH_SLASH="${FRONTEND_URL_CLEAN}/"
           
           # Extract hostname from URL (remove protocol and path)
           FRONTEND_HOSTNAME=$(echo "$FRONTEND_URL_CLEAN" | sed -E 's|https?://||' | sed -E 's|/.*||')
           
           echo "frontend_url=${FRONTEND_URL_CLEAN}" >> $GITHUB_OUTPUT
-          echo "frontend_url_with_slash=${FRONTEND_URL_WITH_SLASH}" >> $GITHUB_OUTPUT
           echo "frontend_hostname=${FRONTEND_HOSTNAME}" >> $GITHUB_OUTPUT
 
   deploys:
@@ -120,7 +115,7 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            ${{ matrix.name == 'frontend' && format('-p URL={0}', needs.init.outputs.frontend_url_with_slash) || '' }}
+            ${{ matrix.name == 'frontend' && format('-p URL={0}/', needs.init.outputs.frontend_url) || '' }}
             ${{ matrix.name == 'frontend' && format('-p HOSTNAME={0}', needs.init.outputs.frontend_hostname) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
             ${{ matrix.name == 'backend' && format('-p FRONTEND_URL={0}', needs.init.outputs.frontend_url) || '' }}
