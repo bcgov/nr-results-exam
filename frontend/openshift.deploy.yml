@@ -48,7 +48,7 @@ parameters:
     value: "ca-central-1_t2HSZBHur"
   - name: VITE_ZONE
     value: PROD
-  - name: REDIRECT_FROM_URL
+  - name: REDIRECT_URL
     description: Hostname for the redirect-from URL (without protocol, e.g., nr-results-exam-12.apps.silver.devops.gov.bc.ca)
     required: true
   - name: RANDOM_EXPRESSION
@@ -103,7 +103,7 @@ objects:
                 - name: URL
                   value: "https://${NAME}-${MOD_ZONE}-${COMPONENT}.${DOMAIN}/"
                 - name: REDIRECT_FROM_HOST
-                  value: "${REDIRECT_FROM_URL}"
+                  value: "${REDIRECT_URL}"
               ports:
                 - containerPort: 3000
                   protocol: TCP
@@ -173,7 +173,7 @@ objects:
         app: ${NAME}-${ZONE}
         purpose: url-redirect
     spec:
-      host: "${REDIRECT_FROM_URL}"
+      host: "${REDIRECT_URL}"
       port:
         targetPort: 3000-tcp
       to:

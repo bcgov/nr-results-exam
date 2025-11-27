@@ -34,16 +34,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     outputs:
-      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
+      redirect_url: ${{ steps.url.outputs.redirect_url }}
     steps:
-      - name: Calculate redirect_from_url
+      - name: Calculate redirect_url
         id: url
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
           REPO="${{ github.event.repository.name }}"
           ZONE="$(( ${{ github.event.number }} % 50 ))"
           # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -56,7 +56,7 @@ jobs:
     with:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
-      redirect_from_url: ${{ needs.vars.outputs.redirect_from_url }}
+      redirect_url: ${{ needs.vars.outputs.redirect_url }}
 
   smoke:
     name: Smoke Tests
