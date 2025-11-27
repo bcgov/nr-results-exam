@@ -32,14 +32,14 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
-      oc_namespace: ${{ vars.OC_NAMESPACE }}
-      oc_server: ${{ vars.OC_SERVER }}
       oc_token: ${{ secrets.OC_TOKEN }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
-      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     with:
       environment: test
+      oc_namespace: ${{ vars.OC_NAMESPACE }}
+      oc_server: ${{ vars.OC_SERVER }}
       tag: ${{ needs.vars.outputs.pr }}
+      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
       zone: test
       redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
@@ -70,14 +70,14 @@ jobs:
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
-      oc_namespace: ${{ vars.OC_NAMESPACE }}
-      oc_server: ${{ vars.OC_SERVER }}
       oc_token: ${{ secrets.OC_TOKEN }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
-      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     with:
       environment: prod
+      oc_namespace: ${{ vars.OC_NAMESPACE }}
+      oc_server: ${{ vars.OC_SERVER }}
       tag: ${{ needs.vars.outputs.pr }}
+      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
       zone: prod
       redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
 

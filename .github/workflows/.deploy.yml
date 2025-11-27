@@ -22,29 +22,32 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
+      oc_namespace:
+        description: OpenShift namespace
+        required: true
+        type: string
+      oc_server:
+        description: OpenShift server URL
+        required: true
+        type: string
       report_issue:
         description: Create an issue when deployment fails
         default: false
         type: boolean
+      vite_user_pools_web_client_id:
+        description: Vite user pools web client ID
+        required: true
+        type: string
 
     secrets:
       ches_client_secret:
         description: CHES client secret
-        required: true
-      oc_namespace:
-        description: OpenShift namespace
-        required: true
-      oc_server:
-        description: OpenShift server URL
         required: true
       oc_token:
         description: OpenShift token
         required: true
       s3_secretkey:
         description: S3 secret key
-        required: true
-      vite_user_pools_web_client_id:
-        description: Vite user pools web client ID
         required: true
 
 jobs:
@@ -62,13 +65,13 @@ jobs:
         uses: bcgov/action-deployer-openshift@v4.0.1
         with:
           file: common/openshift.init.yml
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_server: ${{ secrets.oc_server }}
+          oc_namespace: ${{ inputs.oc_namespace }}
+          oc_server: ${{ inputs.oc_server }}
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ secrets.vite_user_pools_web_client_id }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ inputs.vite_user_pools_web_client_id }}
 
       - name: Calculate MOD_ZONE
         id: mod-zone
@@ -97,8 +100,8 @@ jobs:
         id: deploys
         with:
           file: ${{ matrix.name }}/openshift.deploy.yml
-          oc_namespace: ${{ secrets.oc_namespace }}
-          oc_server: ${{ secrets.oc_server }}
+          oc_namespace: ${{ inputs.oc_namespace }}
+          oc_server: ${{ inputs.oc_server }}
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
