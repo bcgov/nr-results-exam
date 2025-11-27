@@ -10,6 +10,22 @@ concurrency:
 
 jobs:
   # https://github.com/bcgov/action-builder-ghcr
+  vars:
+    name: Variables
+    runs-on: ubuntu-24.04
+    timeout-minutes: 1
+    outputs:
+      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
+    steps:
+      - name: Calculate redirect URL
+        id: url
+        run: |
+          DOMAIN="apps.silver.devops.gov.bc.ca"
+          REPO="${{ github.event.repository.name }}"
+          ZONE="$(( ${{ github.event.number }} % 50 ))"
+          # Redirect from URL (without -frontend) - will redirect to main
+          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
+
   builds:
     name: Builds
     runs-on: ubuntu-24.04
@@ -30,45 +46,21 @@ jobs:
           triggers: ('${{ matrix.triggers }}/')
 
   # https://github.com/bcgov/action-deployer-openshift
-  init:
-    name: Init
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    outputs:
-      url: ${{ steps.url.outputs.url }}
-      redirect_from_url: ${{ steps.url.outputs.redirect_from_url }}
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=${{ github.event.number }}
-            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-
-      - name: Calculate URLs
-        id: url
-        run: |
-          DOMAIN="apps.silver.devops.gov.bc.ca"
-          REPO="${{ github.event.repository.name }}"
-          ZONE="$(( ${{ github.event.number }} % 50 ))"
-          # Main URL (with -frontend) - current working format
-          echo "url=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
-          # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_from_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
-
   deploys:
     name: Deploys (${{ github.event.number }})
-    needs: [builds, init]
+    needs: [builds, vars]
     uses: ./.github/workflows/.deploy.yml
-    secrets: inherit
+    secrets:
+      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
+      oc_namespace: ${{ vars.OC_NAMESPACE }}
+      oc_server: ${{ vars.OC_SERVER }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
+      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
     with:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
-      redirect_from_url: ${{ needs.init.outputs.redirect_from_url }}
+      redirect_from_url: ${{ needs.vars.outputs.redirect_from_url }}
 
   smoke:
     name: Smoke Tests
