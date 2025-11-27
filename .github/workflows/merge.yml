@@ -25,6 +25,7 @@ jobs:
       pull-requests: read
     steps:
       # Get PR number for squash merges to main
+      # Action extracts PR number from commit message (e.g., "message (#492)")
       - name: PR Number
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
