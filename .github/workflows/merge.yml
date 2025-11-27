@@ -40,7 +40,6 @@ jobs:
       zone: test
       redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
-      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke-test:
     name: Smoke Tests (TEST)
@@ -75,7 +74,6 @@ jobs:
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
       redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
-      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke-prod:
     name: Smoke Tests (PROD)
