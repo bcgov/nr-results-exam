@@ -18,10 +18,6 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
-      report_issue:
-        description: Create an issue when deployment fails
-        default: false
-        type: boolean
 
 jobs:
   init:
@@ -92,7 +88,7 @@ jobs:
 
   report-failures:
     name: Deployment Results
-    if: ${{ inputs.report_issue && always() && failure() }}
+    if: failure() && ! github.event.number
     # Include all needs that could have failures!
     needs: [init, deploys]
     runs-on: ubuntu-24.04
