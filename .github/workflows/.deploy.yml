@@ -26,10 +26,26 @@ on:
         description: Create an issue when deployment fails
         default: false
         type: boolean
+      vite_user_pools_web_client_id:
+        description: VITE_USER_POOLS_WEB_CLIENT_ID variable
+        required: false
+        type: string
+
+    secrets:
+      ches_client_secret:
+        description: CHES client secret
+        required: true
+      oc_token:
+        description: OpenShift token
+        required: true
+      s3_secretkey:
+        description: S3 secret key
+        required: true
 
 jobs:
   init:
-    name: Calculate deployment parameters
+    name: Init and calculate deployment parameters
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     permissions:
@@ -37,6 +53,18 @@ jobs:
     outputs:
       mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
     steps:
+      - name: Deploy OpenShift init resources
+        uses: bcgov/action-deployer-openshift@v4.0.1
+        with:
+          file: common/openshift.init.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.oc_token }}
+          parameters: -p ZONE=${{ inputs.zone }}
+            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
+            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
+            ${{ inputs.vite_user_pools_web_client_id && format('-p VITE_USER_POOLS_WEB_CLIENT_ID={0}', inputs.vite_user_pools_web_client_id) || '' }}
+
       - name: Calculate MOD_ZONE
         id: mod-zone
         run: |
@@ -66,7 +94,7 @@ jobs:
           file: ${{ matrix.name }}/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
+          oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}

@@ -26,35 +26,21 @@ jobs:
         id: pr
         uses: bcgov/action-get-pr@v0.0.1
 
-  init-test:
-    name: Init (TEST)
-    needs: vars
-    environment: test
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=test
-            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-
   deploys-test:
     name: Deploys (TEST)
-    needs: [vars, init-test]
+    needs: [vars]
     uses: ./.github/workflows/.deploy.yml
-    secrets: inherit
+    secrets:
+      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
       redirect_from_url: results-exam-test.apps.silver.devops.gov.bc.ca
       report_issue: true
+      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke-test:
     name: Smoke Tests (TEST)
@@ -76,34 +62,20 @@ jobs:
           npm ci
           npm run smoke
 
-  init-prod:
-    name: Init (PROD)
-    needs: [vars, smoke-test]
-    environment: prod
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.OC_TOKEN }}
-          parameters: -p ZONE=prod
-            -p CHES_CLIENT_SECRET=${{ secrets.CHES_CLIENT_SECRET }}
-            -p S3_SECRETKEY=${{ secrets.S3_SECRETKEY }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
-
   deploys-prod:
     name: Deploys (PROD)
-    needs: [vars, init-prod]
+    needs: [vars, smoke-test]
     uses: ./.github/workflows/.deploy.yml
-    secrets: inherit
+    secrets:
+      ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
+      oc_token: ${{ secrets.OC_TOKEN }}
+      s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
       redirect_from_url: results-exam.apps.silver.devops.gov.bc.ca
+      vite_user_pools_web_client_id: ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke-prod:
     name: Smoke Tests (PROD)
