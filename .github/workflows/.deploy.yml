@@ -97,7 +97,7 @@ jobs:
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
 
   report-failures:
-    name: Deployment Results
+    name: Failure Reporting
     if: ${{ inputs.report_issue && always() && failure() }}
     # Include all needs that could have failures!
     needs: [init, deploys]
