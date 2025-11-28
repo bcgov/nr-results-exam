@@ -12,29 +12,37 @@ const retUrl = `https://${returnUrlHost}.gov.bc.ca/auth/realms/standard/protocol
  * 
  * If the user accessed via the redirect-from URL (without -frontend),
  * we need to add the -frontend suffix to match Cognito's allowlist.
+ * 
+ * This function is exported so it can be reused in other files (e.g., index.tsx for cookie domain).
  */
-const getFrontendOrigin = (): string => {
-  const origin = window.location.origin;
-  const hostname = window.location.hostname;
-  
-  // Check if hostname does NOT contain -frontend suffix (redirect-from URL format)
-  // e.g., nr-results-exam-48.apps.silver.devops.gov.bc.ca
-  if (!hostname.includes('-frontend.')) {
-    // Add -frontend suffix to match Cognito's allowlist
-    // Insert -frontend before the first dot in the domain part
-    const parts = hostname.split('.');
-    if (parts.length > 0) {
-      const mainHostname = parts[0];
-      const domain = parts.slice(1).join('.');
-      const frontendHostname = `${mainHostname}-frontend.${domain}`;
-      const frontendOrigin = `${window.location.protocol}//${frontendHostname}`;
-      console.log('Normalizing OAuth redirect URI to -frontend format:', frontendOrigin);
-      return frontendOrigin;
+export const getFrontendOrigin = (): string => {
+  // Use window.location if available (browser environment)
+  if (typeof window !== 'undefined' && window.location) {
+    const origin = window.location.origin;
+    const hostname = window.location.hostname;
+    
+    // Check if hostname does NOT contain -frontend suffix (redirect-from URL format)
+    // e.g., nr-results-exam-48.apps.silver.devops.gov.bc.ca
+    if (!hostname.includes('-frontend.')) {
+      // Add -frontend suffix to match Cognito's allowlist
+      // Insert -frontend before the first dot in the domain part
+      const parts = hostname.split('.');
+      if (parts.length > 0) {
+        const mainHostname = parts[0];
+        const domain = parts.slice(1).join('.');
+        const frontendHostname = `${mainHostname}-frontend.${domain}`;
+        const frontendOrigin = `${window.location.protocol}//${frontendHostname}`;
+        console.log('Normalizing OAuth redirect URI to -frontend format:', frontendOrigin);
+        return frontendOrigin;
+      }
     }
+    
+    // Use current origin if it already has -frontend suffix
+    return origin;
   }
   
-  // Use current origin if it already has -frontend suffix
-  return origin;
+  // Fallback for non-browser environments (should not happen in practice)
+  return '';
 };
 
 const frontendOrigin = getFrontendOrigin();
