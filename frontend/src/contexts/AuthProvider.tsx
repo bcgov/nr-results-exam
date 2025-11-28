@@ -46,19 +46,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const appEnv = env.VITE_ZONE ?? "DEV";
 
-  const refreshUserState = useCallback(async () => {
+  const refreshUserState = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     try {
       const idToken = await loadUserToken();
       if (idToken) {
         setUser(parseToken(idToken));
+        return true; // Success
       } else {
         setUser(undefined);
         setUserRoles(undefined);
+        return false;
       }
-    } catch {
+    } catch (error) {
+      console.error('Failed to refresh user state:', error);
       setUser(undefined);
       setUserRoles(undefined);
+      return false; // Failed
     } finally {
       setIsLoading(false);
     }
@@ -72,12 +76,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // If we're in an OAuth callback, refresh user state immediately
     // This ensures fetchAuthSession() processes the callback and exchanges the code for tokens
     if (isOAuthCallback) {
-      refreshUserState().then(() => {
-        // Clean up the URL by removing OAuth parameters after processing
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete('code');
-        newUrl.searchParams.delete('state');
-        window.history.replaceState({}, '', newUrl.toString());
+      refreshUserState().then((success) => {
+        // Only clean up the URL if token exchange was successful
+        // Amplify needs the code/state parameters to complete the exchange
+        if (success) {
+          // Clean up the URL by removing OAuth parameters after successful processing
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('code');
+          newUrl.searchParams.delete('state');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      }).catch((error) => {
+        // Log error but don't clean up URL params if exchange failed
+        // This allows retry or better error diagnosis
+        console.error('OAuth callback processing failed:', error);
       });
     } else {
       refreshUserState();
