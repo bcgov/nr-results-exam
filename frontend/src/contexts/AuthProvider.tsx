@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useCallback,
   ReactNode
 } from "react";
 import {
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const appEnv = env.VITE_ZONE ?? "DEV";
 
-  const refreshUserState = async () => {
+  const refreshUserState = useCallback(async () => {
     setIsLoading(true);
     try {
       const idToken = await loadUserToken();
@@ -61,13 +62,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshUserState();
+    // Check if we're in an OAuth callback (URL contains authorization code)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isOAuthCallback = urlParams.has('code') || urlParams.has('state');
+    
+    // If we're in an OAuth callback, refresh user state immediately
+    // This ensures fetchAuthSession() processes the callback and exchanges the code for tokens
+    if (isOAuthCallback) {
+      refreshUserState().then(() => {
+        // Clean up the URL by removing OAuth parameters after processing
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('code');
+        newUrl.searchParams.delete('state');
+        window.history.replaceState({}, '', newUrl.toString());
+      });
+    } else {
+      refreshUserState();
+    }
+    
     const interval = setInterval(loadUserToken, 3 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refreshUserState]);
 
   const login = async (provider: ProviderType) => {
     const envProvider =
