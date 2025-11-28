@@ -76,6 +76,16 @@ jobs:
       matrix:
         name: [backend, frontend]
     steps:
+      - name: Set CHES_CLIENT_ID parameter
+        id: ches-client-id
+        if: matrix.name == 'backend'
+        run: |
+          CHES_CLIENT_ID="${{ vars.CHES_CLIENT_ID }}"
+          if [ -z "$CHES_CLIENT_ID" ]; then
+            CHES_CLIENT_ID="09C5071A-ACE9B6FACF6"
+          fi
+          echo "value=$CHES_CLIENT_ID" >> $GITHUB_OUTPUT
+
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
         with:
@@ -86,6 +96,7 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p HOSTNAME=${{ inputs.hostname }}
+            ${{ matrix.name == 'backend' && format('-p CHES_CLIENT_ID={0}', steps.ches-client-id.outputs.value) || '' }}
             ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
 
   smoke:
