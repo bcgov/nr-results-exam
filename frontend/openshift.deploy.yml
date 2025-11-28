@@ -43,7 +43,7 @@ parameters:
     value: "info"
   - name: VITE_AWS_DOMAIN
     description: FAM on AWS domain
-    value: https://prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
+    value: https://lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com
   - name: VITE_USER_POOLS_ID
     value: "ca-central-1_t2HSZBHur"
   - name: VITE_ZONE

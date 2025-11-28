@@ -42,7 +42,7 @@ services:
       VITE_COGNITO_REGION: ${VITE_COGNITO_REGION:-ca-central-1}
       VITE_USER_POOLS_ID: ${VITE_USER_POOLS_ID:-ca-central-1_t2HSZBHur}
       VITE_USER_POOLS_WEB_CLIENT_ID: ${VITE_USER_POOLS_WEB_CLIENT_ID}
-      VITE_AWS_DOMAIN: ${VITE_AWS_DOMAIN:-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com}
+      VITE_AWS_DOMAIN: ${VITE_AWS_DOMAIN:-lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com}
       VITE_ZONE: ${VITE_ZONE:-DEV}
     image: node:24.11.1-bookworm-slim
     ports: ["3000:3000"]
@@ -60,7 +60,7 @@ services:
       VITE_COGNITO_REGION: ${VITE_COGNITO_REGION:-ca-central-1}
       VITE_USER_POOLS_ID: ${VITE_USER_POOLS_ID:-ca-central-1_t2HSZBHur}
       VITE_USER_POOLS_WEB_CLIENT_ID: ${VITE_USER_POOLS_WEB_CLIENT_ID}
-      VITE_AWS_DOMAIN: ${VITE_AWS_DOMAIN:-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com}
+      VITE_AWS_DOMAIN: ${VITE_AWS_DOMAIN:-lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com}
       VITE_ZONE: ${VITE_ZONE:-DEV}
       VITE_BACKEND_URL: ""
     ports: ["3000:3000"]
