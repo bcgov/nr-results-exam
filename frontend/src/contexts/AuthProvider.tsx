@@ -73,6 +73,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const urlParams = new URLSearchParams(window.location.search);
     const isOAuthCallback = urlParams.has('code') || urlParams.has('state');
     
+    // Log OAuth callback details for debugging
+    if (isOAuthCallback) {
+      console.log('OAuth callback detected:', {
+        currentUrl: window.location.href,
+        origin: window.location.origin,
+        expectedRedirectUri: `${window.location.origin}/dashboard`,
+        hasCode: urlParams.has('code'),
+        hasState: urlParams.has('state'),
+        code: urlParams.get('code')?.substring(0, 20) + '...' // Log first 20 chars only
+      });
+    }
+    
     // If we're in an OAuth callback, refresh user state immediately
     // This ensures fetchAuthSession() processes the callback and exchanges the code for tokens
     if (isOAuthCallback) {
@@ -85,6 +97,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           newUrl.searchParams.delete('code');
           newUrl.searchParams.delete('state');
           window.history.replaceState({}, '', newUrl.toString());
+        } else {
+          console.error('Token exchange failed - check Cognito redirect URI configuration');
+          console.error('Expected redirect URI:', `${window.location.origin}/dashboard`);
         }
       }).catch((error) => {
         // Log error but don't clean up URL params if exchange failed
@@ -147,9 +162,34 @@ export const useAuth = (): AuthContextType => {
 
 const loadUserToken = async (): Promise<JWT | undefined> => {
   if (env.NODE_ENV !== "test") {
-    const { idToken } = (await fetchAuthSession()).tokens ?? {};
-    setAuthIdToken(idToken?.toString() || null);
-    return idToken;
+    try {
+      const session = await fetchAuthSession();
+      const { idToken } = session.tokens ?? {};
+      setAuthIdToken(idToken?.toString() || null);
+      return idToken;
+    } catch (error: any) {
+      // Log detailed error information for debugging
+      console.error('fetchAuthSession error:', {
+        message: error?.message,
+        name: error?.name,
+        cause: error?.cause,
+        stack: error?.stack,
+        // Check if it's a network error with response details
+        response: error?.response || error?.$metadata || error?.underlyingError
+      });
+      
+      // If there's a response body, try to extract the error message
+      if (error?.response || error?.underlyingError) {
+        const responseError = error.response || error.underlyingError;
+        console.error('Cognito error details:', {
+          status: responseError.status,
+          statusText: responseError.statusText,
+          data: responseError.data || responseError.body
+        });
+      }
+      
+      throw error;
+    }
   } else {
     // This is for test only
     const token = getUserTokenFromCookie();
