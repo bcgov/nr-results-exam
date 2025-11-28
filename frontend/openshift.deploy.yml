@@ -99,7 +99,7 @@ objects:
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: URL
-                  value: "https://${HOSTNAME}/"
+                  value: "https://${HOSTNAME}"
                 - name: REDIRECT_FROM_HOST
                   value: "${REDIRECT_URL}"
               ports:
