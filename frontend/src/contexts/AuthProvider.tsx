@@ -134,10 +134,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [refreshUserState]);
 
   const login = async (provider: ProviderType) => {
+    // Normalize zone for provider name - Lambda might expect specific formats
+    // For PR numbers, use "DEV" as the zone since PRs are development environments
+    // For named zones (test, prod, dev), use as-is
+    let normalizedZone = appEnv.toLocaleUpperCase();
+    if (/^\d+$/.test(appEnv)) {
+      // If zone is numeric (PR number), use "DEV" for Lambda compatibility
+      normalizedZone = "DEV";
+    }
+
     const envProvider =
       provider.localeCompare("idir") === 0
-        ? `${appEnv.toLocaleUpperCase()}-IDIR`
-        : `${appEnv.toLocaleUpperCase()}-BCEIDBUSINESS`;
+        ? `${normalizedZone}-IDIR`
+        : `${normalizedZone}-BCEIDBUSINESS`;
+
+    console.log('OAuth login:', {
+      originalZone: appEnv,
+      normalizedZone,
+      providerName: envProvider.toUpperCase()
+    });
 
     signInWithRedirect({
       provider: { custom: envProvider.toUpperCase() }
