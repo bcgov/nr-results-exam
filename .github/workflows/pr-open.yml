@@ -35,8 +35,9 @@ jobs:
     timeout-minutes: 1
     outputs:
       redirect_url: ${{ steps.url.outputs.redirect_url }}
+      hostname: ${{ steps.url.outputs.hostname }}
     steps:
-      - name: Calculate redirect_url
+      - name: Calculate redirect_url and hostname
         id: url
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
@@ -44,6 +45,8 @@ jobs:
           ZONE="$(( ${{ github.event.number }} % 50 ))"
           # Redirect from URL (without -frontend) - will redirect to main
           echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
+          # Hostname for frontend Route and URLs
+          echo "hostname=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -57,6 +60,7 @@ jobs:
       tag: ${{ github.event.number }}
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
+      hostname: ${{ needs.vars.outputs.hostname }}
       pr_number: ${{ github.event.number }}
 
   results:
