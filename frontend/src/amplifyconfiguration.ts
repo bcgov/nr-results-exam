@@ -6,30 +6,34 @@ const returnUrlHost = ZONE === "prod" ? "loginproxy" : ZONE === "test" ? "test.l
 const retUrl = `https://${returnUrlHost}.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout`;
 
 /**
- * Constructs the OAuth redirect URI using the redirect-from URL format (without -frontend suffix).
- * This ensures the redirect URI matches Cognito's allowlist, which likely only includes
- * the redirect-from URL format (e.g., nr-results-exam-48.apps.silver.devops.gov.bc.ca)
- * rather than the main URL format (e.g., nr-results-exam-48-frontend.apps.silver.devops.gov.bc.ca).
+ * Constructs the OAuth redirect URI using the -frontend URL format.
+ * Cognito's allowlist includes URLs with the -frontend suffix
+ * (e.g., nr-results-exam-48-frontend.apps.silver.devops.gov.bc.ca).
  * 
- * The redirect-from URL is configured in OpenShift to redirect to the main URL, so this works
- * regardless of which URL the user initially accessed.
+ * If the user accessed via the redirect-from URL (without -frontend),
+ * we need to add the -frontend suffix to match Cognito's allowlist.
  */
 const getRedirectSignInUri = (): string => {
   const origin = window.location.origin;
   const hostname = window.location.hostname;
   
-  // Check if hostname contains -frontend suffix (e.g., nr-results-exam-48-frontend.apps.silver.devops.gov.bc.ca)
-  const frontendMatch = hostname.match(/^(.+)-frontend\.(.+)$/);
-  if (frontendMatch) {
-    // Construct redirect-from URL format (without -frontend)
-    // This format should match what's in Cognito's allowlist
-    const redirectFromHostname = `${frontendMatch[1]}.${frontendMatch[2]}`;
-    const redirectFromOrigin = `${window.location.protocol}//${redirectFromHostname}`;
-    console.log('Using redirect-from URL format for OAuth redirect URI:', redirectFromOrigin);
-    return `${redirectFromOrigin}/dashboard`;
+  // Check if hostname does NOT contain -frontend suffix (redirect-from URL format)
+  // e.g., nr-results-exam-48.apps.silver.devops.gov.bc.ca
+  if (!hostname.includes('-frontend.')) {
+    // Add -frontend suffix to match Cognito's allowlist
+    // Insert -frontend before the first dot in the domain part
+    const parts = hostname.split('.');
+    if (parts.length > 0) {
+      const mainHostname = parts[0];
+      const domain = parts.slice(1).join('.');
+      const frontendHostname = `${mainHostname}-frontend.${domain}`;
+      const frontendOrigin = `${window.location.protocol}//${frontendHostname}`;
+      console.log('Using -frontend URL format for OAuth redirect URI:', frontendOrigin);
+      return `${frontendOrigin}/dashboard`;
+    }
   }
   
-  // Use current origin if no -frontend suffix (already in redirect-from format)
+  // Use current origin if it already has -frontend suffix
   return `${origin}/dashboard`;
 };
 
