@@ -26,6 +26,7 @@ interface AuthContextType {
   userRoles: string[] | undefined;
   isLoggedIn: boolean;
   isLoading: boolean;
+  authError: string | undefined;
   login: (provider: ProviderType) => void;
   logout: () => void;
 }
@@ -43,25 +44,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<FamLoginUser | undefined>(undefined);
   const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | undefined>(undefined);
 
   const appEnv = env.VITE_ZONE ?? "DEV";
 
   const refreshUserState = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
+    setAuthError(undefined); // Clear previous errors
     try {
       const idToken = await loadUserToken();
       if (idToken) {
         setUser(parseToken(idToken));
+        setAuthError(undefined);
         return true; // Success
       } else {
         setUser(undefined);
         setUserRoles(undefined);
         return false;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to refresh user state:', error);
       setUser(undefined);
       setUserRoles(undefined);
+      
+      // Check for PreTokenGeneration Lambda error
+      const errorMessage = error?.message || error?.response?.data?.error || '';
+      const errorDescription = error?.response?.data?.error_description || '';
+      
+      if (errorMessage.includes('PreTokenGeneration') || errorMessage.includes('UserLambdaValidationException')) {
+        setAuthError('AUTH_INFRASTRUCTURE_ERROR');
+      } else if (errorMessage.includes('redirect_uri_mismatch')) {
+        setAuthError('REDIRECT_URI_MISMATCH');
+      } else if (errorMessage.includes('invalid_grant')) {
+        setAuthError('INVALID_GRANT');
+      } else {
+        setAuthError('AUTH_ERROR');
+      }
+      
       return false; // Failed
     } finally {
       setIsLoading(false);
@@ -129,6 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await signOut();
     setUser(undefined);
     setUserRoles(undefined);
+    setAuthError(undefined); // Clear error on logout
   };
 
   const contextValue: AuthContextType = useMemo(
@@ -137,10 +157,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       userRoles,
       isLoggedIn: !!user,
       isLoading,
+      authError,
       login,
       logout
     }),
-    [user, userRoles, isLoading]
+    [user, userRoles, isLoading, authError]
   );
 
   return (
