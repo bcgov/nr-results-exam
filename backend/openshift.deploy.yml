@@ -61,7 +61,7 @@ parameters:
     value: tivpth
   - name: VITE_USER_POOLS_ID
     description: AWS Cognito User Pool ID
-    value: "ca-central-1_t2HSZBHur"
+    value: "ca-central-1_UpeAqsYt4"
   - name: VITE_COGNITO_REGION
     description: AWS Cognito region for user pool
     value: ca-central-1
