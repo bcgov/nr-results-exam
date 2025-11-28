@@ -14,6 +14,28 @@ const redirectSignOut =
 type verificationMethodsType = 'code' | 'token';
 const verificationMethods: verificationMethodsType = 'code';
 
+// Construct redirect URI - try to use format without -frontend suffix for Lambda compatibility
+// If the current origin has -frontend, try to construct the redirect-from URL format
+// This works because Caddy redirects the redirect-from URL to the main URL
+const getRedirectSignInUri = (): string => {
+  const origin = window.location.origin;
+  const hostname = window.location.hostname;
+  
+  // Check if hostname contains -frontend suffix (e.g., nr-results-exam-48-frontend.apps.silver.devops.gov.bc.ca)
+  const frontendMatch = hostname.match(/^(.+)-frontend\.(.+)$/);
+  if (frontendMatch) {
+    // Construct redirect-from URL format (without -frontend)
+    // This format might be what the Lambda expects
+    const redirectFromHostname = `${frontendMatch[1]}.${frontendMatch[2]}`;
+    const redirectFromOrigin = `${window.location.protocol}//${redirectFromHostname}`;
+    console.log('Using redirect-from URL format for OAuth:', redirectFromOrigin);
+    return `${redirectFromOrigin}/dashboard`;
+  }
+  
+  // Use current origin if no -frontend suffix
+  return `${origin}/dashboard`;
+};
+
 // https://docs.amplify.aws/javascript/build-a-backend/auth/set-up-auth/
 const amplifyconfig = {
   Auth: {
@@ -25,7 +47,7 @@ const amplifyconfig = {
         oauth: {
           domain: env.VITE_AWS_DOMAIN || "prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com",
           scopes: [ 'openid' ],
-          redirectSignIn: [ `${window.location.origin}/dashboard` ],
+          redirectSignIn: [ getRedirectSignInUri() ],
           redirectSignOut: [ redirectSignOut ],
           responseType: verificationMethods
         }
