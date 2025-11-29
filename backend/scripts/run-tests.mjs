@@ -42,18 +42,44 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-// Filter out inspector flags from NODE_OPTIONS to prevent debugger wait in CI
-const nodeOptions = (process.env.NODE_OPTIONS || '')
-  .split(/\s+/)
-  .filter(opt => !opt.startsWith('--inspect'))
-  .join(' ');
+// Completely remove any debugger/inspector-related environment to prevent debugger wait in CI
+// This ensures tests exit cleanly without waiting for a debugger connection
+const cleanEnv = { ...process.env };
 
-const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles], {
-  stdio: 'inherit',
-  env: {
-    ...process.env,
-    NODE_OPTIONS: nodeOptions || undefined
+// Filter out all inspector/debugger flags from NODE_OPTIONS
+if (cleanEnv.NODE_OPTIONS) {
+  const filteredOptions = cleanEnv.NODE_OPTIONS
+    .split(/\s+/)
+    .filter(opt => {
+      const trimmed = opt.trim();
+      // Remove all inspector-related flags and options
+      return trimmed && 
+             !trimmed.startsWith('--inspect') && 
+             !trimmed.startsWith('--debug') &&
+             trimmed !== '--inspect' &&
+             trimmed !== '--inspect-brk' &&
+             trimmed !== '--debug-brk';
+    })
+    .join(' ')
+    .trim();
+  
+  if (filteredOptions) {
+    cleanEnv.NODE_OPTIONS = filteredOptions;
+  } else {
+    // Remove NODE_OPTIONS entirely if it's empty or only contained inspector flags
+    delete cleanEnv.NODE_OPTIONS;
   }
+}
+
+// Remove any other debugger-related environment variables
+delete cleanEnv.NODE_INSPECT_RESUME_ON_START;
+delete cleanEnv.NODE_OPTIONS_STRICT;
+
+const child = spawn(process.execPath, [ '--test', ...forwardedArgs, ...testFiles ], {
+  stdio: 'inherit',
+  env: cleanEnv,
+  // Explicitly don't inherit any file descriptors that might be used for debugging
+  detached: false
 });
 
 child.on('error', (error) => {
