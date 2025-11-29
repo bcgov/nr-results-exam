@@ -7,9 +7,6 @@ const express = require('express');
 const sinon = require('sinon');
 const Minio = require('minio');
 
-// Import routes
-const questionRoutes = require('../routes/questionRoutes');
-
 // Store original environment variables
 const originalEnv = {
   s3Endpoint: process.env.S3_ENDPOINT,
@@ -35,7 +32,7 @@ function createMockAuthMiddleware() {
   };
 }
 
-function buildApp() {
+function buildApp(questionRoutes) {
   const app = express();
   app.use(express.json());
 
@@ -50,10 +47,12 @@ function buildApp() {
 describe('Question Routes', { concurrency: 1 }, () => {
   let minioClientStub;
   let getObjectStub;
+  let questionRoutes;
 
   beforeEach(() => {
     sinon.restore();
-    // Set up environment variables
+    
+    // Set up environment variables BEFORE loading modules
     process.env.S3_ENDPOINT = 'test-endpoint';
     process.env.S3_ACCESSKEY = 'test-access-key';
     process.env.S3_SECRETKEY = 'test-secret-key';
@@ -61,19 +60,20 @@ describe('Question Routes', { concurrency: 1 }, () => {
     process.env.VITE_USER_POOLS_ID = 'test-pool-id';
     process.env.VITE_COGNITO_REGION = 'ca-central-1';
 
-    // Mock Minio client
-    minioClientStub = sinon.stub(Minio, 'Client').returns({
-      getObject: () => { }
-    });
-
+    // Stub Minio.Client BEFORE requiring the controller
+    minioClientStub = sinon.stub(Minio, 'Client');
     getObjectStub = sinon.stub();
     minioClientStub.returns({
       getObject: getObjectStub
     });
 
-    // Clear require cache to reload module with new env vars
+    // Clear require cache to reload module with stubbed Minio
     delete require.cache[require.resolve('../controllers/questionController')];
     delete require.cache[require.resolve('../routes/questionRoutes')];
+    
+    // Re-require routes to pick up the stub
+    questionRoutes = require('../routes/questionRoutes');
+    
     sinon.stub(console, 'error');
   });
 
@@ -113,7 +113,20 @@ describe('Question Routes', { concurrency: 1 }, () => {
   test('GET /api/questions/:fileName should require authentication', async () => {
     // This test verifies that the route requires authentication middleware
     // Authentication behavior is tested in authMiddleware.test.js
-    const response = await request(buildApp())
+    // Provide a mock stream that completes successfully
+    const mockStream = {
+      on: function (event, handler) {
+        if (event === 'data') {
+          setImmediate(() => handler(Buffer.from('{}')));
+        } else if (event === 'end') {
+          setImmediate(() => handler());
+        }
+        return this;
+      }
+    };
+    getObjectStub.returns(mockStream);
+
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/test-file')
       .expect(200);
 
@@ -138,7 +151,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
     getObjectStub.returns(mockStream);
 
-    const response = await request(buildApp())
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/test-file')
       .expect(200);
 
@@ -154,7 +167,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
     s3Error.statusCode = 503;
     getObjectStub.rejects(s3Error);
 
-    const response = await request(buildApp())
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/test-file')
       .expect(503);
 
@@ -166,7 +179,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
     notFoundError.statusCode = 404;
     getObjectStub.rejects(notFoundError);
 
-    const response = await request(buildApp())
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/nonexistent-file')
       .expect(404);
 
@@ -186,7 +199,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
     };
     getObjectStub.returns(mockStream);
 
-    const response = await request(buildApp())
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/test-file')
       .expect(500);
 
@@ -209,15 +222,17 @@ describe('Question Routes', { concurrency: 1 }, () => {
     };
     getObjectStub.returns(mockStream);
 
-    // JSON.parse will throw, but it's caught in the stream 'end' handler
-    // The error might not be caught properly, so we'll test that the stream is called
-    await request(buildApp())
-      .get('/api/questions/invalid-json-file')
-      .timeout(1000)
-      .catch(() => {
-        // Expected - JSON parse error
-      });
+    // JSON.parse will throw in the 'end' handler, but controller doesn't catch it
+    // This causes an unhandled error. We verify the stub was called with correct args.
+    try {
+      await request(buildApp(questionRoutes))
+        .get('/api/questions/invalid-json-file')
+        .timeout(1000);
+    } catch (err) {
+      // Expected - request fails due to unhandled JSON.parse error
+    }
 
+    // Verify the stub was called with correct arguments
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
     assert.strictEqual(callArgs[1], 'invalid-json-file.json');
@@ -225,13 +240,21 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
   test('GET /api/questions/:fileName should append .json extension to filename', async () => {
     const mockStream = {
-      on: sinon.stub()
+      on: function (event, handler) {
+        // Don't emit any events - just verify the stub was called with correct args
+        return this;
+      }
     };
     getObjectStub.returns(mockStream);
 
-    await request(buildApp())
-      .get('/api/questions/my-questions')
-      .timeout(500);
+    // Request will hang waiting for stream events, so use timeout
+    try {
+      await request(buildApp(questionRoutes))
+        .get('/api/questions/my-questions')
+        .timeout(500);
+    } catch (err) {
+      // Expected - request times out waiting for stream
+    }
 
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
@@ -243,11 +266,10 @@ describe('Question Routes', { concurrency: 1 }, () => {
     // No statusCode property
     getObjectStub.rejects(genericError);
 
-    const response = await request(buildApp())
+    const response = await request(buildApp(questionRoutes))
       .get('/api/questions/test-file')
       .expect(500);
 
     assert.strictEqual(response.body.error, 'Generic error');
   });
 });
-
