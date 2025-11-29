@@ -68,7 +68,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
     // Mock Minio client
     minioClientStub = sinon.stub(Minio, 'Client').returns({
-      getObject: () => {}
+      getObject: () => { }
     });
 
     getObjectStub = sinon.stub();
@@ -77,8 +77,8 @@ describe('Question Routes', { concurrency: 1 }, () => {
     });
 
     // Clear require cache to reload module with new env vars
-    delete require.cache[require.resolve('../controllers/questionController')];
-    delete require.cache[require.resolve('../routes/questionRoutes')];
+    delete require.cache[ require.resolve('../controllers/questionController') ];
+    delete require.cache[ require.resolve('../routes/questionRoutes') ];
     sinon.stub(console, 'error');
   });
 
@@ -111,8 +111,8 @@ describe('Question Routes', { concurrency: 1 }, () => {
     }
 
     // Clear require cache
-    delete require.cache[require.resolve('../controllers/questionController')];
-    delete require.cache[require.resolve('../routes/questionRoutes')];
+    delete require.cache[ require.resolve('../controllers/questionController') ];
+    delete require.cache[ require.resolve('../routes/questionRoutes') ];
   });
 
   test('GET /api/questions/:fileName should return 401 without authentication', async () => {
@@ -124,9 +124,9 @@ describe('Question Routes', { concurrency: 1 }, () => {
   });
 
   test('GET /api/questions/:fileName should successfully retrieve and return JSON file', async () => {
-    const mockData = { questions: [{ id: 1, text: 'Test question' }] };
+    const mockData = { questions: [ { id: 1, text: 'Test question' } ] };
     const mockStream = {
-      on: function(event, handler) {
+      on: function (event, handler) {
         if (event === 'data') {
           // Simulate data event immediately
           setImmediate(() => handler(Buffer.from(JSON.stringify(mockData))));
@@ -147,8 +147,8 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
-    assert.strictEqual(callArgs[0], 'test-bucket');
-    assert.strictEqual(callArgs[1], 'test-file.json');
+    assert.strictEqual(callArgs[ 0 ], 'test-bucket');
+    assert.strictEqual(callArgs[ 1 ], 'test-file.json');
     assert.deepStrictEqual(response.body, mockData);
   });
 
@@ -181,7 +181,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
   test('GET /api/questions/:fileName should handle stream errors', async () => {
     const streamError = new Error('Stream read error');
     const mockStream = {
-      on: function(event, handler) {
+      on: function (event, handler) {
         if (event === 'error') {
           // Simulate error event
           setImmediate(() => handler(streamError));
@@ -202,7 +202,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
   test('GET /api/questions/:fileName should handle invalid JSON in file', async () => {
     const mockStream = {
-      on: function(event, handler) {
+      on: function (event, handler) {
         if (event === 'data') {
           // Simulate invalid JSON data
           setImmediate(() => handler(Buffer.from('invalid json')));
@@ -227,7 +227,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
-    assert.strictEqual(callArgs[1], 'invalid-json-file.json');
+    assert.strictEqual(callArgs[ 1 ], 'invalid-json-file.json');
   });
 
   test('GET /api/questions/:fileName should append .json extension to filename', async () => {
@@ -243,7 +243,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
-    assert.strictEqual(callArgs[1], 'my-questions.json');
+    assert.strictEqual(callArgs[ 1 ], 'my-questions.json');
   });
 
   test('GET /api/questions/:fileName should handle errors without statusCode', async () => {
