@@ -27,10 +27,6 @@ on:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
         type: string
-      pr_number:
-        description: PR number if this is a PR deployment (empty for non-PRs)
-        required: false
-        type: string
 
     secrets:
       ches_client_secret:
@@ -95,13 +91,12 @@ jobs:
 
   smoke:
     name: Smoke Tests
-    needs: [init, deploys]
+    needs: [deploys]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -110,7 +105,7 @@ jobs:
         working-directory: integration-tests
         env:
           FRONTEND_URL: https://${{ inputs.hostname }}
-          REDIRECT_URL: ${{ inputs.redirect_url && format('https://{0}', inputs.redirect_url) || '' }}
+          REDIRECT_URL: https://${{ inputs.redirect_url }}
         run: |
           npm ci
           npm run smoke
