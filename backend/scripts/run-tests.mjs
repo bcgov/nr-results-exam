@@ -42,19 +42,10 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-// Filter out any inspector/debugger flags from NODE_OPTIONS to prevent debugger wait
+// Completely remove NODE_OPTIONS to prevent debugger wait in CI
+// This ensures the spawned test process never waits for a debugger connection
 const cleanEnv = { ...process.env };
-if (cleanEnv.NODE_OPTIONS) {
-  const filtered = cleanEnv.NODE_OPTIONS
-    .split(/\s+/)
-    .filter(opt => !opt.includes('--inspect') && !opt.includes('--debug'))
-    .join(' ')
-    .trim();
-  cleanEnv.NODE_OPTIONS = filtered || undefined;
-  if (!cleanEnv.NODE_OPTIONS) {
-    delete cleanEnv.NODE_OPTIONS;
-  }
-}
+delete cleanEnv.NODE_OPTIONS;
 
 const child = spawn(process.execPath, [ '--test', ...forwardedArgs, ...testFiles ], {
   stdio: 'inherit',
