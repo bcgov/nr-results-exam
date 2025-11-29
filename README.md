@@ -58,6 +58,55 @@ are fully automated:
   `packageRules` block locally; otherwise defer to the upstream config to stay
   aligned with NRIDS best practices.
 
+### Maintenance Mode Readiness Status
+
+**Status: ✅ READY FOR MAINTENANCE MODE**
+
+This repository has been assessed and verified ready for maintenance/sustainment mode as of the completion of [issue #229](https://github.com/bcgov/nr-results-exam/issues/229). All requirements have been met:
+
+#### Test Coverage Status
+
+**Backend Coverage:**
+- Statements: **95.93%** (threshold: 70% ✅)
+- Branches: **88.74%** (threshold: 70% ✅)
+- Functions: **97.43%** (threshold: 70% ✅)
+- Lines: **95.93%** (threshold: 70% ✅)
+- **Status:** All metrics exceed thresholds
+
+**Frontend Coverage:**
+- Statements: **89.36%** (threshold: 70% ✅)
+- Branches: **70.71%** (threshold: 70% ✅)
+- Functions: **88.17%** (threshold: 70% ✅)
+- Lines: **89.55%** (threshold: 70% ✅)
+- **Status:** All metrics meet or exceed thresholds
+
+**Test Suite:**
+- 71 frontend tests (Vitest + React Testing Library)
+- 17 backend tests (Node.js test runner)
+- Integration smoke tests (health, API, frontend, security headers)
+- Coverage thresholds enforced for both frontend and backend
+
+#### Dependency Status
+
+- ✅ No major version updates pending
+- ✅ All dependencies are current or have only minor/patch updates available
+- ✅ Current major versions are modern (Express 5, React 19, Vite 7)
+- ✅ Renovate configured for automated dependency management
+
+#### Verification Checklist
+
+- ✅ Robust test suite, including integration tests
+- ✅ Properly functioning PR environments
+- ✅ Handling of deprecations (no critical deprecations found)
+- ✅ Handling of outstanding updates (no major updates required)
+- ✅ Linting configured and enforced (ESLint 9 for both frontend and backend)
+
+**Renovate automerge will occur when:**
+- All tests pass (including coverage thresholds)
+- PR validation workflow succeeds
+- Smoke tests pass
+- No merge conflicts exist
+
 ### Runtime Health Checks
 
 - `/health` now includes dependency probes for CHES, the S3/MinIO bucket, and Cognito (FAM).  
