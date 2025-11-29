@@ -46,7 +46,7 @@ parameters:
     value: "ca-central-1_UpeAqsYt4"
   - name: VITE_USER_POOLS_WEB_CLIENT_ID
     description: AWS Cognito User Pool Web Client ID
-    required: true
+    value: "7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z"
   - name: REDIRECT_URL
     description: Hostname for the redirect-from URL (without protocol, e.g., nr-results-exam-12.apps.silver.devops.gov.bc.ca)
     required: true
