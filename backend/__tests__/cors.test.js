@@ -187,8 +187,11 @@ describe('CORS Configuration', () => {
 
 describe('getDefaultWhitelist', () => {
   const originalFrontendUrl = process.env.FRONTEND_URL;
+  const corsOptionsPath = require.resolve('../config/corsOptions');
 
   afterEach(() => {
+    // Clear require cache to reload module with new env var
+    delete require.cache[corsOptionsPath];
     // Restore original value
     if (originalFrontendUrl !== undefined) {
       process.env.FRONTEND_URL = originalFrontendUrl;
@@ -199,7 +202,10 @@ describe('getDefaultWhitelist', () => {
 
   test('should return localhost and FRONTEND_URL when both are set', () => {
     process.env.FRONTEND_URL = 'https://example.com';
-    const whitelist = getDefaultWhitelist();
+    // Clear cache and re-require to pick up new env var
+    delete require.cache[corsOptionsPath];
+    const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
+    const whitelist = getWhitelist();
     
     assert.strictEqual(whitelist.length, 2);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
@@ -208,7 +214,10 @@ describe('getDefaultWhitelist', () => {
 
   test('should filter out undefined FRONTEND_URL', () => {
     delete process.env.FRONTEND_URL;
-    const whitelist = getDefaultWhitelist();
+    // Clear cache and re-require to pick up new env var
+    delete require.cache[corsOptionsPath];
+    const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
+    const whitelist = getWhitelist();
     
     assert.strictEqual(whitelist.length, 1);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
@@ -216,7 +225,10 @@ describe('getDefaultWhitelist', () => {
 
   test('should filter out empty string FRONTEND_URL', () => {
     process.env.FRONTEND_URL = '';
-    const whitelist = getDefaultWhitelist();
+    // Clear cache and re-require to pick up new env var
+    delete require.cache[corsOptionsPath];
+    const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
+    const whitelist = getWhitelist();
     
     assert.strictEqual(whitelist.length, 1);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
