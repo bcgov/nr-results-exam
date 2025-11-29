@@ -115,7 +115,7 @@ jobs:
     if: failure() && (inputs.zone == 'test' || inputs.zone == 'prod')
     # Create issues for non-PR deployments (test/prod)
     # PRs don't need issues since failures are visible in the PR checks
-    needs: [deploys, smoke]
+    needs: [init, deploys, smoke]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
