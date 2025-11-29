@@ -294,25 +294,43 @@ npm test
 
 Set these before running the apps or Docker Compose. Export values in your shell; do not commit them.
 
+### Configuration Storage Pattern
+
+**OpenShift Templates** are the primary source of truth for all configuration defaults. These defaults are:
+- Visible in the codebase and git history
+- Defined in `backend/openshift.deploy.yml` and `frontend/openshift.deploy.yml`
+- Mirrored in `docker-compose.yml` for local development consistency
+
+**Override Mechanism:**
+- **Deployed environments**: GitHub environment variables can override template defaults when needed
+- **Local development**: Shell environment variables can override docker-compose defaults
+- **Empty/unset variables**: Template defaults are used automatically
+
 ### Backend
 
-- `CHES_CLIENT_SECRET` (required)
-- `S3_SECRETKEY` (required)
+- `CHES_CLIENT_SECRET` (required) - Must be set, no default
+- `S3_SECRETKEY` (required) - Must be set, no default
 
-Other backend variables like `CHES_CLIENT_ID`, `S3_ACCESSKEY`, etc. have sensible defaults for development but can be overridden if needed.
+**Optional with defaults (defined in templates):**
+- `CHES_CLIENT_ID` (default: `09C5071A-ACE9B6FACF6`)
+- `CHES_TOKEN_URL` (default: `https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token`)
+- `S3_ACCESSKEY` (default: `nr-fsa-tst`)
+- `S3_BUCKETNAME` (default: `tivpth`)
+- `S3_ENDPOINT` (default: `nrs.objectstore.gov.bc.ca`)
+- `VITE_USER_POOLS_ID` (default: `ca-central-1_UpeAqsYt4`)
+- `VITE_COGNITO_REGION` (default: `ca-central-1`)
 
 ### Frontend
 
 > **Note**: Frontend variables are only required when running full-stack with Docker Compose (Caddy or frontend profiles). For backend-only development, these are not needed.
 
-- `VITE_USER_POOLS_WEB_CLIENT_ID` (required for full-stack) - Cognito web client ID (obtain from team secrets/vault)
-
-**Optional with defaults:**
-- `VITE_MAIN_VERSION` (defaults to 1.0.0)
-- `VITE_COGNITO_REGION` (defaults to ca-central-1)
-- `VITE_USER_POOLS_ID` (defaults to ca-central-1_UpeAqsYt4)
-- `VITE_AWS_DOMAIN` (defaults to lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
-- `VITE_ZONE` (defaults to DEV)
+**Optional with defaults (defined in templates):**
+- `VITE_USER_POOLS_WEB_CLIENT_ID` (default: `7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z`) - Can be overridden for environment-specific values
+- `VITE_MAIN_VERSION` (default: `1.0.0`)
+- `VITE_COGNITO_REGION` (default: `ca-central-1`)
+- `VITE_USER_POOLS_ID` (default: `ca-central-1_UpeAqsYt4`) - Can be overridden via GitHub vars if needed
+- `VITE_AWS_DOMAIN` (default: `lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com`) - Can be overridden via GitHub vars if needed
+- `VITE_ZONE` (default: `DEV` for local, derived from deployment zone in OpenShift)
 
 **Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
 
@@ -385,22 +403,28 @@ docker compose --profile caddy up
 The following environment variables must be set before running Docker Compose. **Export these in your shell and do NOT commit them to any files.**
 
 **For Backend-Only Development:**
-- `CHES_CLIENT_SECRET` - CHES email service client secret
-- `S3_SECRETKEY` - S3 object storage secret key
+- `CHES_CLIENT_SECRET` - CHES email service client secret (no default, must be set)
+- `S3_SECRETKEY` - S3 object storage secret key (no default, must be set)
 
 **For Full-Stack Development (Caddy or Frontend profiles):**
-- `CHES_CLIENT_SECRET` - CHES email service client secret
-- `S3_SECRETKEY` - S3 object storage secret key
-- `VITE_USER_POOLS_WEB_CLIENT_ID` - Cognito web client ID (required for authentication)
+- `CHES_CLIENT_SECRET` - CHES email service client secret (no default, must be set)
+- `S3_SECRETKEY` - S3 object storage secret key (no default, must be set)
+- `VITE_USER_POOLS_WEB_CLIENT_ID` - Cognito web client ID (has default in template, can be overridden)
 
 **Optional Variables with Defaults:**
-All other variables have sensible defaults for development:
+All other variables have sensible defaults defined in templates and mirrored in docker-compose.yml:
 - `VITE_MAIN_VERSION` (default: 1.0.0)
 - `VITE_COGNITO_REGION` (default: ca-central-1)
 - `VITE_USER_POOLS_ID` (default: ca-central-1_UpeAqsYt4)
+- `VITE_USER_POOLS_WEB_CLIENT_ID` (default: 7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z)
 - `VITE_AWS_DOMAIN` (default: lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
 - `VITE_ZONE` (default: DEV)
-- `CHES_CLIENT_ID`, `CHES_TOKEN_URL`, `S3_ACCESSKEY`, `S3_BUCKETNAME`, `S3_ENDPOINT`, `FRONTEND_URL` - Backend defaults
+- `CHES_CLIENT_ID` (default: 09C5071A-ACE9B6FACF6)
+- `CHES_TOKEN_URL` (default: https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token)
+- `S3_ACCESSKEY` (default: nr-fsa-tst)
+- `S3_BUCKETNAME` (default: tivpth)
+- `S3_ENDPOINT` (default: nrs.objectstore.gov.bc.ca)
+- `FRONTEND_URL` (default: http://localhost:3000)
 
 ### Available Services
 

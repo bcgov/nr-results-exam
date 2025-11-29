@@ -58,7 +58,6 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   deploys:
     name: Deploy
@@ -72,8 +71,6 @@ jobs:
       matrix:
         name: [backend, frontend]
         include:
-          - name: backend
-            parameters: -p CHES_CLIENT_ID=${{ vars.CHES_CLIENT_ID }}
           - name: frontend
             parameters: -p REDIRECT_URL=${{ inputs.redirect_url }}
     steps:
