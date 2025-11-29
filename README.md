@@ -60,9 +60,9 @@ are fully automated:
 
 ### Maintenance Mode Readiness Status
 
-**Status: ✅ READY FOR MAINTENANCE MODE**
+**Status: ✅ IN MAINTENANCE MODE**
 
-This repository has been assessed and verified ready for maintenance/sustainment mode as of the completion of [issue #229](https://github.com/bcgov/nr-results-exam/issues/229). All requirements have been met:
+This repository is operating in maintenance/sustainment mode as verified by the completion of [issue #229](https://github.com/bcgov/nr-results-exam/issues/229). All requirements have been met:
 
 #### Test Coverage Status
 
