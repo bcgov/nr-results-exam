@@ -1,5 +1,5 @@
 const {
-  test, describe, beforeEach, afterEach
+  test, describe
 } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
@@ -88,7 +88,7 @@ describe('CORS Configuration', () => {
     const whitelist = ['http://localhost:3000'];
     const app = buildApp(whitelist);
 
-    const response = await request(app)
+    await request(app)
       .get('/api/test')
       .set('Origin', 'http://malicious-site.com')
       .expect(500); // CORS error results in 500
@@ -114,7 +114,7 @@ describe('CORS Configuration', () => {
     const app = buildApp(whitelist);
 
     // Request without Origin header and without X-Forwarded-By
-    const response = await request(app)
+    await request(app)
       .get('/api/test')
       .expect(500); // CORS error
 
@@ -191,6 +191,9 @@ describe('CORS Configuration', () => {
   });
 
   test('should handle whitelist entries with hostname only', async () => {
+    // When whitelist contains hostname only (no protocol/port), it falls back
+    // to string comparison which matches any port for that hostname.
+    // This is the current intended behavior as documented in index.js.
     const whitelist = ['localhost'];
     const app = buildApp(whitelist);
 
@@ -207,7 +210,7 @@ describe('CORS Configuration', () => {
     const app = buildApp(whitelist);
 
     // This will be caught by the try-catch in getCorsOptions
-    const response = await request(app)
+    await request(app)
       .get('/api/test')
       .set('Origin', 'not-a-valid-url')
       .expect(500);

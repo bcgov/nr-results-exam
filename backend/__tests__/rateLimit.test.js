@@ -5,7 +5,6 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
 const rateLimit = require('express-rate-limit');
-const { authenticateToken } = require('../middleware/authMiddleware');
 
 // Store original environment variables
 const originalEnv = {
@@ -15,18 +14,26 @@ const originalEnv = {
   hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION')
 };
 
+// Create a mock authenticateToken middleware that bypasses JWT verification
+function createMockAuthMiddleware() {
+  return (req, res, next) => {
+    req.user = {
+      sub: 'test-user-id',
+      email: 'test@example.com'
+    };
+    next();
+  };
+}
+
 function buildAppWithRateLimit(limitConfig, routePath, routeHandler) {
   const app = express();
   app.use(express.json());
   
   const limiter = rateLimit(limitConfig);
-  app.use(routePath, limiter, authenticateToken, routeHandler);
+  const mockAuth = createMockAuthMiddleware();
+  app.use(routePath, limiter, mockAuth, routeHandler);
   
   return app;
-}
-
-function createMockToken() {
-  return 'mock-jwt-token';
 }
 
 describe('Rate Limiting', { concurrency: 1 }, () => {
@@ -69,7 +76,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     for (let i = 0; i < 2; i++) {
       const response = await request(app)
         .get('/api/questions/test')
-        .set('Authorization', `Bearer ${createMockToken()}`)
         .expect(200);
 
       assert.strictEqual(response.body.success, true);
@@ -80,7 +86,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     // Next request should be rate limited
     const rateLimitedResponse = await request(app)
       .get('/api/questions/test')
-      .set('Authorization', `Bearer ${createMockToken()}`)
       .expect(429);
 
     assert.strictEqual(rateLimitedResponse.body.error, 'Too many requests, please try again later.');
@@ -109,7 +114,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     for (let i = 0; i < 2; i++) {
       const response = await request(app)
         .post('/api/mail')
-        .set('Authorization', `Bearer ${createMockToken()}`)
         .send({
           fromEmail: 'test@example.com',
           toEmails: ['recipient@example.com'],
@@ -124,7 +128,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     // Next request should be rate limited
     const rateLimitedResponse = await request(app)
       .post('/api/mail')
-      .set('Authorization', `Bearer ${createMockToken()}`)
       .send({
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
@@ -154,7 +157,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
 
     const response = await request(app)
       .get('/api/test')
-      .set('Authorization', `Bearer ${createMockToken()}`)
       .expect(200);
 
     assert.ok(response.headers['ratelimit-limit'], 'Should include RateLimit-Limit header');
@@ -181,7 +183,6 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
 
     const response = await request(app)
       .get('/api/test')
-      .set('Authorization', `Bearer ${createMockToken()}`)
       .expect(200);
 
     assert.strictEqual(response.headers['x-ratelimit-limit'], undefined, 'Should not include legacy X-RateLimit-Limit header');
