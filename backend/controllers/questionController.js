@@ -1,5 +1,5 @@
 const Minio = require('minio');
-const dotenv =require('dotenv');
+const dotenv = require('dotenv');
 dotenv.config({
   path: './.env'
 });
