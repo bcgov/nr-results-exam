@@ -31,6 +31,14 @@ function getCorsOptions(req, whitelist) {
       }
 
       // Check if origin matches any whitelisted domain (by hostname)
+      // Helper function to get effective port (handles default ports)
+      const getEffectivePort = (url) => {
+        if (url.port) return url.port;
+        if (url.protocol === 'http:') return '80';
+        if (url.protocol === 'https:') return '443';
+        return '';
+      };
+
       try {
         const originUrl = new URL(origin);
         const isAllowed = whitelist.some((allowed) => {
@@ -38,12 +46,6 @@ function getCorsOptions(req, whitelist) {
             const allowedUrl = new URL(allowed);
             // Match by hostname (and port if specified in whitelist)
             // Always compare effective ports (explicit or default)
-            const getEffectivePort = (url) => {
-              if (url.port) return url.port;
-              if (url.protocol === 'http:') return '80';
-              if (url.protocol === 'https:') return '443';
-              return '';
-            };
             return (
               originUrl.hostname === allowedUrl.hostname
               && getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
