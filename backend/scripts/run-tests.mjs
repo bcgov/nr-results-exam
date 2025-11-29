@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,56 +42,25 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-// Completely remove any debugger/inspector-related environment to prevent debugger wait in CI
-// This ensures tests exit cleanly without waiting for a debugger connection
+// Build completely clean environment with NODE_OPTIONS explicitly unset
+// to prevent any debugger/inspector from being enabled in CI
 const cleanEnv = { ...process.env };
-
-// Filter out all inspector/debugger flags from NODE_OPTIONS
-if (cleanEnv.NODE_OPTIONS) {
-  const filteredOptions = cleanEnv.NODE_OPTIONS
-    .split(/\s+/)
-    .filter(opt => {
-      const trimmed = opt.trim();
-      // Remove all inspector-related flags and options
-      return trimmed && 
-             !trimmed.startsWith('--inspect') && 
-             !trimmed.startsWith('--debug') &&
-             trimmed !== '--inspect' &&
-             trimmed !== '--inspect-brk' &&
-             trimmed !== '--debug-brk';
-    })
-    .join(' ')
-    .trim();
-  
-  if (filteredOptions) {
-    cleanEnv.NODE_OPTIONS = filteredOptions;
-  } else {
-    // Remove NODE_OPTIONS entirely if it's empty or only contained inspector flags
-    delete cleanEnv.NODE_OPTIONS;
-  }
-}
-
-// Remove any other debugger-related environment variables
+delete cleanEnv.NODE_OPTIONS;
 delete cleanEnv.NODE_INSPECT_RESUME_ON_START;
 delete cleanEnv.NODE_OPTIONS_STRICT;
 
-const child = spawn(process.execPath, [ '--test', ...forwardedArgs, ...testFiles ], {
-  stdio: 'inherit',
+// Use execFile instead of spawn to avoid inheriting debugger connections
+// Explicitly pass --test flag and test files as arguments
+const args = [ '--test', ...forwardedArgs, ...testFiles ];
+
+execFile(process.execPath, args, {
   env: cleanEnv,
-  // Explicitly don't inherit any file descriptors that might be used for debugging
-  detached: false
-});
-
-child.on('error', (error) => {
-  console.error('Failed to start test process:', error);
-  process.exit(1);
-});
-
-child.on('exit', (code, signal) => {
-  if (signal) {
-    process.kill(process.pid, signal);
-    return;
+  stdio: 'inherit'
+}, (error, stdout, stderr) => {
+  if (error) {
+    console.error('Test execution failed:', error);
+    process.exit(error.code || 1);
   }
-  process.exit(code ?? 0);
+  process.exit(0);
 });
 
