@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,26 +42,29 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-// Completely remove NODE_OPTIONS to prevent debugger wait in CI
-// This ensures the spawned test process never waits for a debugger connection
+// Build clean environment without NODE_OPTIONS to prevent debugger wait
 const cleanEnv = { ...process.env };
 delete cleanEnv.NODE_OPTIONS;
 
-const child = spawn(process.execPath, [ '--test', ...forwardedArgs, ...testFiles ], {
+// Use execFile instead of spawn to avoid inheriting debugger connections
+// This prevents "Waiting for the debugger to disconnect..." hang
+const args = [ '--test', ...forwardedArgs, ...testFiles ];
+
+execFile(process.execPath, args, {
+  env: cleanEnv,
   stdio: 'inherit',
-  env: cleanEnv
-});
-
-child.on('error', (error) => {
-  console.error('Failed to start test process:', error);
-  process.exit(1);
-});
-
-child.on('exit', (code, signal) => {
-  if (signal) {
-    process.kill(process.pid, signal);
-    return;
+  timeout: 300000 // 5 minute timeout
+}, (error, stdout, stderr) => {
+  if (error) {
+    if (error.code === 'TIMEOUT') {
+      console.error('Test execution timed out');
+      process.exit(1);
+    } else {
+      console.error('Test execution failed:', error.message);
+      process.exit(error.code || 1);
+    }
+  } else {
+    process.exit(0);
   }
-  process.exit(code ?? 0);
 });
 
