@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
 const cors = require('cors');
-const { getCorsOptions, getDefaultWhitelist } = require('../config/corsOptions');
+const { getCorsOptions } = require('../config/corsOptions');
 
 function buildApp(whitelist) {
   const app = express();
