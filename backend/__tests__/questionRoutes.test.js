@@ -200,14 +200,14 @@ describe('Question Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.error, 'Stream read error');
   });
 
-  test('GET /api/questions/:fileName should handle invalid JSON in file', async () => {
+  test('GET /api/questions/:fileName should return 500 when JSON in file is invalid', async () => {
     const mockStream = {
       on: function (event, handler) {
         if (event === 'data') {
-          // Simulate invalid JSON data
+          // Simulate invalid JSON data from S3
           setImmediate(() => handler(Buffer.from('invalid json')));
         } else if (event === 'end') {
-          // Simulate end event - this will trigger JSON.parse which will throw
+          // End of stream triggers JSON.parse in controller
           setImmediate(() => handler());
         }
         return this;
@@ -215,18 +215,14 @@ describe('Question Routes', { concurrency: 1 }, () => {
     };
     getObjectStub.returns(mockStream);
 
-    // JSON.parse will throw, but it's caught in the stream 'end' handler
-    // The error might not be caught properly, so we'll test that the stream is called
-    await request(buildApp())
+    const response = await request(buildApp())
       .get('/api/questions/invalid-json-file')
-      .timeout(1000)
-      .catch(() => {
-        // Expected - JSON parse error
-      });
+      .expect(500);
 
     assert.strictEqual(getObjectStub.calledOnce, true);
     const callArgs = getObjectStub.getCall(0).args;
     assert.strictEqual(callArgs[ 1 ], 'invalid-json-file.json');
+    assert.strictEqual(response.body.error, 'Invalid questions JSON payload');
   });
 
   test('GET /api/questions/:fileName should append .json extension to filename', async () => {

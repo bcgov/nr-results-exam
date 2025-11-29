@@ -5,75 +5,23 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
 const cors = require('cors');
-
-// Import the CORS configuration logic from index.js
-// We'll need to replicate the getCorsOptions function for testing
-function getCorsOptions(whitelist) {
-  return (req) => ({
-    origin: function (origin, callback) {
-      // Allow requests with no origin only if they come from the internal proxy
-      if (!origin) {
-        if (req.headers['x-forwarded-by'] === 'caddy-proxy') {
-          return callback(null, true);
-        }
-        return callback(new Error('CORS: Requests with no origin must come from trusted proxy'));
-      }
-      
-      // Check if origin matches any whitelisted domain (by hostname)
-      try {
-        const originUrl = new URL(origin);
-        const isAllowed = whitelist.some((allowed) => {
-          try {
-            const allowedUrl = new URL(allowed);
-            const getEffectivePort = (url) => {
-              if (url.port) return url.port;
-              if (url.protocol === 'http:') return '80';
-              if (url.protocol === 'https:') return '443';
-              return '';
-            };
-            return (
-              originUrl.hostname === allowedUrl.hostname &&
-              getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
-            );
-          } catch (_e) {
-            const [allowedHost, allowedPort] = allowed.split(':');
-            if (allowedPort) {
-              return (
-                originUrl.hostname === allowedHost &&
-                originUrl.port === allowedPort
-              );
-            } else {
-              return originUrl.hostname === allowedHost;
-            }
-          }
-        });
-        if (isAllowed) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
-        }
-      } catch (_e) {
-        callback(new Error('Not allowed by CORS'));
-      }
-    }
-  });
-}
+const { getCorsOptions } = require('../config/corsOptions');
 
 function buildApp(whitelist) {
   const app = express();
   app.use(express.json());
-  app.use(cors(getCorsOptions(whitelist)));
-  
+  app.use(cors((req) => getCorsOptions(req, whitelist)));
+
   app.get('/api/test', (req, res) => {
     res.json({ success: true });
   });
-  
+
   return app;
 }
 
 describe('CORS Configuration', () => {
   test('should allow requests from whitelisted origin', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -85,7 +33,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should reject requests from non-whitelisted origin', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     await request(app)
@@ -98,7 +46,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should allow requests with no origin if X-Forwarded-By header is present', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -110,7 +58,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should reject requests with no origin if X-Forwarded-By header is missing', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     // Request without Origin header and without X-Forwarded-By
@@ -122,7 +70,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should match origins by hostname and port', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -134,7 +82,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should match origins by hostname when port is default HTTP', async () => {
-    const whitelist = ['http://localhost'];
+    const whitelist = [ 'http://localhost' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -146,7 +94,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should match origins by hostname when port is default HTTPS', async () => {
-    const whitelist = ['https://example.com'];
+    const whitelist = [ 'https://example.com' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -158,7 +106,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should handle multiple whitelisted origins', async () => {
-    const whitelist = ['http://localhost:3000', 'https://production.example.com'];
+    const whitelist = [ 'http://localhost:3000', 'https://production.example.com' ];
     const app = buildApp(whitelist);
 
     // Test first origin
@@ -179,7 +127,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should handle whitelist entries with hostname:port format', async () => {
-    const whitelist = ['localhost:3000'];
+    const whitelist = [ 'localhost:3000' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -194,7 +142,7 @@ describe('CORS Configuration', () => {
     // When whitelist contains hostname only (no protocol/port), it falls back
     // to string comparison which matches any port for that hostname.
     // This is the current intended behavior as documented in index.js.
-    const whitelist = ['localhost'];
+    const whitelist = [ 'localhost' ];
     const app = buildApp(whitelist);
 
     const response = await request(app)
@@ -206,7 +154,7 @@ describe('CORS Configuration', () => {
   });
 
   test('should reject invalid origin URLs', async () => {
-    const whitelist = ['http://localhost:3000'];
+    const whitelist = [ 'http://localhost:3000' ];
     const app = buildApp(whitelist);
 
     // This will be caught by the try-catch in getCorsOptions

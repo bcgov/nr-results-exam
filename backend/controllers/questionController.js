@@ -1,5 +1,5 @@
 const Minio = require('minio');
-const dotenv =require('dotenv');
+const dotenv = require('dotenv');
 dotenv.config({
   path: './.env'
 });
@@ -37,9 +37,14 @@ async function getFileFromS3(req, res) {
 
     dataStream.on('end', function () {
       // Parse the JSON data
-      const jsonData = JSON.parse(fileData);
-      // Return the JSON data in the response
-      res.json(jsonData);
+      try {
+        const jsonData = JSON.parse(fileData);
+        // Return the JSON data in the response
+        res.json(jsonData);
+      } catch (parseError) {
+        // Handle invalid JSON payloads from S3 gracefully
+        res.status(500).json({ error: 'Invalid questions JSON payload' });
+      }
     });
 
     dataStream.on('error', function (err) {
