@@ -96,7 +96,7 @@ jobs:
             npm run lint
             npm run test:coverage
           dir: ${{ matrix.dir }}
-          node_version: "22"
+          node_version: "24"
           sonar_args: >
             -Dsonar.exclusions=src/__tests__/**,__tests__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
