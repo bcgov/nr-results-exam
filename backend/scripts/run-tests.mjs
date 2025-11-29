@@ -42,9 +42,23 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles], {
+// Filter out any inspector/debugger flags from NODE_OPTIONS to prevent debugger wait
+const cleanEnv = { ...process.env };
+if (cleanEnv.NODE_OPTIONS) {
+  const filtered = cleanEnv.NODE_OPTIONS
+    .split(/\s+/)
+    .filter(opt => !opt.includes('--inspect') && !opt.includes('--debug'))
+    .join(' ')
+    .trim();
+  cleanEnv.NODE_OPTIONS = filtered || undefined;
+  if (!cleanEnv.NODE_OPTIONS) {
+    delete cleanEnv.NODE_OPTIONS;
+  }
+}
+
+const child = spawn(process.execPath, [ '--test', ...forwardedArgs, ...testFiles ], {
   stdio: 'inherit',
-  env: { ...process.env }
+  env: cleanEnv
 });
 
 child.on('error', (error) => {
