@@ -213,7 +213,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
   test('GET /api/questions/:fileName should append .json extension to filename', async () => {
     const mockStream = {
-      on: function (event, handler) {
+      on: function (_event, _handler) {
         // Don't emit any events - just verify the stub was called with correct args
         return this;
       }
@@ -225,7 +225,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
       await request(buildApp(questionRoutes))
         .get('/api/questions/my-questions')
         .timeout(500);
-    } catch (err) {
+    } catch (_err) {
       // Expected - request times out waiting for stream
     }
 
