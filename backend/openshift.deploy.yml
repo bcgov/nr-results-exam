@@ -10,14 +10,12 @@ parameters:
   - name: ZONE
     description: Deployment zone, e.g. pr-### or prod
     required: true
-  - name: MOD_ZONE
-    description: Deployment zone, modified for PRs,e.g. pr-### % 50, test or prod
+  - name: HOSTNAME
+    description: Frontend hostname (without protocol), e.g. nr-results-exam-12-frontend.apps.silver.devops.gov.bc.ca
     required: true
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
-  - name: DOMAIN
-    value: apps.silver.devops.gov.bc.ca
   - name: CPU_REQUEST
     value: "25m"
   - name: MEMORY_REQUEST
@@ -26,14 +24,6 @@ parameters:
     value: "75m"
   - name: MEMORY_LIMIT
     value: "150Mi"
-  - name: CPU_REQUEST_INIT
-    value: "125m"
-  - name: MEMORY_REQUEST_INIT
-    value: "100Mi"
-  - name: CPU_LIMIT_INIT
-    value: "250m"
-  - name: MEMORY_LIMIT_INIT
-    value: "250Mi"
   - name: MIN_REPLICAS
     description: The minimum amount of replicas for the horizontal pod autoscaler.
     value: "3"
@@ -103,8 +93,6 @@ objects:
                       key: ches-client-secret
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
-                - name: CHES_CLIENT_ID
-                  value: ${CHES_CLIENT_ID}
                 - name: S3_ACCESSKEY
                   value: ${S3_ACCESSKEY}
                 - name: S3_BUCKETNAME
@@ -117,7 +105,7 @@ objects:
                       name: ${NAME}-${ZONE}-${COMPONENT}
                       key: s3-secretkey
                 - name: FRONTEND_URL
-                  value: https://${NAME}-${MOD_ZONE}-frontend.${DOMAIN}
+                  value: https://${HOSTNAME}
                 - name: RANDOM_EXPRESSION
                   value: ${RANDOM_EXPRESSION}
                 - name: VITE_USER_POOLS_ID

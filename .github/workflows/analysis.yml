@@ -96,7 +96,7 @@ jobs:
             npm run lint
             npm run test:coverage
           dir: ${{ matrix.dir }}
-          node_version: "22"
+          node_version: "24"
           sonar_args: >
             -Dsonar.exclusions=src/__tests__/**,__tests__/**,src/amplifyconfiguration.*,src/**/*.scss,src/**/*.css,src/**/*.d.*,src/setupTests.*
             -Dsonar.organization=bcgov-sonarcloud
@@ -110,9 +110,10 @@ jobs:
 
   results:
     name: Analysis Results
-    if: always() && !failure()
-    # Include all needs that could have failures!
+    if: always()
     needs: [codeql, trivy, tests]
     runs-on: ubuntu-24.04
     steps:
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
       - run: echo "Workflow completed successfully!"

@@ -17,18 +17,15 @@ on:
         required: true
         type: string
 
+      hostname:
+        description: Frontend hostname (without protocol), e.g. nr-results-exam-12-frontend.apps.silver.devops.gov.bc.ca
+        required: true
+        type: string
+
       ### Optional
       environment:
         description: GitHub/OpenShift environment; usually PR number, test or prod
         default: ""
-        type: string
-      pr_number:
-        description: PR number if this is a PR deployment (empty for non-PRs)
-        required: false
-        type: string
-      frontend_url:
-        description: Frontend URL for smoke tests (auto-calculated if not provided)
-        required: false
         type: string
 
     secrets:
@@ -50,8 +47,6 @@ jobs:
     timeout-minutes: 1
     permissions:
       contents: read
-    outputs:
-      mod_zone: ${{ steps.mod-zone.outputs.mod_zone }}
     steps:
       - name: Deploy OpenShift init resources
         uses: bcgov/action-deployer-openshift@v4.0.1
@@ -65,17 +60,6 @@ jobs:
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
-      - name: Calculate MOD_ZONE
-        id: mod-zone
-        run: |
-          # For PR deployments (numeric zones), calculate modulo 50
-          # For named environments (test, prod), use the zone as-is
-          if [[ "${{ inputs.zone }}" =~ ^[0-9]+$ ]]; then
-            echo "mod_zone=$(( ${{ inputs.zone }} % 50 ))" >> $GITHUB_OUTPUT
-          else
-            echo "mod_zone=${{ inputs.zone }}" >> $GITHUB_OUTPUT
-          fi
-
   deploys:
     name: Deploy
     needs: [init]
@@ -87,6 +71,11 @@ jobs:
     strategy:
       matrix:
         name: [backend, frontend]
+        include:
+          - name: backend
+            parameters: -p CHES_CLIENT_ID=${{ vars.CHES_CLIENT_ID }}
+          - name: frontend
+            parameters: -p REDIRECT_URL=${{ inputs.redirect_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.1
         id: deploys
@@ -97,32 +86,17 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
-            -p MOD_ZONE=${{ needs.init.outputs.mod_zone }}
-            ${{ matrix.name == 'frontend' && format('-p REDIRECT_URL={0}', inputs.redirect_url) || '' }}
+            -p HOSTNAME=${{ inputs.hostname }}
+            ${{ matrix.parameters }}
 
   smoke:
     name: Smoke Tests
-    needs: [init, deploys]
+    needs: [deploys]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Calculate frontend URL
-        id: frontend-url
-        run: |
-          if [ -n "${{ inputs.frontend_url }}" ]; then
-            # Use provided frontend URL
-            echo "url=${{ inputs.frontend_url }}" >> $GITHUB_OUTPUT
-          else
-            # Calculate from zone (for PRs)
-            DOMAIN="apps.silver.devops.gov.bc.ca"
-            REPO="nr-results-exam"
-            MOD_ZONE="${{ needs.init.outputs.mod_zone }}"
-            echo "url=https://${REPO}-${MOD_ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
-          fi
-
       - uses: actions/checkout@v6
-
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -130,15 +104,15 @@ jobs:
       - name: Run smoke tests
         working-directory: integration-tests
         env:
-          FRONTEND_URL: ${{ steps.frontend-url.outputs.url }}
-          REDIRECT_URL: ${{ inputs.redirect_url && format('https://{0}', inputs.redirect_url) || '' }}
+          FRONTEND_URL: https://${{ inputs.hostname }}
+          REDIRECT_URL: https://${{ inputs.redirect_url }}
         run: |
           npm ci
           npm run smoke
 
   report-failures:
     name: Failure Reporting
-    if: failure() && !inputs.pr_number
+    if: failure() && (inputs.zone == 'test' || inputs.zone == 'prod')
     # Create issues for non-PR deployments (test/prod)
     # PRs don't need issues since failures are visible in the PR checks
     needs: [init, deploys, smoke]
