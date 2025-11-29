@@ -4,6 +4,7 @@ const {
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const sinon = require('sinon');
 const Minio = require('minio');
 const { authenticateToken } = require('../middleware/authMiddleware');
@@ -26,7 +27,17 @@ const originalEnv = {
 function buildApp() {
   const app = express();
   app.use(express.json());
-  app.use('/api/questions', authenticateToken, questionRoutes);
+
+  // Use a high limit and short window so tests are unlikely to hit the limiter,
+  // while still matching the production pattern of rate limiting this route.
+  const questionsRateLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 1000,
+    standardHeaders: true,
+    legacyHeaders: false
+  });
+
+  app.use('/api/questions', questionsRateLimiter, authenticateToken, questionRoutes);
   return app;
 }
 
