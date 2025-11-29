@@ -42,9 +42,18 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
+// Filter out inspector flags from NODE_OPTIONS to prevent debugger wait in CI
+const nodeOptions = (process.env.NODE_OPTIONS || '')
+  .split(/\s+/)
+  .filter(opt => !opt.startsWith('--inspect'))
+  .join(' ');
+
 const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles], {
   stdio: 'inherit',
-  env: { ...process.env }
+  env: {
+    ...process.env,
+    NODE_OPTIONS: nodeOptions || undefined
+  }
 });
 
 child.on('error', (error) => {

@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node scripts/run-tests.mjs",
-    "test:coverage": "c8 --reporter=lcov --reporter=text --report-dir=coverage node scripts/run-tests.mjs",
+    "test": "NODE_OPTIONS=\"${NODE_OPTIONS//--inspect*}\" node scripts/run-tests.mjs",
+    "test:coverage": "NODE_OPTIONS=\"${NODE_OPTIONS//--inspect*}\" c8 --reporter=lcov --reporter=text --report-dir=coverage node scripts/run-tests.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
