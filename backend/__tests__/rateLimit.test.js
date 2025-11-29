@@ -35,6 +35,14 @@ class TestMemoryStore {
 
   async increment(key) {
     const now = Date.now();
+    const resetTime = this.resetTimes.get(key);
+    
+    // If reset time has passed, clear the hits for this key
+    if (resetTime && now >= resetTime) {
+      this.hits.delete(key);
+      this.resetTimes.delete(key);
+    }
+    
     const count = (this.hits.get(key) || 0) + 1;
     this.hits.set(key, count);
     
@@ -75,7 +83,7 @@ class TestMemoryStore {
 function buildAppWithRateLimit(limitConfig, routePath, routeHandler) {
   const app = express();
   app.use(express.json());
-  
+
   // Use custom store to avoid timer cleanup issues
   const store = new TestMemoryStore();
   const limiter = rateLimit({
@@ -84,7 +92,7 @@ function buildAppWithRateLimit(limitConfig, routePath, routeHandler) {
   });
   const mockAuth = createMockAuthMiddleware();
   app.use(routePath, limiter, mockAuth, routeHandler);
-  
+
   // Return both app and store so we can clean it up
   return { app, store };
 }
@@ -147,8 +155,8 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         .expect(200);
 
       assert.strictEqual(response.body.success, true);
-      assert.ok(response.headers['ratelimit-limit']);
-      assert.ok(response.headers['ratelimit-remaining']);
+      assert.ok(response.headers[ 'ratelimit-limit' ]);
+      assert.ok(response.headers[ 'ratelimit-remaining' ]);
     }
 
     // Next request should be rate limited
@@ -159,9 +167,9 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     // Check error message (may be in body.error or body.message depending on rate limiter config)
     const errorMsg = rateLimitedResponse.body.error || rateLimitedResponse.body.message || rateLimitedResponse.text;
     assert.ok(errorMsg && errorMsg.includes('Too many requests'), `Expected rate limit error, got: ${JSON.stringify(rateLimitedResponse.body)}`);
-    assert.ok(rateLimitedResponse.headers['ratelimit-limit']);
-    assert.ok(rateLimitedResponse.headers['ratelimit-remaining']);
-    assert.ok(rateLimitedResponse.headers['ratelimit-reset']);
+    assert.ok(rateLimitedResponse.headers[ 'ratelimit-limit' ]);
+    assert.ok(rateLimitedResponse.headers[ 'ratelimit-remaining' ]);
+    assert.ok(rateLimitedResponse.headers[ 'ratelimit-reset' ]);
   });
 
   test('should enforce rate limit on mail endpoint (20 requests per 15 minutes)', async () => {
@@ -187,7 +195,7 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         .post('/api/mail')
         .send({
           fromEmail: 'test@example.com',
-          toEmails: ['recipient@example.com'],
+          toEmails: [ 'recipient@example.com' ],
           subject: 'Test',
           mailBody: '<p>Test</p>'
         })
@@ -201,7 +209,7 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
       .post('/api/mail')
       .send({
         fromEmail: 'test@example.com',
-        toEmails: ['recipient@example.com'],
+        toEmails: [ 'recipient@example.com' ],
         subject: 'Test',
         mailBody: '<p>Test</p>'
       })
@@ -233,10 +241,10 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
       .get('/api/test')
       .expect(200);
 
-    assert.ok(response.headers['ratelimit-limit'], 'Should include RateLimit-Limit header');
-    assert.ok(response.headers['ratelimit-remaining'], 'Should include RateLimit-Remaining header');
-    assert.ok(response.headers['ratelimit-reset'], 'Should include RateLimit-Reset header');
-    assert.strictEqual(response.headers['ratelimit-limit'], '100');
+    assert.ok(response.headers[ 'ratelimit-limit' ], 'Should include RateLimit-Limit header');
+    assert.ok(response.headers[ 'ratelimit-remaining' ], 'Should include RateLimit-Remaining header');
+    assert.ok(response.headers[ 'ratelimit-reset' ], 'Should include RateLimit-Reset header');
+    assert.strictEqual(response.headers[ 'ratelimit-limit' ], '100');
   });
 
   test('should not include legacy rate limit headers', async () => {
@@ -260,7 +268,7 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
       .get('/api/test')
       .expect(200);
 
-    assert.strictEqual(response.headers['x-ratelimit-limit'], undefined, 'Should not include legacy X-RateLimit-Limit header');
-    assert.strictEqual(response.headers['x-ratelimit-remaining'], undefined, 'Should not include legacy X-RateLimit-Remaining header');
+    assert.strictEqual(response.headers[ 'x-ratelimit-limit' ], undefined, 'Should not include legacy X-RateLimit-Limit header');
+    assert.strictEqual(response.headers[ 'x-ratelimit-remaining' ], undefined, 'Should not include legacy X-RateLimit-Remaining header');
   });
 });
