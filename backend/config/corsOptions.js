@@ -80,5 +80,3 @@ module.exports = {
   getCorsOptions,
   getDefaultWhitelist
 };
-
-
