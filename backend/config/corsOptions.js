@@ -48,20 +48,25 @@ function getCorsOptions(req, whitelist) {
               originUrl.hostname === allowedUrl.hostname
               && getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
             );
-          } catch (_error) {
-            // If whitelist entry is not a valid URL, fallback to string/host:port comparison
+          } catch (error) {
+            // If whitelist entry is not a valid URL (TypeError from new URL()),
+            // fallback to string/host:port comparison
             // Support 'hostname' or 'hostname:port' in whitelist
-            // The error is expected when whitelist entry is not a full URL, so we handle it
-            const [ allowedHost, allowedPort ] = allowed.split(':');
-            if (allowedPort) {
-              // Compare both hostname and port
-              return (
-                originUrl.hostname === allowedHost
-                && originUrl.port === allowedPort
-              );
+            // Handle the exception by using fallback comparison logic
+            if (error instanceof TypeError) {
+              const [ allowedHost, allowedPort ] = allowed.split(':');
+              if (allowedPort) {
+                // Compare both hostname and port
+                return (
+                  originUrl.hostname === allowedHost
+                  && originUrl.port === allowedPort
+                );
+              }
+              // Compare only hostname
+              return originUrl.hostname === allowedHost;
             }
-            // Compare only hostname
-            return originUrl.hostname === allowedHost;
+            // Re-throw if it's not a TypeError (unexpected error)
+            throw error;
           }
         });
 
@@ -70,10 +75,16 @@ function getCorsOptions(req, whitelist) {
         } else {
           callback(new Error('Not allowed by CORS'));
         }
-      } catch (_error) {
+      } catch (error) {
         // Invalid origin URL format - reject the request
-        // The error details are not needed, just reject with CORS error
-        callback(new Error('Not allowed by CORS'));
+        // The origin string cannot be parsed as a URL (TypeError from new URL()),
+        // so we handle the exception by explicitly denying the request
+        if (error instanceof TypeError) {
+          callback(new Error('Not allowed by CORS'));
+        } else {
+          // Re-throw if it's not a TypeError (unexpected error)
+          throw error;
+        }
       }
     }
   };
