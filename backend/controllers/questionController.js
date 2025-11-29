@@ -41,7 +41,7 @@ async function getFileFromS3(req, res) {
         const jsonData = JSON.parse(fileData);
         // Return the JSON data in the response
         res.json(jsonData);
-      } catch (parseError) {
+      } catch (_parseError) {
         // Handle invalid JSON payloads from S3 gracefully
         res.status(500).json({ error: 'Invalid questions JSON payload' });
       }
