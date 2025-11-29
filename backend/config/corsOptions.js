@@ -48,7 +48,7 @@ function getCorsOptions(req, whitelist) {
               originUrl.hostname === allowedUrl.hostname
               && getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
             );
-          } catch (error_) {
+          } catch (_error) {
             // If whitelist entry is not a valid URL, fallback to string/host:port comparison
             // Support 'hostname' or 'hostname:port' in whitelist
             // The error is expected when whitelist entry is not a full URL, so we handle it
@@ -70,7 +70,7 @@ function getCorsOptions(req, whitelist) {
         } else {
           callback(new Error('Not allowed by CORS'));
         }
-      } catch (error_) {
+      } catch (_error) {
         // Invalid origin URL format - reject the request
         // The error details are not needed, just reject with CORS error
         callback(new Error('Not allowed by CORS'));
