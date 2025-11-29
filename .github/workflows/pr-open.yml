@@ -27,26 +27,22 @@ jobs:
           package: ${{ matrix.package }}
           tags: ${{ github.event.number }}
           tag_fallback: latest
-          triggers: ('${{ matrix.triggers }}/')
 
   vars:
     name: Variables
     runs-on: ubuntu-24.04
     timeout-minutes: 1
     outputs:
-      redirect_url: ${{ steps.url.outputs.redirect_url }}
       hostname: ${{ steps.url.outputs.hostname }}
+      redirect_url: ${{ steps.url.outputs.redirect_url }}
     steps:
       - name: Calculate redirect_url and hostname
         id: url
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
-          REPO="${{ github.event.repository.name }}"
-          ZONE="$(( ${{ github.event.number }} % 50 ))"
-          # Redirect from URL (without -frontend) - will redirect to main
-          echo "redirect_url=${REPO}-${ZONE}.${DOMAIN}" >> $GITHUB_OUTPUT
-          # Hostname for frontend Route and URLs
-          echo "hostname=${REPO}-${ZONE}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          SUBDOMAIN="${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 ))"
+          echo "hostname=${SUBDOMAIN}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "redirect_url=${SUBDOMAIN}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -61,14 +57,13 @@ jobs:
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
       hostname: ${{ needs.vars.outputs.hostname }}
-      pr_number: ${{ github.event.number }}
 
   results:
     name: PR Results
-    if: always() && !failure()
-    # Include all needs that could have failures!
-    # Note: deploys now includes smoke tests
+    if: always()
     needs: [builds, deploys]
     runs-on: ubuntu-24.04
     steps:
+      - if: contains(needs.*.result, 'failure')||contains(needs.*.result, 'canceled')
+        run: echo "At least one job has failed." && exit 1
       - run: echo "Workflow completed successfully!"
