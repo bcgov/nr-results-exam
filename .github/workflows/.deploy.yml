@@ -84,6 +84,7 @@ jobs:
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p HOSTNAME=${{ inputs.hostname }}
+            ${{ matrix.name == 'frontend' && vars.VITE_USER_POOLS_WEB_CLIENT_ID != '' && format('-p VITE_USER_POOLS_WEB_CLIENT_ID={0}', vars.VITE_USER_POOLS_WEB_CLIENT_ID) || '' }}
             ${{ matrix.parameters }}
 
   smoke:
