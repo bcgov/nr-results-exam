@@ -36,21 +36,21 @@ class TestMemoryStore {
   async increment(key) {
     const now = Date.now();
     const resetTime = this.resetTimes.get(key);
-    
+
     // If reset time has passed, clear the hits for this key
     if (resetTime && now >= resetTime) {
       this.hits.delete(key);
       this.resetTimes.delete(key);
     }
-    
+
     const count = (this.hits.get(key) || 0) + 1;
     this.hits.set(key, count);
-    
+
     // Set reset time if not already set (for the window)
     if (!this.resetTimes.has(key)) {
       this.resetTimes.set(key, now + 1000); // 1 second window for tests
     }
-    
+
     return {
       totalHits: count,
       resetTime: new Date(this.resetTimes.get(key))
