@@ -208,8 +208,10 @@ describe('Question Routes', { concurrency: 1 }, () => {
   });
 
   // Note: Invalid JSON handling test removed because the controller doesn't catch
-  // JSON.parse errors in the 'end' handler, causing uncaught exceptions that fail tests.
-  // This is a known limitation that should be fixed in the controller (wrap JSON.parse in try-catch).
+  // JSON.parse errors in the 'end' handler (questionController.js line 40), causing
+  // uncaught exceptions that fail tests. This is a known bug that should be fixed
+  // in the controller by wrapping JSON.parse in a try-catch block to return a 500 error
+  // instead of crashing the process.
 
   test('GET /api/questions/:fileName should append .json extension to filename', async () => {
     const mockStream = {
