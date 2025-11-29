@@ -124,23 +124,16 @@ describe('CORS Configuration', () => {
     // When whitelist entry is 'hostname:port' (not a valid URL), it falls back
     // to string comparison. The origin 'http://localhost:3000' has port '3000',
     // which should match the whitelist entry 'localhost:3000' after splitting.
-    // Note: The CORS logic compares originUrl.port (string) with allowedPort from split.
+    // The CORS logic uses getEffectivePort for consistent port comparison.
     const whitelist = ['localhost:3000'];
     const app = buildApp(whitelist);
 
     const response = await request(app)
       .get('/api/test')
-      .set('Origin', 'http://localhost:3000');
+      .set('Origin', 'http://localhost:3000')
+      .expect(200);
 
-    // The hostname:port format should work, but if it doesn't, the response will be 500
-    // This tests that the fallback logic handles non-URL whitelist entries
-    if (response.status === 200) {
-      assert.strictEqual(response.body.success, true);
-    } else {
-      // If it fails, it means the port comparison isn't working - this is a known limitation
-      // In practice, use full URL format: ['http://localhost:3000'] instead of ['localhost:3000']
-      assert.strictEqual(response.status, 500, 'hostname:port format may require full URL in whitelist');
-    }
+    assert.strictEqual(response.body.success, true);
   });
 
   test('should handle whitelist entries with hostname only', async () => {

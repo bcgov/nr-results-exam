@@ -2,7 +2,7 @@ const frontendUrl = process.env.FRONTEND_URL;
 
 /**
  * Build the default whitelist of allowed origins.
- * This mirrors the configuration in backend/index.js.
+ * Used by the CORS configuration in backend/index.js.
  */
 function getDefaultWhitelist() {
   return [
@@ -23,7 +23,7 @@ function getCorsOptions(req, whitelist) {
       if (!origin) {
         // For server-to-server requests, require the X-Forwarded-By header
         // This adds defense-in-depth beyond network isolation
-        if (req.headers[ 'x-forwarded-by' ] === 'caddy-proxy') {
+        if (req.headers['x-forwarded-by'] === 'caddy-proxy') {
           return callback(null, true);
         }
         // Deny requests without origin and without the trusted proxy header
@@ -54,12 +54,13 @@ function getCorsOptions(req, whitelist) {
             // Support 'hostname' or 'hostname:port' in whitelist
             // Handle the exception by using fallback comparison logic
             if (error instanceof TypeError) {
-              const [ allowedHost, allowedPort ] = allowed.split(':');
+              const [allowedHost, allowedPort] = allowed.split(':');
               if (allowedPort) {
                 // Compare both hostname and port
+                // Use getEffectivePort for consistent port comparison with URL-based logic
                 return (
                   originUrl.hostname === allowedHost
-                  && originUrl.port === allowedPort
+                  && getEffectivePort(originUrl) === allowedPort
                 );
               }
               // Compare only hostname
