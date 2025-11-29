@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -42,25 +42,21 @@ const forwardedArgs = (() => {
   return process.argv.slice(separatorIndex + 1);
 })();
 
-// Build completely clean environment with NODE_OPTIONS explicitly unset
-// to prevent any debugger/inspector from being enabled in CI
-const cleanEnv = { ...process.env };
-delete cleanEnv.NODE_OPTIONS;
-delete cleanEnv.NODE_INSPECT_RESUME_ON_START;
-delete cleanEnv.NODE_OPTIONS_STRICT;
+const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles], {
+  stdio: 'inherit',
+  env: { ...process.env }
+});
 
-// Use execFile instead of spawn to avoid inheriting debugger connections
-// Explicitly pass --test flag and test files as arguments
-const args = [ '--test', ...forwardedArgs, ...testFiles ];
+child.on('error', (error) => {
+  console.error('Failed to start test process:', error);
+  process.exit(1);
+});
 
-execFile(process.execPath, args, {
-  env: cleanEnv,
-  stdio: 'inherit'
-}, (error, stdout, stderr) => {
-  if (error) {
-    console.error('Test execution failed:', error);
-    process.exit(error.code || 1);
+child.on('exit', (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+    return;
   }
-  process.exit(0);
+  process.exit(code ?? 0);
 });
 
