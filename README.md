@@ -81,8 +81,8 @@ This repository is operating in maintenance/sustainment mode as verified by the 
 - **Status:** All metrics meet or exceed thresholds
 
 **Test Suite:**
-- 71 frontend tests (Vitest + React Testing Library)
-- 41 backend tests (Node.js test runner)
+- 73 frontend tests (Vitest + React Testing Library)
+- 65 backend tests (Node.js test runner)
 - Integration smoke tests (health, API, frontend, security headers)
 - Coverage thresholds enforced for both frontend and backend
 

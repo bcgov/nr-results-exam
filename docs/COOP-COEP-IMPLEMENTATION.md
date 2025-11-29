@@ -75,8 +75,8 @@ All cross-origin resources in the application:
 ## Testing Performed
 
 ### Automated Tests
-- ✅ All 71 frontend tests pass
-- ✅ All 17 backend tests pass
+- ✅ All 73 frontend tests pass
+- ✅ All 65 backend tests pass
 - ✅ Frontend builds successfully
 - ✅ Linting passes (frontend and backend)
 - ✅ CodeQL security scan: 0 alerts
