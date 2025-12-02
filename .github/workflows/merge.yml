@@ -38,8 +38,8 @@ jobs:
       environment: test
       tag: ${{ needs.vars.outputs.pr }}
       zone: test
-      redirect_url: results-exam-test.apps.silver.devops.gov.bc.ca
-      hostname: nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
+      hostname: results-exam-test.apps.silver.devops.gov.bc.ca
+      redirect_url: nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
 
   deploys-prod:
     name: Deploys (PROD)
@@ -53,8 +53,8 @@ jobs:
       environment: prod
       tag: ${{ needs.vars.outputs.pr }}
       zone: prod
-      redirect_url: results-exam.apps.silver.devops.gov.bc.ca
-      hostname: nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
+      hostname: results-exam.apps.silver.devops.gov.bc.ca
+      redirect_url: nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
 
   image-promotions:
     name: Promote images
