@@ -41,8 +41,8 @@ jobs:
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
           SUBDOMAIN="${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 ))"
-          echo "hostname=${SUBDOMAIN}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
-          echo "redirect_url=${SUBDOMAIN}.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "redirect_url=${SUBDOMAIN}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "hostname=${SUBDOMAIN}.${DOMAIN}" >> $GITHUB_OUTPUT
 
   deploys:
     name: Deploys (${{ github.event.number }})
