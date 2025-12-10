@@ -14,6 +14,9 @@ RUN npm ci --ignore-scripts && \
 FROM caddy:2.10.2-builder AS builder
 # Install CA certificates for Go module downloads
 RUN apk add --no-cache ca-certificates
+# Build Caddy with Coraza WAF plugin
+# Note: Using /v2 module path (latest v2 branch). For reproducible builds, consider pinning to a specific version tag:
+# --with github.com/corazawaf/coraza-caddy/v2@v2.x.x
 RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2
 
