@@ -29,12 +29,11 @@ COPY --from=build /app/build/ /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 COPY coraza.conf /etc/caddy/coraza.conf
 
-# Create directories for Coraza WAF with restricted permissions
-# OpenShift uses random UIDs, so use root group (GID 0) with group write permissions
-# This allows any UID in the root group (which OpenShift assigns to all containers) to access
+# Create directories for Coraza WAF with OpenShift-compatible permissions
+# OpenShift uses random UIDs, so use 777 permissions for /tmp (standard for temporary directories)
+# This ensures any UID can write to the directory regardless of ownership
 RUN mkdir -p /tmp/coraza && \
-    chown -R 1001:0 /tmp/coraza && \
-    chmod -R 770 /tmp/coraza
+    chmod -R 777 /tmp/coraza
 
 # CA certs and verify Caddy formatting
 RUN apk add --no-cache ca-certificates && \

@@ -263,8 +263,8 @@ The Coraza Web Application Firewall (WAF) protects your application from common 
 - Look for entries containing "coraza" or "WAF" to identify blocked requests and rule matches.
 
 **3. Temporarily Disabling the WAF**
-- To disable the WAF for testing, comment out or remove the Coraza configuration block in the Caddyfile (usually in `frontend/Caddyfile`).
-- Alternatively, you can remove or rename `coraza.conf` and restart the frontend.
+- To disable the WAF for testing, comment out or remove the Coraza configuration block in the Caddyfile (usually in `frontend/Caddyfile`). This ensures Caddy will start without referencing the missing configuration.
+- Do **not** simply remove or rename `coraza.conf` without updating the Caddyfile, as this will cause Caddy to fail to start due to the `Include /etc/caddy/coraza.conf` directive.
 - **Warning:** Disabling the WAF exposes your app to threats. Only do this in non-production environments.
 
 **4. Handling False Positives & Whitelisting Legitimate Traffic**
