@@ -12,7 +12,7 @@ RUN npm ci --ignore-scripts && \
 FROM caddy:2.10.2-builder AS xcaddy
 RUN apk add --no-cache ca-certificates
 RUN xcaddy build \
-    --with github.com/corazawaf/coraza-caddy/v2@v2.8.1
+    --with github.com/corazawaf/coraza-caddy/v2
 
 # Deploy using custom Caddy to host static files
 FROM caddy:2.10.2-alpine
@@ -23,14 +23,13 @@ COPY --from=build /app/build/ /srv
 COPY Caddyfile coraza.conf /etc/caddy/
 
 # Create directory for Coraza WAF temporary files
-# Coraza requires SecTmpDir and SecDataDir to exist (configured in coraza.conf)
-RUN mkdir -p /tmp/coraza
 
-# CA certs and verify Caddy formatting
-RUN apk add --no-cache ca-certificates && \
-    caddy fmt --diff /etc/caddy/Caddyfile
+# Verify Caddy formatting, install CA certs, Coraza dir
+RUN caddy fmt --diff /etc/caddy/Caddyfile && \
+    apk add --no-cache ca-certificates && \
+    mkdir -p /tmp/coraza
 
-# User and port
+# User, port, healthcheck
 USER 1001
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
