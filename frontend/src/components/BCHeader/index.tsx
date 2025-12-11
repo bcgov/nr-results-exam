@@ -1,26 +1,97 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import BCGovLogo from "../BCGovLogo";
+import { Link, NavLink } from "react-router-dom";
+import { useThemePreference } from "../../utils/ThemePreference";
+import { toggleTheme } from "../../utils/ThemeFunction";
+import {
+  HeaderContainer,
+  Header,
+  SkipToContent,
+  HeaderGlobalBar,
+  HeaderGlobalAction,
+  HeaderMenuButton
+} from "@carbon/react";
+import * as Icons from "@carbon/icons-react";
+
 import "./BCHeader.scss";
 
 const BCHeader: React.FC = () => {
+  // Can only be imported at component level
+  const { theme, setTheme } = useThemePreference();
+
   return (
-    <header className="bc-gov-header" data-testid="header">
-      <div className="bc-gov-header__container">
-        <div className="bc-gov-header__branding">
-          <BCGovLogo />
-          <div className="bc-gov-header__text">
-            <span className="bc-gov-header__british">BRITISH</span>
-            <span className="bc-gov-header__columbia">COLUMBIA</span>
-          </div>
-        </div>
-        <div className="bc-gov-header__separator"></div>
-        <Link to="/" className="bc-gov-header__title" data-testid="header-name">
-          RESULTS EXAM
-        </Link>
-      </div>
-      <div className="bc-gov-header__border"></div>
-    </header>
+    <>
+      <HeaderContainer
+        render={({ isSideNavExpanded, onClickSideNavExpand }: { isSideNavExpanded: boolean; onClickSideNavExpand: () => void }) => (
+          <Header
+            aria-label="React TS Carbon Quickstart"
+            className="results-exam-header"
+            data-testid="header"
+          >
+            <SkipToContent />
+            <HeaderMenuButton
+              aria-label={isSideNavExpanded ? "Close menu" : "Open menu"}
+              onClick={onClickSideNavExpand}
+              isActive={isSideNavExpanded}
+            />
+            <Link to="/" className="header-link" data-testid="header-name">
+              BCGOV
+              <span className="header-full-name"> RESULTS EXAM</span>
+            </Link>
+            {/* Navigation placeholder - remove when actual links are needed */}
+            {/* <HeaderNavigation aria-label="BC-Gov Starter">
+              <HeaderMenuItem href="#">Link 1</HeaderMenuItem>
+              <HeaderMenuItem href="#">Link 2</HeaderMenuItem>
+              <HeaderMenuItem href="#">Link 3</HeaderMenuItem>
+              <HeaderMenu
+                isCurrentPage
+                aria-label="Link 4"
+                menuLinkName="Link 4"
+              >
+                <HeaderMenuItem href="#">Sub-link 1</HeaderMenuItem>
+                <HeaderMenuItem href="#">Sub-link 2</HeaderMenuItem>
+                <HeaderMenuItem href="#">Sub-link 3</HeaderMenuItem>
+              </HeaderMenu>
+            </HeaderNavigation> */}
+            <HeaderGlobalBar>
+              <HeaderGlobalAction
+                aria-label={
+                  theme === "g10"
+                    ? "Switch to Dark Mode"
+                    : "Switch to Light Mode"
+                }
+                tooltipAlignment="end"
+                onClick={() => {
+                  toggleTheme(theme, setTheme);
+                }}
+              >
+                {/* Must have a child component */}
+                <>
+                  {theme === "g10" ? (
+                    <Icons.Asleep size={20} />
+                  ) : (
+                    <Icons.Light size={20} />
+                  )}
+                </>
+              </HeaderGlobalAction>
+
+              <NavLink to="/help">
+                <HeaderGlobalAction aria-label="Help">
+                  <Icons.Help size={20} />
+                </HeaderGlobalAction>
+              </NavLink>
+
+              <HeaderGlobalAction
+                aria-label="App Switch"
+                tooltipAlignment="end"
+              >
+                <Icons.Switcher size={20} />
+              </HeaderGlobalAction>
+            </HeaderGlobalBar>
+            {/* SideNav removed until navigation items are defined */}
+          </Header>
+        )}
+      />
+    </>
   );
 };
 
