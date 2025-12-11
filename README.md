@@ -246,31 +246,9 @@ test and deploy.
 - Web Application Firewall
   - [Coraza WAF](https://github.com/corazawaf/coraza-caddy) integrated with Caddy
 
-### 🛡️ Coraza WAF: Customization & Troubleshooting
+### 🛡️ Coraza WAF
 
-The Coraza Web Application Firewall (WAF) protects your application from common web threats. If you need to customize its behavior or troubleshoot blocked requests, follow these steps:
-
-**1. Modifying WAF Rules**
-- WAF rules are defined in `frontend/coraza.conf`.
-- Edit this file to add, remove, or adjust rules. For example, to allow a specific request method, modify or comment out the relevant rule.
-- After making changes, restart the frontend service (Caddy) to apply updates.
-
-**2. Viewing WAF Logs**
-- WAF logs are typically output to the Caddy logs. Check the container logs with:
-  ```bash
-  oc logs <pod-name> -n <namespace>
-  ```
-- Look for entries containing "coraza" or "WAF" to identify blocked requests and rule matches.
-
-**3. Handling False Positives & Whitelisting Legitimate Traffic**
-- If legitimate requests are blocked, review the logs to identify which rule triggered the block.
-- Adjust or disable the specific rule in `coraza.conf` to whitelist the traffic.
-- You can use `SecRuleRemoveById <rule_id>` to disable a rule by its ID.
-  - Place the `SecRuleRemoveById` directive in `coraza.conf` **after the `Include` statement** or **before the rule definition** you want to disable.
-  - This is a Coraza directive and works differently from commenting out rules: it disables the rule by its ID, regardless of where the rule is defined.
-- Test thoroughly after making changes to ensure security is maintained.
-
-For more details, see the [Coraza documentation](https://coraza.io/docs/).
+The Coraza Web Application Firewall (WAF) protects your application from common web threats. WAF rules are configured in `frontend/coraza.conf`. For troubleshooting, check Caddy container logs for entries containing "coraza" or "WAF".
 
 # Architecture & Network Topology
 
