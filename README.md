@@ -271,6 +271,8 @@ The Coraza Web Application Firewall (WAF) protects your application from common 
 - If legitimate requests are blocked, review the logs to identify which rule triggered the block.
 - Adjust or disable the specific rule in `coraza.conf` to whitelist the traffic.
 - You can use `SecRuleRemoveById <rule_id>` to disable a rule by its ID.
+  - Place the `SecRuleRemoveById` directive in `coraza.conf` **after the `Include` statement** or **before the rule definition** you want to disable.
+  - This is a Coraza directive and works differently from commenting out rules: it disables the rule by its ID, regardless of where the rule is defined.
 - Test thoroughly after making changes to ensure security is maintained.
 
 For more details, see the [Coraza documentation](https://coraza.io/docs/).
