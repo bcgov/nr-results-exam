@@ -243,6 +243,12 @@ test and deploy.
   - Bootstrap
 - Authentication
   - AWS Cognito (FAM)
+- Web Application Firewall
+  - [Coraza WAF](https://github.com/corazawaf/coraza-caddy) integrated with Caddy
+
+### 🛡️ Coraza WAF
+
+The Coraza Web Application Firewall (WAF) protects your application from common web threats. WAF rules are configured in `frontend/coraza.conf`. For troubleshooting, check Caddy container logs for entries containing "coraza" or "WAF".
 
 # Architecture & Network Topology
 
@@ -256,6 +262,7 @@ The application follows a defense-in-depth approach with restricted network acce
   - Serves static React application
   - Acts as a reverse proxy for backend API calls
   - All backend requests from the browser go through the frontend proxy (e.g., `/api/*`)
+  - Protected by Coraza WAF for security threat detection and blocking
   
 - **Backend (Node.js)**: Internal-only access
   - No public Route exposed

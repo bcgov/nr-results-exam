@@ -1,10 +1,18 @@
 {
 	auto_https off
 	admin off
+	order coraza_waf first
 }
 
 :3000 {
 	root * /srv
+
+	# Enable Coraza WAF
+	coraza_waf {
+		directives `
+		Include /etc/caddy/coraza.conf
+		`
+	}
 
 	encode gzip
 
