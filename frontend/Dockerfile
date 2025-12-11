@@ -22,12 +22,11 @@ COPY --from=xcaddy /usr/bin/caddy /usr/bin/caddy
 COPY --from=build /app/build/ /srv
 COPY Caddyfile coraza.conf /etc/caddy/
 
-# Create directory for Coraza WAF temporary files
-
-# Verify Caddy formatting, install CA certs, Coraza dir
+# Verify Caddy formatting, install CA certs, create Coraza dir with proper permissions
 RUN caddy fmt --diff /etc/caddy/Caddyfile && \
     apk add --no-cache ca-certificates && \
-    mkdir -p /tmp/coraza
+    mkdir -p /tmp/coraza && \
+    chown 1001:1001 /tmp/coraza
 
 # User, port, healthcheck
 USER 1001
