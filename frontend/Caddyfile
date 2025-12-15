@@ -44,7 +44,7 @@
 		-X-Forwarded-Proto
 		-Forwarded
 		-Server
-		
+
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
 		X-XSS-Protection "1;mode=block"
