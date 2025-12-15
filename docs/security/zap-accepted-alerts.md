@@ -410,11 +410,197 @@ console.log(self.crossOriginIsolated);
 3. No proxy or CDN is stripping the headers
 4. Browser supports COOP/COEP (Chrome 83+, Firefox 79+, Safari 15+)
 
+**Investigation Note (2025-12-15)**:
+- Headers are configured in Caddyfile (lines 62-63)
+- If ZAP still detects this alert, it may indicate:
+  - OpenShift router or intermediate proxy stripping headers
+  - Headers not applied to all response types (static files, etc.)
+  - ZAP scanning before headers are applied
+- Manual verification recommended: Check browser DevTools Network tab for actual response headers
+
 **References**:
 - [OWASP ZAP Alert 90004](https://www.zaproxy.org/docs/alerts/90004/)
 - [COOP/COEP Implementation](../COOP-COEP-IMPLEMENTATION.md) - Detailed implementation documentation
 - [Security Headers](../SECURITY-HEADERS.md) - Complete security headers documentation
 - [Making your website "cross-origin isolated"](https://web.dev/cross-origin-isolation-guide/)
+
+---
+
+### 12. Proxy Disclosure (40025)
+
+**Risk Level**: Low  
+**ZAP Alert ID**: 40025
+
+**Description**:  
+ZAP detects HTTP response headers that reveal information about reverse proxy infrastructure, such as `Via`, `X-Forwarded-*`, or `Server` headers.
+
+**Findings**:
+- Proxy disclosure headers detected in responses
+- Headers added by OpenShift HAProxy router (`Via`, `X-Forwarded-*`, `Server`)
+- Headers present on multiple endpoints (root, assets, static files)
+
+**Risk Assessment**:
+- **Potential Risk**: Proxy information could aid attackers in infrastructure reconnaissance
+- **Actual Risk**: ✅ **Low** (Mitigated)
+
+**Mitigation Implemented**:
+- Caddyfile configured to remove proxy disclosure headers from all responses:
+  - `-Via`
+  - `-X-Forwarded-For`
+  - `-X-Forwarded-Host`
+  - `-X-Forwarded-Port`
+  - `-X-Forwarded-Proto`
+  - `-Forwarded`
+  - `-Server`
+- Headers are necessary for backend processing but removed from client-facing responses
+- See [SECURITY-HEADERS.md](../SECURITY-HEADERS.md) for detailed documentation
+
+**Status**: ✅ **Resolved/Mitigated**
+
+**Note**: If this alert still appears after deployment, verify:
+1. Caddyfile changes are deployed
+2. Headers are actually removed in production responses
+3. No intermediate proxy is re-adding headers
+
+**References**:
+- [OWASP ZAP Alert 40025](https://www.zaproxy.org/docs/alerts/40025/)
+- [Security Headers Documentation](../SECURITY-HEADERS.md) - Proxy disclosure mitigation
+
+---
+
+### 13. Cookie Slack Detector (90027)
+
+**Risk Level**: Informational  
+**ZAP Alert ID**: 90027
+
+**Description**:  
+ZAP detects cookies that, when omitted, do not affect the response size or content. This may indicate cookies that are not being properly enforced.
+
+**Findings**:
+- Cookies detected that don't affect responses when omitted
+- Likely includes AWS Cognito OAuth cookies (`XSRF-TOKEN`, session cookies)
+- May include application cookies during certain request flows
+
+**Risk Assessment**:
+- **Potential Risk**: Cookies not affecting responses could indicate missing authentication/session validation
+- **Actual Risk**: ✅ **Low** (Accepted)
+
+**Acceptance Rationale**:
+1. **OAuth Flow Cookies**: Cognito OAuth cookies (`XSRF-TOKEN`) are:
+   - Only required during authentication flows
+   - Not checked on every request (normal OAuth behavior)
+   - Properly validated during critical operations (login, token exchange)
+2. **Application Cookies**: Application authentication cookies are:
+   - Validated on protected API endpoints (see `authMiddleware.js`)
+   - Required for state-changing operations
+   - May not affect static asset responses (expected behavior)
+3. **Expected Behavior**: Not all cookies need to affect all responses:
+   - Static assets don't require authentication
+   - Public endpoints may not check cookies
+   - Authentication is enforced at the API layer, not static file layer
+
+**Mitigation**:
+- Authentication middleware validates tokens on protected endpoints
+- CSRF protection via Cognito's XSRF-TOKEN mechanism
+- Session management properly implemented for authenticated requests
+
+**References**:
+- [OWASP ZAP Alert 90027](https://www.zaproxy.org/docs/alerts/90027/)
+
+---
+
+### 14. Non-Storable Content (10049)
+
+**Risk Level**: Informational  
+**ZAP Alert ID**: 10049
+
+**Description**:  
+ZAP detects HTTP responses that cannot be stored by caching components (proxy servers, browsers). This indicates content that cannot be cached.
+
+**Findings**:
+- Responses include `Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate`
+- Multiple endpoints return non-storable content (root, favicon, robots.txt, sitemap.xml)
+
+**Risk Assessment**:
+- **Potential Risk**: None - this is intentional security configuration
+- **Actual Risk**: ✅ **Low** (Accepted - Intentional)
+
+**Acceptance Rationale**:
+1. **Intentional Security Configuration**: Application explicitly sets `Cache-Control: no-store` for:
+   - HTML entry point (prevents stale authentication state)
+   - Security-sensitive responses
+   - Dynamic content that must be fresh
+2. **Appropriate for Application Type**: Government exam application requires:
+   - Fresh authentication checks
+   - No cached sensitive data
+   - Real-time content updates
+3. **Performance Trade-off**: Acceptable trade-off for security:
+   - Static assets (JS, CSS) are versioned and can be cached separately
+   - HTML entry point is small and infrequently accessed
+   - Security benefits outweigh minor performance impact
+
+**Configuration**:
+- Cache-Control headers set in Caddyfile (line 42)
+- Intentional configuration to prevent caching of sensitive content
+
+**References**:
+- [OWASP ZAP Alert 10049](https://www.zaproxy.org/docs/alerts/10049/)
+- [HTTP Caching - MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching)
+
+---
+
+### 15. Session Management Response Identified (10112)
+
+**Risk Level**: Informational  
+**ZAP Alert ID**: 10112
+
+**Description**:  
+ZAP detects HTTP responses containing session management tokens. This is an informational alert to help configure ZAP's session management detection.
+
+**Findings**:
+- Session management tokens detected in responses
+- Likely includes Authorization headers or session cookies
+- Detected on root and main application endpoints
+
+**Risk Assessment**:
+- **Potential Risk**: None - this is informational only
+- **Actual Risk**: ✅ **Informational** (Not a vulnerability)
+
+**Acceptance Rationale**:
+1. **Informational Alert**: This alert is not a vulnerability - it's ZAP identifying session tokens for its own session management configuration
+2. **Expected Behavior**: Application uses:
+   - AWS Cognito authentication tokens
+   - JWT tokens in Authorization headers
+   - Session cookies for authentication state
+3. **Proper Implementation**: Session management is properly implemented:
+   - Tokens validated on protected endpoints
+   - Secure token storage and transmission
+   - Proper session lifecycle management
+
+**Action Required**: None - this is an informational alert for ZAP configuration purposes only.
+
+**References**:
+- [OWASP ZAP Alert 10112](https://www.zaproxy.org/docs/alerts/10112/)
+
+---
+
+### 16. Sec-Fetch-Mode Header is Missing (90005 variant)
+
+**Risk Level**: Informational  
+**ZAP Alert ID**: 90005
+
+**Description**:  
+ZAP detects that the `Sec-Fetch-Mode` header is not set or validated by the server. This is a variant of the Sec-Fetch header alerts.
+
+**Risk Assessment**: ✅ **Low** (Accepted)
+
+**Acceptance Rationale**:
+- Same rationale as other Sec-Fetch headers (see alert #5)
+- Browser-controlled header, not application-controlled
+- Covered under existing Sec-Fetch header documentation
+
+**References**:
+- See [Sec-Fetch-Dest Header Not Set (90005)](#5-sec-fetch-dest-header-not-set-90005) above
 
 ---
 
@@ -430,7 +616,14 @@ console.log(self.crossOriginIsolated);
 | Retrieved from Cache | Informational | Accepted | Intentional; appropriate cache headers |
 | X-Content-Type-Options | Low | Resolved | Security headers configured |
 | Cookie SameSite=None | Low | Accepted | AWS Cognito managed; application uses Lax |
-| Spectre Site Isolation | Low | Resolved | COOP/COEP headers configured |
+| Spectre Site Isolation | Low | Resolved* | COOP/COEP headers configured (investigating detection) |
+| Proxy Disclosure | Low | Resolved | Header removal configured in Caddyfile |
+| Cookie Slack Detector | Informational | Accepted | OAuth cookies; authentication enforced at API layer |
+| Non-Storable Content | Informational | Accepted | Intentional security configuration |
+| Session Management Response | Informational | Accepted | Informational only; not a vulnerability |
+| Sec-Fetch-Mode | Informational | Accepted | Covered under Sec-Fetch headers |
+
+\* Headers configured but may not be detected by ZAP due to proxy/router behavior
 
 ---
 
@@ -522,6 +715,7 @@ These require investigation and typically require remediation:
 |------|---------|---------|--------|
 | 2025-11-13 | 1.0 | Initial documentation of accepted ZAP alerts | GitHub Copilot |
 | 2025-12-15 | 1.1 | Added Cookie SameSite=None (10054) and Spectre Site Isolation (90004) alerts | Auto |
+| 2025-12-15 | 1.2 | Added Proxy Disclosure (40025), Cookie Slack (90027), Non-Storable Content (10049), Session Management (10112), and Sec-Fetch-Mode alerts. Fixed Proxy Disclosure mitigation. | Auto |
 
 ---
 
