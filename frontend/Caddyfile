@@ -36,6 +36,15 @@
 	}
 
 	header {
+		# Remove proxy disclosure headers (added by OpenShift router)
+		-Via
+		-X-Forwarded-For
+		-X-Forwarded-Host
+		-X-Forwarded-Port
+		-X-Forwarded-Proto
+		-Forwarded
+		-Server
+
 		# Security headers
 		X-Frame-Options "SAMEORIGIN"
 		X-XSS-Protection "1;mode=block"
