@@ -452,22 +452,27 @@ ZAP detects HTTP response headers that reveal information about reverse proxy in
 
 **Mitigation Implemented**:
 - Caddyfile configured to remove proxy disclosure headers from all responses:
-  - `-Via`
-  - `-X-Forwarded-For`
-  - `-X-Forwarded-Host`
-  - `-X-Forwarded-Port`
-  - `-X-Forwarded-Proto`
-  - `-Forwarded`
-  - `-Server`
-- Headers are necessary for backend processing but removed from client-facing responses
-- See [SECURITY-HEADERS.md](../SECURITY-HEADERS.md) for detailed documentation
+  - `-Via` ✅ (Verified: Not present in responses)
+  - `-X-Forwarded-For` ✅ (Verified: Not present in responses)
+  - `-X-Forwarded-Host` ✅ (Verified: Not present in responses)
+  - `-X-Forwarded-Port` ✅ (Verified: Not present in responses)
+  - `-X-Forwarded-Proto` ✅ (Verified: Not present in responses)
+  - `-Forwarded` ✅ (Verified: Not present in responses)
+  - `-Server` ⚠️ (Still present: `Server: Caddy` header appears in responses)
 
-**Status**: ✅ **Resolved/Mitigated**
+**Status**: ⚠️ **Partially Resolved**
 
-**Note**: If this alert still appears after deployment, verify:
-1. Caddyfile changes are deployed
-2. Headers are actually removed in production responses
-3. No intermediate proxy is re-adding headers
+**Verification (2025-12-15)**:
+- ✅ OpenShift router proxy headers successfully removed
+- ⚠️ Caddy's `Server` header still present despite `-Server` directive
+- **Note**: Caddy may add Server header after header block processes. The `-Server` directive may need to be placed differently or Caddy may require a global configuration option to disable Server header entirely.
+
+**Risk Assessment**:
+- **Low Risk**: `Server: Caddy` reveals web server type but not version or sensitive configuration
+- **Mitigation Options**:
+  1. Accept as low-risk disclosure (server type is not sensitive)
+  2. Investigate Caddy global options to disable Server header
+  3. Consider using reverse proxy in front of Caddy to strip header
 
 **References**:
 - [OWASP ZAP Alert 40025](https://www.zaproxy.org/docs/alerts/40025/)
