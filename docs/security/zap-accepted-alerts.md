@@ -404,19 +404,26 @@ console.log(self.crossOriginIsolated);
 // Should return: true
 ```
 
-**Note**: If this alert still appears in ZAP scans, verify that:
-1. Scan is targeting the correct environment (production-like with Caddy or development with Vite)
-2. Headers are present in response headers (check Network tab in DevTools)
-3. No proxy or CDN is stripping the headers
-4. Browser supports COOP/COEP (Chrome 83+, Firefox 79+, Safari 15+)
+**Verification Status (2025-12-15)**:
+- ✅ **Headers confirmed working in production** - Verified via curl on:
+  - Main document (root `/`)
+  - Static files: `/favicon.ico`, `/robots.txt`, `/sitemap.xml`
+- ✅ All responses include:
+  - `cross-origin-opener-policy: same-origin-allow-popups`
+  - `cross-origin-embedder-policy: credentialless`
+- **ZAP Alert Analysis**: If ZAP still flags this alert, it is likely a **false positive** because:
+  - Headers are present on all tested endpoints
+  - Headers are correctly configured in Caddyfile (lines 71-72)
+  - Headers are being applied to all response types (HTML, images, text files)
+- **Recommendation**: Accept as false positive or investigate ZAP scan configuration/timing
 
-**Investigation Note (2025-12-15)**:
-- Headers are configured in Caddyfile (lines 62-63)
-- If ZAP still detects this alert, it may indicate:
-  - OpenShift router or intermediate proxy stripping headers
-  - Headers not applied to all response types (static files, etc.)
-  - ZAP scanning before headers are applied
-- Manual verification recommended: Check browser DevTools Network tab for actual response headers
+**Browser Verification**:
+To verify cross-origin isolation is enabled in browser:
+```javascript
+// In browser console:
+console.log(self.crossOriginIsolated);
+// Should return: true
+```
 
 **References**:
 - [OWASP ZAP Alert 90004](https://www.zaproxy.org/docs/alerts/90004/)
@@ -616,14 +623,14 @@ ZAP detects that the `Sec-Fetch-Mode` header is not set or validated by the serv
 | Retrieved from Cache | Informational | Accepted | Intentional; appropriate cache headers |
 | X-Content-Type-Options | Low | Resolved | Security headers configured |
 | Cookie SameSite=None | Low | Accepted | AWS Cognito managed; application uses Lax |
-| Spectre Site Isolation | Low | Resolved* | COOP/COEP headers configured (investigating detection) |
-| Proxy Disclosure | Low | Resolved | Header removal configured in Caddyfile |
+| Spectre Site Isolation | Low | Resolved** | COOP/COEP headers verified working on all endpoints |
+| Proxy Disclosure | Low | Partially Resolved | OpenShift headers removed; Caddy Server header still present |
 | Cookie Slack Detector | Informational | Accepted | OAuth cookies; authentication enforced at API layer |
 | Non-Storable Content | Informational | Accepted | Intentional security configuration |
 | Session Management Response | Informational | Accepted | Informational only; not a vulnerability |
 | Sec-Fetch-Mode | Informational | Accepted | Covered under Sec-Fetch headers |
 
-\* Headers configured but may not be detected by ZAP due to proxy/router behavior
+\*\* Headers verified working in production (2025-12-15). Tested endpoints: root, favicon.ico, robots.txt, sitemap.xml - all include COOP/COEP headers. ZAP alert likely false positive.
 
 ---
 
