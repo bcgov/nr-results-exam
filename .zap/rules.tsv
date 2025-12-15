@@ -1,0 +1,26 @@
+# ZAP Rules Configuration
+# This file ignores documented acceptable alerts to reduce noise in scan results
+# See docs/security/zap-accepted-alerts.md for rationale
+
+# Informational Alerts - Documented as Acceptable
+10094	IGNORE	# Base64 Disclosure - No sensitive data in bundles
+10096	IGNORE	# Timestamp Disclosure - Legitimate business function
+10027	IGNORE	# Suspicious Comments - Open source context, production builds minimize
+10109	IGNORE	# Modern Web Application - Dependency management in place
+10050	IGNORE	# Retrieved from Cache - Intentional caching configuration
+
+# Sec-Fetch Headers - Browser-controlled, not application-controlled
+90005	IGNORE	# Sec-Fetch-Dest Header Not Set - Browser feature
+90006	IGNORE	# Sec-Fetch-Site Header Not Set - Browser feature
+90007	IGNORE	# Sec-Fetch-User Header Not Set - Browser feature
+
+# Low-Risk Alerts - Documented as Acceptable or Resolved
+10054	IGNORE	# Cookie SameSite=None - AWS Cognito managed, documented
+90004	IGNORE	# Spectre Site Isolation - Headers verified working (false positive)
+40025	IGNORE	# Proxy Disclosure - Partially resolved (Server header low risk)
+90027	IGNORE	# Cookie Slack Detector - OAuth cookies, authentication enforced
+10049	IGNORE	# Non-Storable Content - Intentional security configuration
+10112	IGNORE	# Session Management Response - Informational only, not a vulnerability
+
+# Resolved Alerts - Headers configured
+10021	IGNORE	# X-Content-Type-Options - Resolved, headers configured
