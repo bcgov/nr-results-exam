@@ -305,6 +305,119 @@ The X-Content-Type-Options header is not set on some responses.
 
 ---
 
+### 10. Cookie with SameSite Attribute None (10054)
+
+**Risk Level**: Low  
+**ZAP Alert ID**: 10054
+
+**Description**:  
+ZAP detects cookies set with `SameSite=None` attribute, which can allow cross-site request forgery (CSRF) attacks if not properly managed.
+
+**Findings**:
+- Cookies with `SameSite=None` detected during authentication flows
+- Specifically: `XSRF-TOKEN` cookie set by AWS Cognito Hosted UI
+- Session cookies on `*.amazoncognito.com` domain
+
+**Risk Assessment**:
+- **Potential Risk**: Cookies with `SameSite=None` can be sent in cross-site requests, potentially enabling CSRF attacks
+- **Actual Risk**: ✅ **Low** (Accepted)
+
+**Acceptance Rationale**:
+1. **AWS Cognito Managed Cookies**: The cookies flagged by ZAP are set by AWS Cognito Hosted UI infrastructure, not by the application
+2. **Required for OAuth/OIDC Flows**: `SameSite=None` is necessary for OAuth redirect flows across domains:
+   - User initiates login on application domain
+   - Redirected to `*.amazoncognito.com` for authentication
+   - Redirected back to application domain with authentication tokens
+3. **Application Cookies Use Lax**: All application-controlled cookies use `SameSite=Lax`:
+   - Configured in `/frontend/src/index.tsx` via AWS Amplify CookieStorage
+   - Provides CSRF protection for application cookies
+4. **Properly Scoped**: Cognito cookies are:
+   - Scoped to AWS infrastructure domain (`*.amazoncognito.com`)
+   - Not accessible by application JavaScript
+   - Protected by AWS security controls
+   - Used only during authentication flows
+5. **Secure Flag Required**: Modern browsers require `Secure=true` when using `SameSite=None`, which Cognito properly implements
+
+**Mitigation**:
+- Application cookies use `SameSite=Lax` (see [COOKIE_SECURITY.md](../COOKIE_SECURITY.md))
+- CSRF protection via AWS Cognito's XSRF-TOKEN mechanism
+- Authentication state managed securely via HttpOnly cookies where possible
+- Regular security scans to monitor cookie configuration
+
+**Configuration**:
+- Application cookie configuration: `/frontend/src/index.tsx` (lines 24-32)
+- Cognito cookies are not configurable by the application
+
+**References**:
+- [OWASP ZAP Alert 10054](https://www.zaproxy.org/docs/alerts/10054/)
+- [Cookie Security Documentation](../COOKIE_SECURITY.md) - Detailed cookie security documentation
+- [MDN SameSite Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite)
+
+---
+
+### 11. Insufficient Site Isolation Against Spectre Vulnerability (90004)
+
+**Risk Level**: Low  
+**ZAP Alert ID**: 90004
+
+**Description**:  
+ZAP detects that the site may not have adequate protections against the Spectre vulnerability, which can lead to unauthorized access to sensitive information through side-channel attacks.
+
+**Status**: ✅ **Resolved/Mitigated**
+
+**Implementation**:
+- Cross-Origin-Opener-Policy (COOP): `same-origin-allow-popups`
+- Cross-Origin-Embedder-Policy (COEP): `credentialless`
+- Headers configured in both production (Caddyfile) and development (vite.config.ts) environments
+
+**Configuration Details**:
+1. **Production (Caddyfile)**: Lines 62-63
+   ```
+   Cross-Origin-Opener-Policy "same-origin-allow-popups"
+   Cross-Origin-Embedder-Policy "credentialless"
+   ```
+
+2. **Development (vite.config.ts)**: Lines 36-39
+   ```typescript
+   headers: {
+     'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+     'Cross-Origin-Embedder-Policy': 'credentialless'
+   }
+   ```
+
+**Rationale for Header Choices**:
+- **COOP: `same-origin-allow-popups`**: 
+  - Provides site isolation benefits while maintaining compatibility with AWS Cognito authentication
+  - Allows authentication flows that may use popup windows
+  - More permissive than `same-origin` but still provides protection
+
+- **COEP: `credentialless`**:
+  - Allows cross-origin resources to be loaded without credentials
+  - Compatible with CDN resources (Bootstrap from cdn.jsdelivr.net) that use `crossorigin="anonymous"`
+  - Provides Spectre protection while being less restrictive than `require-corp`
+
+**Verification**:
+To verify cross-origin isolation is enabled:
+```javascript
+// In browser console:
+console.log(self.crossOriginIsolated);
+// Should return: true
+```
+
+**Note**: If this alert still appears in ZAP scans, verify that:
+1. Scan is targeting the correct environment (production-like with Caddy or development with Vite)
+2. Headers are present in response headers (check Network tab in DevTools)
+3. No proxy or CDN is stripping the headers
+4. Browser supports COOP/COEP (Chrome 83+, Firefox 79+, Safari 15+)
+
+**References**:
+- [OWASP ZAP Alert 90004](https://www.zaproxy.org/docs/alerts/90004/)
+- [COOP/COEP Implementation](../COOP-COEP-IMPLEMENTATION.md) - Detailed implementation documentation
+- [Security Headers](../SECURITY-HEADERS.md) - Complete security headers documentation
+- [Making your website "cross-origin isolated"](https://web.dev/cross-origin-isolation-guide/)
+
+---
+
 ## Risk Summary
 
 | Alert Type | Risk Level | Status | Mitigation |
@@ -316,6 +429,8 @@ The X-Content-Type-Options header is not set on some responses.
 | Sec-Fetch Headers | Informational | Accepted | Browser-controlled; other controls in place |
 | Retrieved from Cache | Informational | Accepted | Intentional; appropriate cache headers |
 | X-Content-Type-Options | Low | Resolved | Security headers configured |
+| Cookie SameSite=None | Low | Accepted | AWS Cognito managed; application uses Lax |
+| Spectre Site Isolation | Low | Resolved | COOP/COEP headers configured |
 
 ---
 
@@ -406,6 +521,7 @@ These require investigation and typically require remediation:
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
 | 2025-11-13 | 1.0 | Initial documentation of accepted ZAP alerts | GitHub Copilot |
+| 2025-12-15 | 1.1 | Added Cookie SameSite=None (10054) and Spectre Site Isolation (90004) alerts | Auto |
 
 ---
 
