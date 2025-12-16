@@ -69,10 +69,27 @@ const checks = [
         throw new Error(`Health status is ${data.status ?? "unknown"}`);
       }
 
+      // Verify required fields exist and have correct types
+      if (!data.hasOwnProperty('uptime') || typeof data.uptime !== 'number') {
+        throw new Error('Health response missing uptime field or wrong type');
+      }
+      if (!data.hasOwnProperty('timestamp') || typeof data.timestamp !== 'number') {
+        throw new Error('Health response missing timestamp field or wrong type');
+      }
+      if (data.hasOwnProperty('lastCheckedAt') && typeof data.lastCheckedAt !== 'number') {
+        throw new Error('Health response lastCheckedAt field has wrong type');
+      }
+      if (data.hasOwnProperty('refreshInProgress') && typeof data.refreshInProgress !== 'boolean') {
+        throw new Error('Health response refreshInProgress field has wrong type');
+      }
+
       const dependencies = data.dependencies ?? {};
+      if (typeof dependencies !== 'object') {
+        throw new Error('Health response dependencies field must be an object');
+      }
       const failingDependencies = Object.entries(dependencies)
-        .filter(([, dependency]) => dependency?.status === "error")
-        .map(([name]) => name);
+        .filter(([ , dependency ]) => dependency?.status === "error")
+        .map(([ name ]) => name);
 
       if (failingDependencies.length > 0) {
         throw new Error(
@@ -84,10 +101,73 @@ const checks = [
     }
   },
   {
+    name: "health deep check",
+    url: `${frontendUrl}/health?deep=true`,
+    validate: (response) => {
+      if (response.status !== 200) {
+        return false;
+      }
+
+      const data = response.data;
+      if (!data || typeof data !== "object") {
+        throw new Error("Health payload missing");
+      }
+
+      // Deep check should force a fresh dependency check
+      // The response should include refreshInProgress or show fresh timestamps
+      if (data.status !== "ok") {
+        throw new Error(`Health status is ${data.status ?? "unknown"}`);
+      }
+
+      // Verify dependencies are checked (even if some are skipped)
+      if (!data.dependencies || typeof data.dependencies !== "object") {
+        throw new Error("Dependencies object missing from deep health check");
+      }
+
+      return true;
+    }
+  },
+  {
     name: "api root",
     url: `${frontendUrl}/api/`,
-    validate: (response) =>
-      response.status === 200 && response.data?.success === true
+    validate: (response) => {
+      if (response.status !== 200) {
+        return false;
+      }
+
+      // Verify Content-Type is JSON
+      const contentType = response.headers[ 'content-type' ] ?? "";
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Expected application/json Content-Type, got: ${contentType}`);
+      }
+
+      // Verify response structure
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('API root response is not a JSON object');
+      }
+
+      if (response.data.success !== true) {
+        throw new Error(`Expected success: true, got: ${response.data.success}`);
+      }
+
+      if (response.data.status !== 200) {
+        throw new Error(`Expected status: 200, got: ${response.data.status}`);
+      }
+
+      return true;
+    }
+  },
+  {
+    name: "protected endpoint requires auth",
+    url: `${frontendUrl}/api/questions/test.json`,
+    validateStatus: (status) => status === 401,
+    validate: (response) => {
+      // Should return 401 Unauthorized without authentication token
+      if (response.status !== 401) {
+        throw new Error(`Expected 401 Unauthorized, got ${response.status}`);
+      }
+      return true;
+    }
   },
   {
     name: "frontend",
@@ -96,7 +176,7 @@ const checks = [
       if (response.status !== 200) {
         return false;
       }
-      const contentType = response.headers["content-type"] ?? "";
+      const contentType = response.headers[ "content-type" ] ?? "";
       if (!contentType.includes("text/html")) {
         throw new Error("Frontend response is not HTML content");
       }
@@ -115,23 +195,23 @@ const checks = [
     url: frontendUrl,
     validate: (response) => {
       const headers = response.headers;
-      const permissionsPolicy = headers['permissions-policy'];
+      const permissionsPolicy = headers[ 'permissions-policy' ];
       if (!permissionsPolicy) {
         throw new Error('Permissions-Policy header is missing');
       }
       // Verify that key security features are disabled
-      const requiredPolicies = ['camera=()', 'microphone=()', 'geolocation=()'];
+      const requiredPolicies = [ 'camera=()', 'microphone=()', 'geolocation=()' ];
       const hasAllPolicies = requiredPolicies.every(policy =>
         permissionsPolicy.includes(policy)
       );
       if (!hasAllPolicies) {
         throw new Error(`Permissions-Policy header missing required policies. Got: ${permissionsPolicy}`);
       }
-      const contentSecurityPolicy = headers['content-security-policy'];
+      const contentSecurityPolicy = headers[ 'content-security-policy' ];
       if (!contentSecurityPolicy) {
         throw new Error('Content-Security-Policy header is missing');
       }
-      const requiredDirectives = ["default-src 'self'", "connect-src 'self'"];
+      const requiredDirectives = [ "default-src 'self'", "connect-src 'self'" ];
       const hasDirectives = requiredDirectives.every((directive) =>
         contentSecurityPolicy.includes(directive)
       );
@@ -157,21 +237,66 @@ const checks = [
       ];
 
       for (const { name, validator, message } of requiredHeaderChecks) {
-        const headerValue = headers[name];
+        const headerValue = headers[ name ];
         if (!validator(headerValue)) {
           throw new Error(message);
         }
       }
+
+      // Verify Cross-Origin Isolation headers (COOP/COEP) for Spectre protection
+      const coop = headers[ 'cross-origin-opener-policy' ];
+      if (coop !== 'same-origin-allow-popups') {
+        throw new Error(`Cross-Origin-Opener-Policy must be 'same-origin-allow-popups', got: ${coop}`);
+      }
+
+      const coep = headers[ 'cross-origin-embedder-policy' ];
+      if (coep !== 'credentialless') {
+        throw new Error(`Cross-Origin-Embedder-Policy must be 'credentialless', got: ${coep}`);
+      }
+
       return response.status === 200;
     }
   },
+  {
+    name: "CORS preflight",
+    url: `${frontendUrl}/api/`,
+    method: "OPTIONS",
+    validate: (response) => {
+      // CORS preflight should succeed for same-origin requests
+      // Should return 204 No Content or 200 OK
+      if (response.status !== 200 && response.status !== 204) {
+        throw new Error(`Expected 200 or 204 for CORS preflight, got ${response.status}`);
+      }
+
+      // Verify CORS headers are present
+      const headers = response.headers;
+      const accessControlAllowOrigin = headers[ 'access-control-allow-origin' ];
+      if (!accessControlAllowOrigin) {
+        throw new Error('CORS preflight missing Access-Control-Allow-Origin header');
+      }
+
+      return true;
+    }
+  },
+  {
+    name: "404 error handling",
+    url: `${frontendUrl}/api/nonexistent-endpoint`,
+    validateStatus: (status) => status === 404,
+    validate: (response) => {
+      // Should return 404 for non-existent endpoints
+      if (response.status !== 404) {
+        throw new Error(`Expected 404 Not Found, got ${response.status}`);
+      }
+      return true;
+    }
+  },
   // Only add redirect check if REDIRECT_URL is configured
-  ...(redirectFromUrl ? [{
+  ...(redirectFromUrl ? [ {
     name: "redirect from URL",
     url: redirectFromUrl,
     checkRedirect: true,
     expectedRedirect: frontendUrl
-  }] : [])
+  } ] : [])
 ];
 
 const validateRedirectLocation = (location, expectedRedirect) => {
@@ -266,12 +391,24 @@ const executeCheck = async (check) => {
   // Standard check execution
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
-      const response = await axios.get(check.url, {
+      const method = check.method || 'GET';
+      const axiosConfig = {
+        method: method,
+        url: check.url,
         headers: {
           Origin: origin
         },
-        timeout: timeoutMs
-      });
+        timeout: timeoutMs,
+        validateStatus: check.validateStatus || ((status) => status >= 200 && status < 300)
+      };
+
+      // For OPTIONS requests, add CORS preflight headers
+      if (method === 'OPTIONS') {
+        axiosConfig.headers[ 'Access-Control-Request-Method' ] = 'GET';
+        axiosConfig.headers[ 'Access-Control-Request-Headers' ] = 'Content-Type';
+      }
+
+      const response = await axios(axiosConfig);
 
       if (!check.validate(response)) {
         throw new Error(

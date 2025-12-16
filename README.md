@@ -83,7 +83,7 @@ This repository is operating in maintenance/sustainment mode as verified by the 
 **Test Suite:**
 - 73 frontend tests (Vitest + React Testing Library)
 - 65 backend tests (Node.js test runner)
-- Integration smoke tests (health, API, frontend, security headers)
+- Smoke tests (health, API, frontend, security headers)
 - Coverage thresholds enforced for both frontend and backend
 
 #### Dependency Status
@@ -95,7 +95,7 @@ This repository is operating in maintenance/sustainment mode as verified by the 
 
 #### Verification Checklist
 
-- ✅ Robust test suite, including integration tests
+- ✅ Robust test suite, including smoke tests
 - ✅ Properly functioning PR environments
 - ✅ Handling of deprecations (no critical deprecations found)
 - ✅ Handling of outstanding updates (no major updates required)
