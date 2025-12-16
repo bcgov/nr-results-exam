@@ -95,7 +95,7 @@ jobs:
           node-version: "24"
 
       - name: Run smoke tests
-        working-directory: smoke-tests
+        working-directory: tests
         env:
           FRONTEND_URL: https://${{ inputs.hostname }}
           REDIRECT_URL: https://${{ inputs.redirect_url }}
