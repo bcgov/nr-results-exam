@@ -201,7 +201,52 @@ const checks = [
           throw new Error(message);
         }
       }
+
+      // Verify Cross-Origin Isolation headers (COOP/COEP) for Spectre protection
+      const coop = headers[ 'cross-origin-opener-policy' ];
+      if (coop !== 'same-origin-allow-popups') {
+        throw new Error(`Cross-Origin-Opener-Policy must be 'same-origin-allow-popups', got: ${coop}`);
+      }
+
+      const coep = headers[ 'cross-origin-embedder-policy' ];
+      if (coep !== 'credentialless') {
+        throw new Error(`Cross-Origin-Embedder-Policy must be 'credentialless', got: ${coep}`);
+      }
+
       return response.status === 200;
+    }
+  },
+  {
+    name: "CORS preflight",
+    url: `${frontendUrl}/api/`,
+    method: "OPTIONS",
+    validate: (response) => {
+      // CORS preflight should succeed for same-origin requests
+      // Should return 204 No Content or 200 OK
+      if (response.status !== 200 && response.status !== 204) {
+        throw new Error(`Expected 200 or 204 for CORS preflight, got ${response.status}`);
+      }
+
+      // Verify CORS headers are present
+      const headers = response.headers;
+      const accessControlAllowOrigin = headers[ 'access-control-allow-origin' ];
+      if (!accessControlAllowOrigin) {
+        throw new Error('CORS preflight missing Access-Control-Allow-Origin header');
+      }
+
+      return true;
+    }
+  },
+  {
+    name: "404 error handling",
+    url: `${frontendUrl}/api/nonexistent-endpoint`,
+    validateStatus: (status) => status === 404,
+    validate: (response) => {
+      // Should return 404 for non-existent endpoints
+      if (response.status !== 404) {
+        throw new Error(`Expected 404 Not Found, got ${response.status}`);
+      }
+      return true;
     }
   },
   // Only add redirect check if REDIRECT_URL is configured
@@ -305,13 +350,24 @@ const executeCheck = async (check) => {
   // Standard check execution
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
-      const response = await axios.get(check.url, {
+      const method = check.method || 'GET';
+      const axiosConfig = {
+        method: method,
+        url: check.url,
         headers: {
           Origin: origin
         },
         timeout: timeoutMs,
         validateStatus: check.validateStatus || ((status) => status >= 200 && status < 300)
-      });
+      };
+
+      // For OPTIONS requests, add CORS preflight headers
+      if (method === 'OPTIONS') {
+        axiosConfig.headers[ 'Access-Control-Request-Method' ] = 'GET';
+        axiosConfig.headers[ 'Access-Control-Request-Headers' ] = 'Content-Type';
+      }
+
+      const response = await axios(axiosConfig);
 
       if (!check.validate(response)) {
         throw new Error(
