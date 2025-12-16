@@ -69,7 +69,24 @@ const checks = [
         throw new Error(`Health status is ${data.status ?? "unknown"}`);
       }
 
+      // Verify required fields exist and have correct types
+      if (!data.hasOwnProperty('uptime') || typeof data.uptime !== 'number') {
+        throw new Error('Health response missing uptime field or wrong type');
+      }
+      if (!data.hasOwnProperty('timestamp') || typeof data.timestamp !== 'number') {
+        throw new Error('Health response missing timestamp field or wrong type');
+      }
+      if (data.hasOwnProperty('lastCheckedAt') && typeof data.lastCheckedAt !== 'number') {
+        throw new Error('Health response lastCheckedAt field has wrong type');
+      }
+      if (data.hasOwnProperty('refreshInProgress') && typeof data.refreshInProgress !== 'boolean') {
+        throw new Error('Health response refreshInProgress field has wrong type');
+      }
+
       const dependencies = data.dependencies ?? {};
+      if (typeof dependencies !== 'object') {
+        throw new Error('Health response dependencies field must be an object');
+      }
       const failingDependencies = Object.entries(dependencies)
         .filter(([ , dependency ]) => dependency?.status === "error")
         .map(([ name ]) => name);
@@ -113,8 +130,32 @@ const checks = [
   {
     name: "api root",
     url: `${frontendUrl}/api/`,
-    validate: (response) =>
-      response.status === 200 && response.data?.success === true
+    validate: (response) => {
+      if (response.status !== 200) {
+        return false;
+      }
+
+      // Verify Content-Type is JSON
+      const contentType = response.headers[ 'content-type' ] ?? "";
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Expected application/json Content-Type, got: ${contentType}`);
+      }
+
+      // Verify response structure
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('API root response is not a JSON object');
+      }
+
+      if (response.data.success !== true) {
+        throw new Error(`Expected success: true, got: ${response.data.success}`);
+      }
+
+      if (response.data.status !== 200) {
+        throw new Error(`Expected status: 200, got: ${response.data.status}`);
+      }
+
+      return true;
+    }
   },
   {
     name: "protected endpoint requires auth",
