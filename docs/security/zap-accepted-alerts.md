@@ -659,9 +659,8 @@ The application implements defense-in-depth with multiple security layers:
 
 ### Related Documentation
 
-- [Security Headers](../SECURITY-HEADERS.md) - HTTP security header configuration
+- [Security Headers](../SECURITY-HEADERS.md) - HTTP security header configuration including COOP/COEP
 - [Cookie Security](../COOKIE_SECURITY.md) - Cookie handling and authentication
-- [COOP/COEP Implementation](../COOP-COEP-IMPLEMENTATION.md) - Cross-origin isolation
 
 ---
 
