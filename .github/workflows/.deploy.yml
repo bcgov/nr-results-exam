@@ -99,7 +99,7 @@ jobs:
             -p TAG=${{ inputs.tag }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p REDIRECT_URL=${{ inputs.redirect_url }}
-            ${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID != '' && format('-p VITE_USER_POOLS_WEB_CLIENT_ID={0}', vars.VITE_USER_POOLS_WEB_CLIENT_ID) || '' }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke:
     name: Smoke Tests
