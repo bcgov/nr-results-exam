@@ -119,6 +119,7 @@ const checks = [
   {
     name: "protected endpoint requires auth",
     url: `${frontendUrl}/api/questions/test.json`,
+    validateStatus: (status) => status === 401,
     validate: (response) => {
       // Should return 401 Unauthorized without authentication token
       if (response.status !== 401) {
@@ -308,7 +309,8 @@ const executeCheck = async (check) => {
         headers: {
           Origin: origin
         },
-        timeout: timeoutMs
+        timeout: timeoutMs,
+        validateStatus: check.validateStatus || ((status) => status >= 200 && status < 300)
       });
 
       if (!check.validate(response)) {
