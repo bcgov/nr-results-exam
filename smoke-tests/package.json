@@ -1,10 +1,8 @@
 {
-  "name": "integration-tests",
+  "name": "smoke-tests",
   "version": "1.0.0",
   "type": "module",
-  "main": "src/main.js",
   "scripts": {
-    "dev": "node src/main.js",
     "smoke": "node src/smoke.js"
   },
   "dependencies": {
