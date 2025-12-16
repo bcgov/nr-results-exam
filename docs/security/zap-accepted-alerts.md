@@ -427,8 +427,7 @@ console.log(self.crossOriginIsolated);
 
 **References**:
 - [OWASP ZAP Alert 90004](https://www.zaproxy.org/docs/alerts/90004/)
-- [COOP/COEP Implementation](../COOP-COEP-IMPLEMENTATION.md) - Detailed implementation documentation
-- [Security Headers](../SECURITY-HEADERS.md) - Complete security headers documentation
+- [Security Headers](../SECURITY-HEADERS.md) - Complete security headers documentation including COOP/COEP
 - [Making your website "cross-origin isolated"](https://web.dev/cross-origin-isolation-guide/)
 
 ---
@@ -660,10 +659,8 @@ The application implements defense-in-depth with multiple security layers:
 
 ### Related Documentation
 
-- [ZAP Dangerous JS Functions Audit](./zap-dangerous-js-functions-audit.md) - Medium risk alert (eval) - RESOLVED
-- [Security Headers](../SECURITY-HEADERS.md) - HTTP security header configuration
+- [Security Headers](../SECURITY-HEADERS.md) - HTTP security header configuration including COOP/COEP
 - [Cookie Security](../COOKIE_SECURITY.md) - Cookie handling and authentication
-- [COOP/COEP Implementation](../COOP-COEP-IMPLEMENTATION.md) - Cross-origin isolation
 
 ---
 

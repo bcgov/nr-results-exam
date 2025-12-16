@@ -16,6 +16,10 @@ parameters:
   - name: TAG
     description: Image tag; e.g. PR number, latest or prod
     required: true
+  - name: CHES_CLIENT_SECRET
+    required: true
+  - name: S3_SECRETKEY
+    required: true
   - name: CPU_REQUEST
     value: "25m"
   - name: MEMORY_REQUEST
@@ -87,10 +91,7 @@ objects:
                 - name: CHES_CLIENT_ID
                   value: ${CHES_CLIENT_ID}
                 - name: CHES_CLIENT_SECRET
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}-${ZONE}-${COMPONENT}
-                      key: ches-client-secret
+                  value: ${CHES_CLIENT_SECRET}
                 - name: CHES_TOKEN_URL
                   value: ${CHES_TOKEN_URL}
                 - name: S3_ACCESSKEY
@@ -100,10 +101,7 @@ objects:
                 - name: S3_ENDPOINT
                   value: ${S3_ENDPOINT}
                 - name: S3_SECRETKEY
-                  valueFrom:
-                    secretKeyRef:
-                      name: ${NAME}-${ZONE}-${COMPONENT}
-                      key: s3-secretkey
+                  value: ${S3_SECRETKEY}
                 - name: FRONTEND_URL
                   value: https://${HOSTNAME}
                 - name: RANDOM_EXPRESSION
@@ -174,3 +172,31 @@ objects:
             target:
               type: Utilization
               averageUtilization: 100
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-from-openshift-ingress
+      labels:
+        template: openshift-test
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  network.openshift.io/policy-group: ingress
+      policyTypes:
+        - Ingress
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: allow-same-namespace
+      labels:
+        template: nr-spar-backend-network-security-policy
+    spec:
+      podSelector: {}
+      ingress:
+        - from:
+            - podSelector: {}
+      policyTypes:
+        - Ingress

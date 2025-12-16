@@ -305,11 +305,7 @@ The deployment includes the following network policies:
 # Getting started
 
 After cloning the repository install dependencies separately for the frontend and backend.  
-Use Node.js 24 to match CI/CD runners (an `.nvmrc` is provided for convenience):
-
-```bash
-nvm use
-```
+Use Node.js 24 to match CI/CD runners:
 
 ```bash
 # Frontend
@@ -568,8 +564,7 @@ our [CONTRIBUTING](CONTRIBUTING.md) guide.
 - [Branch Protection](docs/BRANCH_PROTECTION.md) - Branch protection settings and maintenance mode operations
 - [Operations Guide](docs/OPERATIONS.md) - Maintenance mode CI/CD policy, trigger configuration, and Renovate automerge
 - [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
-- [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers
-- [COOP/COEP Implementation](docs/COOP-COEP-IMPLEMENTATION.md) - Cross-Origin isolation implementation
+- [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers including COOP/COEP
 - [ZAP Accepted Alerts](docs/security/zap-accepted-alerts.md) - Documentation of accepted low-risk ZAP security scan alerts
 
 ## Getting help

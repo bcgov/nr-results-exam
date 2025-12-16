@@ -40,56 +40,51 @@ on:
         required: true
 
 jobs:
-  init:
-    name: Init and calculate deployment parameters
-    environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    permissions:
-      contents: read
-    steps:
-      - name: Deploy OpenShift init resources
-        uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.oc_token }}
-          parameters: -p ZONE=${{ inputs.zone }}
-            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
-            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-
-  deploys:
-    name: Deploy
-    needs: [init]
+  deploy-backend:
+    name: Deploy Backend
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
-    strategy:
-      matrix:
-        name: [backend, frontend]
-        include:
-          - name: frontend
-            parameters: -p REDIRECT_URL=${{ inputs.redirect_url }}
     steps:
       - uses: bcgov/action-deployer-openshift@v4.0.1
-        id: deploys
+        id: deploy-backend
         with:
-          file: ${{ matrix.name }}/openshift.deploy.yml
+          file: backend/openshift.deploy.yml
+          oc_namespace: ${{ vars.OC_NAMESPACE }}
+          oc_server: ${{ vars.OC_SERVER }}
+          oc_token: ${{ secrets.oc_token }}
+          parameters: -p ZONE=${{ inputs.zone }}
+            -p TAG=${{ inputs.tag }}
+            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
+            -p HOSTNAME=${{ inputs.hostname }}
+            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: bcgov/action-deployer-openshift@v4.0.1
+        id: deploy-frontend
+        with:
+          file: frontend/openshift.deploy.yml
           oc_namespace: ${{ vars.OC_NAMESPACE }}
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
             -p HOSTNAME=${{ inputs.hostname }}
-            ${{ matrix.name == 'frontend' && vars.VITE_USER_POOLS_WEB_CLIENT_ID != '' && format('-p VITE_USER_POOLS_WEB_CLIENT_ID={0}', vars.VITE_USER_POOLS_WEB_CLIENT_ID) || '' }}
-            ${{ matrix.parameters }}
+            -p REDIRECT_URL=${{ inputs.redirect_url }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   smoke:
     name: Smoke Tests
-    needs: [deploys]
+    needs: [deploy-backend, deploy-frontend]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -100,7 +95,7 @@ jobs:
           node-version: "24"
 
       - name: Run smoke tests
-        working-directory: smoke-tests
+        working-directory: tests
         env:
           FRONTEND_URL: https://${{ inputs.hostname }}
           REDIRECT_URL: https://${{ inputs.redirect_url }}
@@ -113,7 +108,7 @@ jobs:
     if: failure() && (inputs.zone == 'test' || inputs.zone == 'prod')
     # Create issues for non-PR deployments (test/prod)
     # PRs don't need issues since failures are visible in the PR checks
-    needs: [init, deploys, smoke]
+    needs: [deploy-backend, deploy-frontend, smoke]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
