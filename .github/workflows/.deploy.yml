@@ -40,28 +40,8 @@ on:
         required: true
 
 jobs:
-  init:
-    name: Init and calculate deployment parameters
-    environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 1
-    permissions:
-      contents: read
-    steps:
-      - name: Deploy OpenShift init resources
-        uses: bcgov/action-deployer-openshift@v4.0.1
-        with:
-          file: common/openshift.init.yml
-          oc_namespace: ${{ vars.OC_NAMESPACE }}
-          oc_server: ${{ vars.OC_SERVER }}
-          oc_token: ${{ secrets.oc_token }}
-          parameters: -p ZONE=${{ inputs.zone }}
-            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
-            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-
   deploy-backend:
     name: Deploy Backend
-    needs: [init]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -77,11 +57,12 @@ jobs:
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
             -p TAG=${{ inputs.tag }}
+            -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p HOSTNAME=${{ inputs.hostname }}
+            -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
 
   deploy-frontend:
     name: Deploy Frontend
-    needs: [init]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -127,7 +108,7 @@ jobs:
     if: failure() && (inputs.zone == 'test' || inputs.zone == 'prod')
     # Create issues for non-PR deployments (test/prod)
     # PRs don't need issues since failures are visible in the PR checks
-    needs: [init, deploy-backend, deploy-frontend, smoke]
+    needs: [deploy-backend, deploy-frontend, smoke]
     runs-on: ubuntu-24.04
     permissions:
       issues: write
