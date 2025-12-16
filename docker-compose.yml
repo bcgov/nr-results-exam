@@ -27,7 +27,7 @@ services:
       retries: 5
       start_period: 10s
       timeout: 5s
-    image: node:24.11.1-bookworm-slim
+    image: node:24.12.0-bookworm-slim
     ports: ["5000:5000"]
     restart: always
     volumes: ["./backend:/app", "/app/node_modules"]
@@ -44,7 +44,7 @@ services:
       VITE_USER_POOLS_ID: ${VITE_USER_POOLS_ID:-ca-central-1_UpeAqsYt4}
       VITE_USER_POOLS_WEB_CLIENT_ID: ${VITE_USER_POOLS_WEB_CLIENT_ID:-7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z}
       VITE_ZONE: ${VITE_ZONE:-DEV}
-    image: node:24.11.1-bookworm-slim
+    image: node:24.12.0-bookworm-slim
     ports: ["3000:3000"]
     volumes: ["./frontend:/app", "/app/node_modules"]
     working_dir: "/app"
