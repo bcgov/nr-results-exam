@@ -18,7 +18,7 @@ vi.mock('../../utils/ThemeFunction', () => ({
 //mock the matchMedia function to have a dark theme
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -26,8 +26,8 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: vi.fn(), // Deprecated
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn()
-  }))
+    dispatchEvent: vi.fn(),
+  })),
 });
 
 describe('BC Header component tests', () => {
@@ -37,17 +37,18 @@ describe('BC Header component tests', () => {
     vi.resetAllMocks();
   });
 
-  const renderComponent = () => render(
-    <MemoryRouter>
-      <BCHeader />
-    </MemoryRouter>
-  );
+  const renderComponent = () =>
+    render(
+      <MemoryRouter>
+        <BCHeader />
+      </MemoryRouter>,
+    );
 
   it('renders with the light theme and toggles to dark', () => {
     const setTheme = vi.fn();
     mockedUseThemePreference.mockReturnValue({
       theme: 'g10',
-      setTheme
+      setTheme,
     });
 
     const { getByTestId } = renderComponent();
@@ -63,7 +64,7 @@ describe('BC Header component tests', () => {
     const setTheme = vi.fn();
     mockedUseThemePreference.mockReturnValue({
       theme: 'g100',
-      setTheme
+      setTheme,
     });
 
     renderComponent();

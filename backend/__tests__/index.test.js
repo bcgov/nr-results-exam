@@ -11,12 +11,9 @@ describe('Index Routes', () => {
     const app = express();
     app.use('/api', indexRoutes);
 
-    const response = await request(app)
-      .get('/api/')
-      .expect(200);
+    const response = await request(app).get('/api/').expect(200);
 
     assert.strictEqual(response.body.status, 200);
     assert.strictEqual(response.body.success, true);
   });
 });
-

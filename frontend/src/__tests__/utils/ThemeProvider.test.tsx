@@ -1,8 +1,8 @@
-import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
-import ThemeProvider, { useTheme } from "../../utils/ThemeProvider";
+import ThemeProvider, { useTheme } from '../../utils/ThemeProvider';
 
 const ThemeConsumer = () => {
   const { theme, setTheme } = useTheme();
@@ -10,7 +10,7 @@ const ThemeConsumer = () => {
   return (
     <button
       data-testid="theme-provider-value"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       type="button"
     >
       {theme}
@@ -21,35 +21,34 @@ const ThemeConsumer = () => {
 const renderWithProvider = (element?: React.ReactElement) =>
   render(<ThemeProvider>{element ?? <ThemeConsumer />}</ThemeProvider>);
 
-describe("ThemeProvider", () => {
+describe('ThemeProvider', () => {
   beforeEach(() => {
     localStorage.clear();
-    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.removeAttribute('data-theme');
   });
 
-  test("reads initial theme from localStorage", async () => {
-    localStorage.setItem("theme", "light");
+  test('reads initial theme from localStorage', async () => {
+    localStorage.setItem('theme', 'light');
 
     renderWithProvider();
 
     await waitFor(() => {
-      expect(screen.getByTestId("theme-provider-value")).toHaveTextContent("light");
+      expect(screen.getByTestId('theme-provider-value')).toHaveTextContent('light');
     });
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
   });
 
-  test("persists theme updates", async () => {
+  test('persists theme updates', async () => {
     renderWithProvider();
 
-    const toggle = screen.getByTestId("theme-provider-value");
+    const toggle = screen.getByTestId('theme-provider-value');
 
     await userEvent.click(toggle);
 
     await waitFor(() => {
-      expect(toggle).toHaveTextContent("light");
+      expect(toggle).toHaveTextContent('light');
     });
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(localStorage.getItem("theme")).toBe("light");
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(localStorage.getItem('theme')).toBe('light');
   });
 });
-

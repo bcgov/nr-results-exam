@@ -19,4 +19,3 @@ test('resolveTrustProxy parses numeric strings', () => {
 test('resolveTrustProxy returns original value for other inputs', () => {
   assert.equal(resolveTrustProxy('loopback'), 'loopback');
 });
-

@@ -1,6 +1,4 @@
-const {
-  test, describe, beforeEach, afterEach
-} = require('node:test');
+const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
@@ -11,7 +9,7 @@ const originalEnv = {
   userPoolId: process.env.VITE_USER_POOLS_ID,
   cognitoRegion: process.env.VITE_COGNITO_REGION,
   hasUserPoolId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_ID'),
-  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION')
+  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION'),
 };
 
 // Create a mock authenticateToken middleware that bypasses JWT verification
@@ -19,7 +17,7 @@ function createMockAuthMiddleware() {
   return (req, res, next) => {
     req.user = {
       sub: 'test-user-id',
-      email: 'test@example.com'
+      email: 'test@example.com',
     };
     next();
   };
@@ -53,7 +51,7 @@ class TestMemoryStore {
 
     return {
       totalHits: count,
-      resetTime: new Date(this.resetTimes.get(key))
+      resetTime: new Date(this.resetTimes.get(key)),
     };
   }
 
@@ -88,7 +86,7 @@ function buildAppWithRateLimit(limitConfig, routePath, routeHandler) {
   const store = new TestMemoryStore();
   const limiter = rateLimit({
     ...limitConfig,
-    store
+    store,
   });
   const mockAuth = createMockAuthMiddleware();
   app.use(routePath, limiter, mockAuth, routeHandler);
@@ -141,18 +139,16 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 2, // Low limit for testing
         standardHeaders: true,
-        legacyHeaders: false
+        legacyHeaders: false,
       },
       '/api/questions',
-      questionsHandler
+      questionsHandler,
     );
     stores.push(store);
 
     // Make requests up to the limit
     for (let i = 0; i < 2; i++) {
-      const response = await request(app)
-        .get('/api/questions/test')
-        .expect(200);
+      const response = await request(app).get('/api/questions/test').expect(200);
 
       assert.strictEqual(response.body.success, true);
       assert.ok(response.headers['ratelimit-limit']);
@@ -160,13 +156,17 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     }
 
     // Next request should be rate limited
-    const rateLimitedResponse = await request(app)
-      .get('/api/questions/test')
-      .expect(429);
+    const rateLimitedResponse = await request(app).get('/api/questions/test').expect(429);
 
     // Check error message (may be in body.error or body.message depending on rate limiter config)
-    const errorMsg = rateLimitedResponse.body.error || rateLimitedResponse.body.message || rateLimitedResponse.text;
-    assert.ok(errorMsg && errorMsg.includes('Too many requests'), `Expected rate limit error, got: ${JSON.stringify(rateLimitedResponse.body)}`);
+    const errorMsg =
+      rateLimitedResponse.body.error ||
+      rateLimitedResponse.body.message ||
+      rateLimitedResponse.text;
+    assert.ok(
+      errorMsg && errorMsg.includes('Too many requests'),
+      `Expected rate limit error, got: ${JSON.stringify(rateLimitedResponse.body)}`,
+    );
     assert.ok(rateLimitedResponse.headers['ratelimit-limit']);
     assert.ok(rateLimitedResponse.headers['ratelimit-remaining']);
     assert.ok(rateLimitedResponse.headers['ratelimit-reset']);
@@ -182,10 +182,10 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         windowMs: 15 * 60 * 1000, // 15 minutes
         max: 2, // Low limit for testing
         standardHeaders: true,
-        legacyHeaders: false
+        legacyHeaders: false,
       },
       '/api/mail',
-      mailHandler
+      mailHandler,
     );
     stores.push(store);
 
@@ -197,7 +197,7 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
           fromEmail: 'test@example.com',
           toEmails: ['recipient@example.com'],
           subject: 'Test',
-          mailBody: '<p>Test</p>'
+          mailBody: '<p>Test</p>',
         })
         .expect(200);
 
@@ -211,13 +211,19 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test',
-        mailBody: '<p>Test</p>'
+        mailBody: '<p>Test</p>',
       })
       .expect(429);
 
     // Check error message (may be in body.error or body.message depending on rate limiter config)
-    const errorMsg = rateLimitedResponse.body.error || rateLimitedResponse.body.message || rateLimitedResponse.text;
-    assert.ok(errorMsg && errorMsg.includes('Too many requests'), `Expected rate limit error, got: ${JSON.stringify(rateLimitedResponse.body)}`);
+    const errorMsg =
+      rateLimitedResponse.body.error ||
+      rateLimitedResponse.body.message ||
+      rateLimitedResponse.text;
+    assert.ok(
+      errorMsg && errorMsg.includes('Too many requests'),
+      `Expected rate limit error, got: ${JSON.stringify(rateLimitedResponse.body)}`,
+    );
   });
 
   test('should include rate limit headers in successful responses', async () => {
@@ -230,16 +236,14 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         windowMs: 15 * 60 * 1000,
         max: 100,
         standardHeaders: true,
-        legacyHeaders: false
+        legacyHeaders: false,
       },
       '/api/test',
-      handler
+      handler,
     );
     stores.push(store);
 
-    const response = await request(app)
-      .get('/api/test')
-      .expect(200);
+    const response = await request(app).get('/api/test').expect(200);
 
     assert.ok(response.headers['ratelimit-limit'], 'Should include RateLimit-Limit header');
     assert.ok(response.headers['ratelimit-remaining'], 'Should include RateLimit-Remaining header');
@@ -257,18 +261,24 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
         windowMs: 15 * 60 * 1000,
         max: 100,
         standardHeaders: true,
-        legacyHeaders: false
+        legacyHeaders: false,
       },
       '/api/test',
-      handler
+      handler,
     );
     stores.push(store);
 
-    const response = await request(app)
-      .get('/api/test')
-      .expect(200);
+    const response = await request(app).get('/api/test').expect(200);
 
-    assert.strictEqual(response.headers['x-ratelimit-limit'], undefined, 'Should not include legacy X-RateLimit-Limit header');
-    assert.strictEqual(response.headers['x-ratelimit-remaining'], undefined, 'Should not include legacy X-RateLimit-Remaining header');
+    assert.strictEqual(
+      response.headers['x-ratelimit-limit'],
+      undefined,
+      'Should not include legacy X-RateLimit-Limit header',
+    );
+    assert.strictEqual(
+      response.headers['x-ratelimit-remaining'],
+      undefined,
+      'Should not include legacy X-RateLimit-Remaining header',
+    );
   });
 });

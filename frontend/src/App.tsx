@@ -1,12 +1,8 @@
-import {
-  Navigate,
-  createBrowserRouter,
-  RouterProvider
-} from 'react-router-dom';
+import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import './custom.scss';
 
-import Landing from "./screens/Landing";
+import Landing from './screens/Landing';
 import SideLayout from './layouts/SideLayout';
 import Dashboard from './screens/Dashboard';
 import TestB from './screens/TestB';
@@ -19,8 +15,8 @@ import { useAuth } from './contexts/AuthProvider';
 const publicRoutes: RouteObject[] = [
   {
     path: '*',
-    element: <Landing />
-  }
+    element: <Landing />,
+  },
 ];
 
 const privateRoutes: RouteObject[] = [
@@ -28,29 +24,27 @@ const privateRoutes: RouteObject[] = [
     element: <ProtectedRoute />,
     errorElement: <ErrorHandling />,
     children: [
-      { path: "/", element: <Navigate to="/dashboard" /> },
+      { path: '/', element: <Navigate to="/dashboard" /> },
       {
-        path: "/dashboard",
-        element: <SideLayout pageContent={<Dashboard />} />
+        path: '/dashboard',
+        element: <SideLayout pageContent={<Dashboard />} />,
       },
-      { path: "/testA", element: <SideLayout pageContent={<TestA />} /> },
-      { path: "/testB", element: <SideLayout pageContent={<TestB />} /> },
-      { path: "/testC", element: <SideLayout pageContent={<TestC />} /> }
-    ]
+      { path: '/testA', element: <SideLayout pageContent={<TestA />} /> },
+      { path: '/testB', element: <SideLayout pageContent={<TestB />} /> },
+      { path: '/testC', element: <SideLayout pageContent={<TestC />} /> },
+    ],
   },
   // catch all route for unmatched routes
   {
     path: '*',
-    element: <ErrorHandling />
-  }
+    element: <ErrorHandling />,
+  },
 ];
 
 const App: React.FC = () => {
   const auth = useAuth();
   const browserRouter = createBrowserRouter(auth.isLoggedIn ? privateRoutes : publicRoutes);
-  return (
-    <RouterProvider router={browserRouter} />
-  );
+  return <RouterProvider router={browserRouter} />;
 };
 
 export default App;

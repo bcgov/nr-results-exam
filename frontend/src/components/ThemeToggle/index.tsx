@@ -6,14 +6,14 @@ import { toggleTheme } from '../../utils/ThemeFunction';
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useThemePreference();
-  const [isToggled, setIsToggled] = useState(theme === 'g10'?false:true);
+  const [isToggled, setIsToggled] = useState(theme === 'g10' ? false : true);
 
-  useEffect(()=>{
-    setIsToggled(theme === 'g10'?false:true);
-  },[theme])
+  useEffect(() => {
+    setIsToggled(theme === 'g10' ? false : true);
+  }, [theme]);
 
   const handleToggle = async () => {
-    toggleTheme(theme,setTheme)
+    toggleTheme(theme, setTheme);
     // keep the logic opposite at the time of sending the toggle
   };
 
@@ -25,14 +25,14 @@ const ThemeToggle = () => {
   };
 
   return (
-    <div 
-      className={`theme-toggle ${isToggled ? 'on' : 'off'}`} 
-      data-testid="theme-toggle" 
+    <div
+      className={`theme-toggle ${isToggled ? 'on' : 'off'}`}
+      data-testid="theme-toggle"
       onClick={handleToggle}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={isToggled ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={isToggled ? 'Switch to light mode' : 'Switch to dark mode'}
       aria-pressed={isToggled}
     >
       <div className="circle">

@@ -1,23 +1,8 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  useMemo,
-  ReactNode
-} from "react";
-import {
-  fetchAuthSession,
-  signInWithRedirect,
-  signOut
-} from "aws-amplify/auth";
-import {
-  parseToken,
-  FamLoginUser,
-  setAuthIdToken
-} from "../services/AuthService";
-import { env } from "../env";
-import { JWT, ProviderType } from "../types/amplify";
+import React, { createContext, useState, useContext, useEffect, useMemo, ReactNode } from 'react';
+import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { parseToken, FamLoginUser, setAuthIdToken } from '../services/AuthService';
+import { env } from '../env';
+import { JWT, ProviderType } from '../types/amplify';
 
 // 1. Define an interface for the context value
 interface AuthContextType {
@@ -43,7 +28,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
-  const appEnv = env.VITE_ZONE ?? "DEV";
+  const appEnv = env.VITE_ZONE ?? 'DEV';
 
   const refreshUserState = async () => {
     setIsLoading(true);
@@ -71,12 +56,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (provider: ProviderType) => {
     const envProvider =
-      provider.localeCompare("idir") === 0
+      provider.localeCompare('idir') === 0
         ? `${appEnv.toLocaleUpperCase()}-IDIR`
         : `${appEnv.toLocaleUpperCase()}-BCEIDBUSINESS`;
 
     signInWithRedirect({
-      provider: { custom: envProvider.toUpperCase() }
+      provider: { custom: envProvider.toUpperCase() },
     });
   };
 
@@ -93,16 +78,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isLoggedIn: !!user,
       isLoading,
       login,
-      logout
+      logout,
     }),
-    [user, userRoles, isLoading]
+    [user, userRoles, isLoading],
   );
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 // This is a helper hook to use the Auth context more easily
@@ -110,13 +91,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
 const loadUserToken = async (): Promise<JWT | undefined> => {
-  if (env.NODE_ENV !== "test") {
+  if (env.NODE_ENV !== 'test') {
     const { idToken } = (await fetchAuthSession()).tokens ?? {};
     setAuthIdToken(idToken?.toString() || null);
     return idToken;
@@ -124,18 +105,16 @@ const loadUserToken = async (): Promise<JWT | undefined> => {
     // This is for test only
     const token = getUserTokenFromCookie();
     if (token) {
-      const jwtBody = JSON.parse(atob(token.split(".")[1]));
+      const jwtBody = JSON.parse(atob(token.split('.')[1]));
       return { payload: jwtBody };
     }
-    throw new Error("No token found");
+    throw new Error('No token found');
   }
 };
 
 const getUserTokenFromCookie = (): string | undefined => {
   const baseCookieName = `CognitoIdentityServiceProvider.${env.VITE_USER_POOLS_WEB_CLIENT_ID}`;
-  const userId = encodeURIComponent(
-    getCookie(`${baseCookieName}.LastAuthUser`)
-  );
+  const userId = encodeURIComponent(getCookie(`${baseCookieName}.LastAuthUser`));
   if (userId) {
     return getCookie(`${baseCookieName}.${userId}.idToken`);
   } else {
@@ -145,7 +124,7 @@ const getUserTokenFromCookie = (): string | undefined => {
 
 const getCookie = (name: string): string => {
   const cookie = document.cookie
-    .split(";")
+    .split(';')
     .find((cookieValue) => cookieValue.trim().startsWith(name));
-  return cookie ? cookie.split("=")[1] : "";
+  return cookie ? cookie.split('=')[1] : '';
 };
