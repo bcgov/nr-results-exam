@@ -32,7 +32,7 @@ const baseRules = {
   'no-console': 'off',
   'no-debugger': 'warn',
   'no-unused-vars': 'off',
-  'no-empty': [ 'error', { allowEmptyCatch: true } ],
+  'no-empty': ['error', { allowEmptyCatch: true }],
   'no-shadow': 'off',
 
   // TypeScript rules
@@ -40,7 +40,7 @@ const baseRules = {
     'error',
     { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
   ],
-  '@typescript-eslint/no-shadow': [ 'error' ],
+  '@typescript-eslint/no-shadow': ['error'],
   '@typescript-eslint/explicit-module-boundary-types': 'off',
   '@typescript-eslint/no-explicit-any': 'off',
   '@typescript-eslint/no-non-null-assertion': 'off',
@@ -53,8 +53,8 @@ export default [
   eslint.configs.recommended,
   prettierConfig,
   {
-    files: [ '**/*.{js,jsx,ts,tsx}' ],
-    ignores: [ ...baseIgnores ],
+    files: ['**/*.{js,jsx,ts,tsx}'],
+    ignores: [...baseIgnores],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -87,7 +87,7 @@ export default [
       ...baseRules,
       ...tsPlugin.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
-      ...reactPlugin.configs[ 'jsx-runtime' ].rules,
+      ...reactPlugin.configs['jsx-runtime'].rules,
 
       // React hooks rules (using only basic rules, not all recommended)
       'react-hooks/rules-of-hooks': 'error',
@@ -97,11 +97,11 @@ export default [
       'react/prop-types': 'off',
       'react/display-name': 'off',
       'react/require-default-props': 'off',
-      'react/jsx-filename-extension': [ 2, { extensions: [ '.js', '.jsx', '.ts', '.tsx' ] } ],
+      'react/jsx-filename-extension': [2, { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
       'react/function-component-definition': [
         'error',
         {
-          namedComponents: [ 'function-declaration', 'arrow-function' ],
+          namedComponents: ['function-declaration', 'arrow-function'],
           unnamedComponents: 'arrow-function',
         },
       ],
@@ -109,7 +109,7 @@ export default [
   },
   {
     // Test files configuration
-    files: [ '**/__tests__/**/*.{js,jsx,ts,tsx}', '**/*.test.{js,jsx,ts,tsx}', '**/*.spec.{js,jsx,ts,tsx}' ],
+    files: ['**/__tests__/**/*.{js,jsx,ts,tsx}', '**/*.test.{js,jsx,ts,tsx}', '**/*.spec.{js,jsx,ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -124,17 +124,9 @@ export default [
         ...globals.browser,
         ...globals.es2021,
         ...globals.node, // Add node globals for 'global'
+        ...globals.vitest,
         React: 'readonly',
         JSX: 'readonly',
-        vi: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        test: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
       },
     },
     plugins: {
@@ -152,7 +144,7 @@ export default [
       ...baseRules,
       ...tsPlugin.configs.recommended.rules,
       ...reactPlugin.configs.recommended.rules,
-      ...reactPlugin.configs[ 'jsx-runtime' ].rules,
+      ...reactPlugin.configs['jsx-runtime'].rules,
       // React hooks rules (using only basic rules, not all recommended)
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
@@ -161,11 +153,11 @@ export default [
       'react/prop-types': 'off',
       'react/display-name': 'off',
       'react/require-default-props': 'off',
-      'react/jsx-filename-extension': [ 2, { extensions: [ '.js', '.jsx', '.ts', '.tsx' ] } ],
+      'react/jsx-filename-extension': [2, { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
       'react/function-component-definition': [
         'error',
         {
-          namedComponents: [ 'function-declaration', 'arrow-function' ],
+          namedComponents: ['function-declaration', 'arrow-function'],
           unnamedComponents: 'arrow-function',
         },
       ],
