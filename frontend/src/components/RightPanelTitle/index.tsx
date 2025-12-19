@@ -1,7 +1,7 @@
-import { IconButton } from '@carbon/react';
-import { Close } from '@carbon/icons-react';
+import { IconButton } from "@carbon/react";
+import { Close } from "@carbon/icons-react";
 
-import './RightPanelTitle.scss';
+import "./RightPanelTitle.scss";
 
 interface RightPanelTitleProps {
   title: string;

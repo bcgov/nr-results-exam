@@ -1,4 +1,6 @@
-const { test, describe, beforeEach, afterEach } = require('node:test');
+const {
+  test, describe, beforeEach, afterEach
+} = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
@@ -13,7 +15,7 @@ const originalEnv = {
   userPoolId: process.env.VITE_USER_POOLS_ID,
   cognitoRegion: process.env.VITE_COGNITO_REGION,
   hasUserPoolId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_ID'),
-  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION'),
+  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION')
 };
 
 /**
@@ -22,7 +24,7 @@ const originalEnv = {
 function buildApp(mockJwt, mockJwks) {
   // Clear the require cache for the middleware module to pick up the mock
   delete require.cache[require.resolve('../middleware/authMiddleware')];
-
+  
   // Mock the jsonwebtoken module if mockJwt is provided
   Module.prototype.require = function (id) {
     if (id === 'jsonwebtoken' && mockJwt) {
@@ -33,24 +35,24 @@ function buildApp(mockJwt, mockJwks) {
     }
     return originalRequire.apply(this, arguments);
   };
-
+  
   const { authenticateToken } = require('../middleware/authMiddleware');
-
+  
   // Restore original require
   Module.prototype.require = originalRequire;
-
+  
   const app = express();
   app.use(express.json());
-
+  
   // Protected route
   app.get('/protected', authenticateToken, (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Access granted',
-      user: req.user,
+      user: req.user
     });
   });
-
+  
   return app;
 }
 
@@ -66,13 +68,13 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     sinon.restore();
     // Clear require cache
     delete require.cache[require.resolve('../middleware/authMiddleware')];
-
+    
     if (originalEnv.hasUserPoolId) {
       process.env.VITE_USER_POOLS_ID = originalEnv.userPoolId;
     } else {
       delete process.env.VITE_USER_POOLS_ID;
     }
-
+    
     if (originalEnv.hasCognitoRegion) {
       process.env.VITE_COGNITO_REGION = originalEnv.cognitoRegion;
     } else {
@@ -81,7 +83,9 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   });
 
   test('should deny access when no authorization header is provided', async () => {
-    const response = await request(buildApp()).get('/protected').expect(401);
+    const response = await request(buildApp())
+      .get('/protected')
+      .expect(401);
 
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Authentication required');
@@ -102,7 +106,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     // For this test, we need to build app without mock since we're testing the validation logic
     // Clear cache first
     delete require.cache[require.resolve('../middleware/authMiddleware')];
-
+    
     const { authenticateToken } = require('../middleware/authMiddleware');
     const app = express();
     app.use(express.json());
@@ -110,10 +114,10 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       res.status(200).json({
         success: true,
         message: 'Access granted',
-        user: req.user,
+        user: req.user
       });
     });
-
+    
     const response = await request(app)
       .get('/protected')
       .set('Authorization', 'Bearer ')
@@ -122,16 +126,13 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.success, false);
     // Empty token after "Bearer " will be caught by early validation
     // Note: In some cases it may reach JWT validation which also properly rejects it
-    assert(
-      response.body.message === 'Authentication required' ||
-        response.body.message === 'Invalid token',
-      `Expected 'Authentication required' or 'Invalid token', got '${response.body.message}'`,
-    );
+    assert(response.body.message === 'Authentication required' || response.body.message === 'Invalid token',
+      `Expected 'Authentication required' or 'Invalid token', got '${response.body.message}'`);
   });
 
   test('should return 500 when user pool is not configured', async () => {
     delete process.env.VITE_USER_POOLS_ID;
-
+    
     const response = await request(buildApp())
       .get('/protected')
       .set('Authorization', 'Bearer mock-token')
@@ -155,7 +156,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
           super(message);
           this.name = 'JsonWebTokenError';
         }
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -175,7 +176,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
         const error = new Error('jwt expired');
         error.name = 'TokenExpiredError';
         callback(error);
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -195,14 +196,14 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       'custom:idp_username': 'testuser',
       'custom:idp_display_name': 'Test User',
       'custom:idp_name': 'IDIR',
-      'cognito:username': 'testuser',
+      'cognito:username': 'testuser'
     };
 
     // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -225,14 +226,14 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       email: 'testuser@example.com',
       'cognito:username': 'cognitouser',
       'custom:idp_display_name': 'Test User',
-      'custom:idp_name': 'BCEID',
+      'custom:idp_name': 'BCEID'
     };
 
     // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -249,14 +250,14 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       sub: '12345678-1234-1234-1234-123456789012',
       email: 'testuser@example.com',
       'custom:idp_username': 'testuser',
-      'cognito:username': 'testuser',
+      'cognito:username': 'testuser'
     };
 
     // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -273,7 +274,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(new Error('Generic verification error'));
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -294,14 +295,14 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       'custom:idp_display_name': 'Test User',
       'custom:idp_name': 'IDIR',
       'cognito:username': 'testuser',
-      'custom:roles': ['admin', 'user'],
+      'custom:roles': ['admin', 'user']
     };
 
     // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))
@@ -323,7 +324,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       email: 'jwksuser@example.com',
       'custom:idp_username': 'jwksuser',
       'custom:idp_display_name': 'JWKS User',
-      'custom:idp_name': 'IDIR',
+      'custom:idp_name': 'IDIR'
     };
 
     const mockJwks = sinon.stub().callsFake((options) => {
@@ -334,7 +335,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
           getSigningKeyCalls += 1;
           assert.strictEqual(kid, 'test-kid');
           callback(null, { publicKey: 'mock-public-key' });
-        }),
+        })
       };
     });
 
@@ -346,15 +347,21 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
           assert.strictEqual(signingKey, 'mock-public-key');
           callback(null, mockPayload);
         });
-      },
+      }
     };
 
     const app = buildApp(mockJwt, mockJwks);
 
-    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
+    await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
 
     // Second request should reuse cached JWKS client
-    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
+    await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
 
     assert.strictEqual(jwksClientCalls, 1);
     assert.strictEqual(getSigningKeyCalls, 2);
@@ -365,7 +372,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const mockJwks = () => ({
       getSigningKey: (kid, callback) => {
         callback(new Error('JWKS key retrieval failed'));
-      },
+      }
     });
 
     const mockJwt = {
@@ -373,7 +380,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
         getKey({ kid: 'bad-kid' }, (err) => {
           callback(err);
         });
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt, mockJwks))
@@ -390,7 +397,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const mockJwt = {
       verify: () => {
         throw new Error('Synchronous verification failure');
-      },
+      }
     };
 
     const response = await request(buildApp(mockJwt))

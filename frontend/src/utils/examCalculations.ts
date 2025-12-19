@@ -9,7 +9,10 @@ export interface Question {
   choices: Choice[];
 }
 
-export const getRandomQuestions = (questions: Question[], count: number): Question[] => {
+export const getRandomQuestions = (
+  questions: Question[],
+  count: number
+): Question[] => {
   const shuffledQuestions = [...questions];
 
   // Fisher-Yates shuffle with crypto.getRandomValues
@@ -18,14 +21,22 @@ export const getRandomQuestions = (questions: Question[], count: number): Questi
     crypto.getRandomValues(randomValues);
     const j = randomValues[0] % (i + 1);
 
-    [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+    [shuffledQuestions[i], shuffledQuestions[j]] = [
+      shuffledQuestions[j],
+      shuffledQuestions[i]
+    ];
   }
 
   return shuffledQuestions.slice(0, count);
 };
 
-export const calculateScorePercentage = (questions: Question[], userAnswers: number[]): number => {
-  const totalAnswered = userAnswers.filter((answer) => answer !== undefined).length;
+export const calculateScorePercentage = (
+  questions: Question[],
+  userAnswers: number[]
+): number => {
+  const totalAnswered = userAnswers.filter(
+    (answer) => answer !== undefined
+  ).length;
   if (totalAnswered === 0) return 0; // Prevent division by zero
 
   const correctAnswers = userAnswers.reduce((count, answer, index) => {
@@ -35,15 +46,24 @@ export const calculateScorePercentage = (questions: Question[], userAnswers: num
   return Math.round((correctAnswers / totalAnswered) * 100);
 };
 
-export const isPassing = (questions: Question[], userAnswers: number[]): boolean => {
+export const isPassing = (
+  questions: Question[],
+  userAnswers: number[]
+): boolean => {
   return calculateScorePercentage(questions, userAnswers) >= 50;
 };
 
-export const generateResultJson = (questions: Question[], userAnswers: number[]) => {
+export const generateResultJson = (
+  questions: Question[],
+  userAnswers: number[]
+) => {
   return questions.map((question, index) => ({
     question: question.question,
-    answer: question.choices.find((choice) => choice.isCorrect)?.option || 'N/A',
-    userAnswered: question.choices[userAnswers[index]]?.option || 'N/A',
-    isCorrect: userAnswers[index] === question.choices.findIndex((choice) => choice.isCorrect),
+    answer:
+      question.choices.find((choice) => choice.isCorrect)?.option || "N/A",
+    userAnswered: question.choices[userAnswers[index]]?.option || "N/A",
+    isCorrect:
+      userAnswers[index] ===
+      question.choices.findIndex((choice) => choice.isCorrect)
   }));
 };

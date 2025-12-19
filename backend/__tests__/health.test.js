@@ -19,19 +19,21 @@ describe('Health Routes', () => {
         dependencies: {
           ches: { status: 'ok', latencyMs: 10 },
           federatedAuth: { status: 'skipped' },
-          objectStorage: { status: 'ok', latencyMs: 5 },
-        },
-      }),
+          objectStorage: { status: 'ok', latencyMs: 5 }
+        }
+      })
     );
 
-    const response = await request(app).get('/health').expect(200);
+    const response = await request(app)
+      .get('/health')
+      .expect(200);
 
     assert.strictEqual(response.body.status, 'ok');
     assert(typeof response.body.uptime === 'number');
     assert(typeof response.body.timestamp === 'number');
     assert.deepStrictEqual(
       Object.keys(response.body.dependencies).sort(),
-      ['ches', 'federatedAuth', 'objectStorage'].sort(),
+      ['ches', 'federatedAuth', 'objectStorage'].sort()
     );
     assert.strictEqual(response.body.dependencies.ches.status, 'ok');
     restore.mock.restore();
@@ -48,12 +50,14 @@ describe('Health Routes', () => {
         dependencies: {
           ches: { status: 'error', error: 'boom' },
           federatedAuth: { status: 'ok' },
-          objectStorage: { status: 'ok' },
-        },
-      }),
+          objectStorage: { status: 'ok' }
+        }
+      })
     );
 
-    const response = await request(app).get('/health').expect(503);
+    const response = await request(app)
+      .get('/health')
+      .expect(503);
 
     assert.strictEqual(response.body.status, 'error');
     restore.mock.restore();
@@ -70,14 +74,17 @@ describe('Health Routes', () => {
         dependencies: {
           ches: { status: 'skipped' },
           federatedAuth: { status: 'skipped' },
-          objectStorage: { status: 'skipped' },
-        },
-      }),
+          objectStorage: { status: 'skipped' }
+        }
+      })
     );
 
-    const response = await request(app).get('/health?deep=true').expect(200);
+    const response = await request(app)
+      .get('/health?deep=true')
+      .expect(200);
 
     assert.strictEqual(response.body.status, 'ok');
     restore.mock.restore();
   });
 });
+

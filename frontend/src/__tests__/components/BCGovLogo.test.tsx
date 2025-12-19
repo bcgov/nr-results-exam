@@ -9,7 +9,7 @@ describe('BCGovLogo Component', () => {
     const logoElement = screen.getByAltText('BCGov Logo');
     expect(logoElement).toBeDefined();
 
-    const displayedImage = document.querySelector('img') as HTMLImageElement;
+    const displayedImage = document.querySelector("img") as HTMLImageElement;
     expect(displayedImage.src).toContain('bc-gov-logo.png');
   });
 
@@ -18,7 +18,7 @@ describe('BCGovLogo Component', () => {
     const logoElement = screen.getByAltText('BCGov Logo');
     expect(logoElement.classList).toContain('logo');
 
-    const displayedImage = document.querySelector('img') as HTMLImageElement;
+    const displayedImage = document.querySelector("img") as HTMLImageElement;
     expect(displayedImage.width).toEqual(160);
   });
 });

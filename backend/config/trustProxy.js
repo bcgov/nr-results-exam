@@ -12,5 +12,6 @@ function resolveTrustProxy(value) {
 }
 
 module.exports = {
-  resolveTrustProxy,
+  resolveTrustProxy
 };
+

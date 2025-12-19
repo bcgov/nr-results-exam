@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode } from "react";
 
-import './SideLayout.scss';
-import BCHeaderwSide from '../../components/BCHeaderwSide';
+import "./SideLayout.scss";
+import BCHeaderwSide from "../../components/BCHeaderwSide";
 
 interface SideLayoutProps {
   pageContent: ReactNode;

@@ -1,7 +1,7 @@
-import React from 'react';
-import StandardCard from '../../components/StandardCard';
-import { useAuth } from '../../contexts/AuthProvider';
-import { Loading } from '@carbon/react';
+import React from "react";
+import StandardCard from "../../components/StandardCard";
+import { useAuth } from "../../contexts/AuthProvider";
+import { Loading } from "@carbon/react";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -9,9 +9,13 @@ const Dashboard: React.FC = () => {
     <>
       <div className="container">
         <h4 className="py-4">
-          Hello <span className="fw-bold">{user.firstName + ' ' + user.lastName}</span>, welcome to
-          the RESULTS EXAM portal. Please take a moment to review the available options and select
-          the test that best matches your access requirements:
+          Hello{" "}
+          <span className="fw-bold">
+            {user.firstName + " " + user.lastName}
+          </span>
+          , welcome to the RESULTS EXAM portal. Please take a moment to review
+          the available options and select the test that best matches your
+          access requirements:
         </h4>
         <div className="row justify-content-center">
           <div className="col-md-6 col-xl-4" data-testid="card-a">

@@ -1,4 +1,6 @@
-const { test, describe, beforeEach, afterEach } = require('node:test');
+const {
+  test, describe, beforeEach, afterEach
+} = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
@@ -12,7 +14,7 @@ const originalEnv = {
   clientId: process.env.CHES_CLIENT_ID,
   clientSecret: process.env.CHES_CLIENT_SECRET,
   hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'CHES_CLIENT_ID'),
-  hasClientSecret: Object.prototype.hasOwnProperty.call(process.env, 'CHES_CLIENT_SECRET'),
+  hasClientSecret: Object.prototype.hasOwnProperty.call(process.env, 'CHES_CLIENT_SECRET')
 };
 
 function buildApp() {
@@ -60,7 +62,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(200);
 
@@ -81,15 +83,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(200);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should have 2 axios.post calls (token + email)',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 2, 'Should have 2 axios.post calls (token + email)');
 
     const tokenCall = axiosPostStub.getCall(0);
     const [tokenUrl, tokenPayload, tokenConfig] = tokenCall.args;
@@ -97,32 +95,20 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(
       tokenUrl,
       'https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token',
-      'Token endpoint URL should match',
+      'Token endpoint URL should match'
     );
 
-    assert.strictEqual(
-      tokenPayload,
-      'grant_type=client_credentials',
-      'Token payload should be grant_type=client_credentials',
-    );
+    assert.strictEqual(tokenPayload, 'grant_type=client_credentials', 'Token payload should be grant_type=client_credentials');
 
     assert.strictEqual(
       tokenConfig.headers['Content-Type'],
       'application/x-www-form-urlencoded',
-      'Token request Content-Type should be application/x-www-form-urlencoded',
+      'Token request Content-Type should be application/x-www-form-urlencoded'
     );
 
     assert(tokenConfig.auth, 'Token request should include auth credentials');
-    assert.strictEqual(
-      tokenConfig.auth.username,
-      'test-client-id',
-      'Token request username should match CHES_CLIENT_ID',
-    );
-    assert.strictEqual(
-      tokenConfig.auth.password,
-      'test-client-secret',
-      'Token request password should match CHES_CLIENT_SECRET',
-    );
+    assert.strictEqual(tokenConfig.auth.username, 'test-client-id', 'Token request username should match CHES_CLIENT_ID');
+    assert.strictEqual(tokenConfig.auth.password, 'test-client-secret', 'Token request password should match CHES_CLIENT_SECRET');
   });
 
   test('POST /api/mail should call email endpoint with correct parameters', async () => {
@@ -136,15 +122,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(200);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should have 2 axios.post calls (token + email)',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 2, 'Should have 2 axios.post calls (token + email)');
 
     const emailCall = axiosPostStub.getCall(1);
     const [emailUrl, emailPayload, emailConfig] = emailCall.args;
@@ -152,15 +134,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(
       emailUrl,
       'https://ches-test.api.gov.bc.ca/api/v1/email',
-      'Email endpoint URL should match',
+      'Email endpoint URL should match'
     );
 
     assert.strictEqual(emailPayload.from, 'test@example.com', 'Email from should match request');
-    assert.deepStrictEqual(
-      emailPayload.to,
-      ['recipient@example.com'],
-      'Email to should match request',
-    );
+    assert.deepStrictEqual(emailPayload.to, ['recipient@example.com'], 'Email to should match request');
     assert.strictEqual(emailPayload.subject, 'Test Subject', 'Email subject should match request');
     assert.strictEqual(emailPayload.body, '<p>Test body</p>', 'Email body should match request');
     assert.strictEqual(emailPayload.bodyType, 'html', 'Email bodyType should be html');
@@ -174,12 +152,12 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(
       emailConfig.headers['Content-Type'],
       'application/json',
-      'Email request Content-Type should be application/json',
+      'Email request Content-Type should be application/json'
     );
     assert.strictEqual(
       emailConfig.headers['Authorization'],
       'Bearer mock-token',
-      'Email request Authorization header should include Bearer token from first call',
+      'Email request Authorization header should include Bearer token from first call'
     );
   });
 
@@ -191,18 +169,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .send({
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: fromEmail');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is missing', async () => {
@@ -213,18 +187,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .send({
         fromEmail: 'test@example.com',
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is not an array', async () => {
@@ -236,18 +206,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: 'recipient@example.com',
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if subject is missing', async () => {
@@ -258,18 +224,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .send({
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: subject');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if mailBody is missing', async () => {
@@ -280,18 +242,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .send({
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
-        subject: 'Test Subject',
+        subject: 'Test Subject'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: mailBody');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is empty array', async () => {
@@ -303,18 +261,14 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: [],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(400);
 
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not make axios calls when validation fails');
   });
 
   test('POST /api/mail should return 500 if CHES credentials are missing', async () => {
@@ -332,15 +286,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(500);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not call axios when credentials are missing',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 0, 'Should not call axios when credentials are missing');
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
@@ -360,7 +310,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(500);
 
@@ -381,7 +331,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(500);
 
@@ -406,15 +356,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(500);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should attempt to send email after obtaining token',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 2, 'Should attempt to send email after obtaining token');
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
@@ -432,15 +378,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
         fromEmail: 'test@example.com',
         toEmails: ['recipient@example.com'],
         subject: 'Test Subject',
-        mailBody: '<p>Test body</p>',
+        mailBody: '<p>Test body</p>'
       })
       .expect(500);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should attempt to send email after obtaining token',
-    );
+    assert.strictEqual(axiosPostStub.callCount, 2, 'Should attempt to send email after obtaining token');
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');

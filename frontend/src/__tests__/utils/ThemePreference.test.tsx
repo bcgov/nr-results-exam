@@ -1,8 +1,8 @@
-import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import React from "react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
-import { ThemePreference, useThemePreference } from '../../utils/ThemePreference';
+import { ThemePreference, useThemePreference } from "../../utils/ThemePreference";
 
 type MockMediaQueryList = MediaQueryList & {
   dispatchChange: (matches: boolean) => void;
@@ -14,7 +14,7 @@ const ThemeConsumer = () => {
   return (
     <button
       data-testid="current-theme"
-      onClick={() => setTheme(theme === 'g100' ? 'g10' : 'g100')}
+      onClick={() => setTheme(theme === "g100" ? "g10" : "g100")}
       type="button"
     >
       {theme}
@@ -30,7 +30,7 @@ function createMatchMedia(matches: boolean): MockMediaQueryList {
 
   const mock: MockMediaQueryList = {
     matches,
-    media: '(prefers-color-scheme: dark)',
+    media: "(prefers-color-scheme: dark)",
     onchange: null,
     addEventListener: (_eventName, handler) => {
       listeners.add(handler);
@@ -48,27 +48,24 @@ function createMatchMedia(matches: boolean): MockMediaQueryList {
     dispatchChange: (nextMatches: boolean) => {
       mock.matches = nextMatches;
       listeners.forEach((listener) => listener({ matches: nextMatches } as MediaQueryListEvent));
-    },
+    }
   } as MockMediaQueryList;
 
   return mock;
 }
 
-describe('ThemePreference', () => {
+describe("ThemePreference", () => {
   let originalMatchMedia: typeof window.matchMedia;
   let mockMediaQuery: MockMediaQueryList;
 
   beforeEach(() => {
     originalMatchMedia = window.matchMedia;
     localStorage.clear();
-    document.documentElement.removeAttribute('data-carbon-theme');
-    document.documentElement.removeAttribute('data-bs-theme');
+    document.documentElement.removeAttribute("data-carbon-theme");
+    document.documentElement.removeAttribute("data-bs-theme");
 
     mockMediaQuery = createMatchMedia(false);
-    vi.stubGlobal(
-      'matchMedia',
-      vi.fn(() => mockMediaQuery),
-    );
+    vi.stubGlobal("matchMedia", vi.fn(() => mockMediaQuery));
   });
 
   afterEach(() => {
@@ -76,45 +73,46 @@ describe('ThemePreference', () => {
     window.matchMedia = originalMatchMedia;
   });
 
-  test('uses stored theme when available', () => {
-    localStorage.setItem('theme', 'g100');
+  test("uses stored theme when available", () => {
+    localStorage.setItem("theme", "g100");
 
     renderWithProvider();
 
-    expect(screen.getByTestId('current-theme')).toHaveTextContent('g100');
-    expect(document.documentElement.getAttribute('data-carbon-theme')).toBe('g100');
-    expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark');
+    expect(screen.getByTestId("current-theme")).toHaveTextContent("g100");
+    expect(document.documentElement.getAttribute("data-carbon-theme")).toBe("g100");
+    expect(document.documentElement.getAttribute("data-bs-theme")).toBe("dark");
   });
 
-  test('falls back to system preference and responds to changes', async () => {
+  test("falls back to system preference and responds to changes", async () => {
     mockMediaQuery.matches = true;
 
     renderWithProvider();
 
-    expect(screen.getByTestId('current-theme')).toHaveTextContent('g100');
+    expect(screen.getByTestId("current-theme")).toHaveTextContent("g100");
 
     await act(async () => {
       mockMediaQuery.dispatchChange(false);
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId('current-theme')).toHaveTextContent('g10');
+      expect(screen.getByTestId("current-theme")).toHaveTextContent("g10");
     });
-    expect(localStorage.getItem('theme')).toBe('g10');
+    expect(localStorage.getItem("theme")).toBe("g10");
   });
 
-  test('updates theme when toggled via context', async () => {
+  test("updates theme when toggled via context", async () => {
     renderWithProvider();
 
-    const toggle = screen.getByTestId('current-theme');
+    const toggle = screen.getByTestId("current-theme");
 
     await userEvent.click(toggle);
 
     await waitFor(() => {
-      expect(toggle).toHaveTextContent('g100');
+      expect(toggle).toHaveTextContent("g100");
     });
-    expect(document.documentElement.getAttribute('data-carbon-theme')).toBe('g100');
-    expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark');
-    expect(localStorage.getItem('theme')).toBe('g100');
+    expect(document.documentElement.getAttribute("data-carbon-theme")).toBe("g100");
+    expect(document.documentElement.getAttribute("data-bs-theme")).toBe("dark");
+    expect(localStorage.getItem("theme")).toBe("g100");
   });
 });
+

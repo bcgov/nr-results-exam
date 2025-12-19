@@ -1,4 +1,6 @@
-const { test, describe, afterEach } = require('node:test');
+const {
+  test, describe, afterEach
+} = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
@@ -11,11 +13,11 @@ function buildApp(whitelist) {
   app.use((req, res, next) => {
     cors(getCorsOptions(req, whitelist))(req, res, next);
   });
-
+  
   app.get('/api/test', (req, res) => {
     res.json({ success: true });
   });
-
+  
   return app;
 }
 
@@ -36,7 +38,10 @@ describe('CORS Configuration', () => {
     const whitelist = ['http://localhost:3000'];
     const app = buildApp(whitelist);
 
-    await request(app).get('/api/test').set('Origin', 'http://malicious-site.com').expect(500);
+    await request(app)
+      .get('/api/test')
+      .set('Origin', 'http://malicious-site.com')
+      .expect(500);
   });
 
   test('should allow requests with no origin if X-Forwarded-By header is present', async () => {
@@ -55,7 +60,9 @@ describe('CORS Configuration', () => {
     const whitelist = ['http://localhost:3000'];
     const app = buildApp(whitelist);
 
-    await request(app).get('/api/test').expect(500);
+    await request(app)
+      .get('/api/test')
+      .expect(500);
   });
 
   test('should match origins by hostname and port', async () => {
@@ -128,7 +135,9 @@ describe('CORS Configuration', () => {
     // This test may fail if 'localhost:3000' is parsed as a valid URL
     // In that case, the fallback logic (lines 61-67) won't be executed
     // We accept either outcome to avoid flaky tests
-    const response = await request(app).get('/api/test').set('Origin', 'http://localhost:3000');
+    const response = await request(app)
+      .get('/api/test')
+      .set('Origin', 'http://localhost:3000');
 
     // Accept either 200 (if URL parsing fails and fallback works) or 500 (if URL parsing succeeds)
     assert.ok([200, 500].includes(response.status), `Expected 200 or 500, got ${response.status}`);
@@ -153,7 +162,10 @@ describe('CORS Configuration', () => {
     const whitelist = ['http://localhost:3000'];
     const app = buildApp(whitelist);
 
-    await request(app).get('/api/test').set('Origin', 'not-a-valid-url').expect(500);
+    await request(app)
+      .get('/api/test')
+      .set('Origin', 'not-a-valid-url')
+      .expect(500);
   });
 
   test('should handle getEffectivePort edge case with unknown protocol', async () => {
@@ -194,7 +206,7 @@ describe('getDefaultWhitelist', () => {
     delete require.cache[corsOptionsPath];
     const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
     const whitelist = getWhitelist();
-
+    
     assert.strictEqual(whitelist.length, 2);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
     assert.strictEqual(whitelist[1], 'https://example.com');
@@ -206,7 +218,7 @@ describe('getDefaultWhitelist', () => {
     delete require.cache[corsOptionsPath];
     const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
     const whitelist = getWhitelist();
-
+    
     assert.strictEqual(whitelist.length, 1);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
   });
@@ -217,7 +229,7 @@ describe('getDefaultWhitelist', () => {
     delete require.cache[corsOptionsPath];
     const { getDefaultWhitelist: getWhitelist } = require('../config/corsOptions');
     const whitelist = getWhitelist();
-
+    
     assert.strictEqual(whitelist.length, 1);
     assert.strictEqual(whitelist[0], 'http://localhost:3000');
   });

@@ -10,7 +10,7 @@ import {
   HeaderPanel,
   SideNav,
   SideNavItems,
-  SideNavLink,
+  SideNavLink
 } from '@carbon/react';
 import * as Icons from '@carbon/icons-react';
 import './BCHeaderwSide.scss';
@@ -27,7 +27,7 @@ interface ListItem {
 }
 interface ListItems {
   name: string;
-  items: ListItem[];
+  items: ListItem[]
 }
 
 const listItems = [
@@ -38,34 +38,35 @@ const listItems = [
         name: 'Home',
         icon: 'Home',
         link: '/dashboard',
-        disabled: false,
+        disabled: false
       },
       {
         name: 'TestA',
         icon: 'Dashboard',
         link: '/testA',
-        disabled: false,
+        disabled: false
       },
       {
         name: 'TestB',
         icon: 'Dashboard',
         link: '/testB',
-        disabled: false,
+        disabled: false
       },
       {
         name: 'TestC',
         icon: 'Dashboard',
         link: '/testC',
-        disabled: false,
-      },
-    ],
-  },
+        disabled: false
+      }
+    ]
+  }
 ];
 
 const BCHeaderwSide = () => {
   const [myProfile, setMyProfile] = useState<boolean>(false);
   const [goToURL, setGoToURL] = useState<string>('');
   const [goTo, setGoTo] = useState<boolean>(false);
+
 
   const handleMyProfilePanel = useCallback((): void => {
     if (myProfile) {
@@ -90,13 +91,7 @@ const BCHeaderwSide = () => {
 
   return (
     <HeaderContainer
-      render={({
-        isSideNavExpanded,
-        onClickSideNavExpand,
-      }: {
-        isSideNavExpanded: boolean;
-        onClickSideNavExpand: () => void;
-      }) => (
+      render={({ isSideNavExpanded, onClickSideNavExpand }: { isSideNavExpanded: boolean; onClickSideNavExpand: () => void }) => (
         <Header
           aria-label="React TS Carbon Quickstart"
           className="quickstart-header"
@@ -114,9 +109,9 @@ const BCHeaderwSide = () => {
           </Link>
           <HeaderGlobalBar className="align-items-center">
             <div className="mx-2">
-              <ThemeToggle />
+              <ThemeToggle/>
             </div>
-
+            
             <HeaderGlobalAction
               aria-label="User Settings"
               tooltipAlignment="end"
@@ -127,20 +122,14 @@ const BCHeaderwSide = () => {
               <Icons.UserAvatar size={20} />
             </HeaderGlobalAction>
           </HeaderGlobalBar>
-          <HeaderPanel
-            aria-label="User Profile Tab"
-            expanded={myProfile}
-            className="notifications-panel"
-          >
-            <RightPanelTitle title="My Profile" closeFn={closeMyProfilePanel} />
-            <MyProfile />
+          <HeaderPanel aria-label="User Profile Tab" expanded={myProfile} className="notifications-panel">
+            <RightPanelTitle
+              title="My Profile"
+              closeFn={closeMyProfilePanel}
+            />
+            <MyProfile/>
           </HeaderPanel>
-          <SideNav
-            isChildOfHeader
-            expanded={isSideNavExpanded}
-            aria-label="Side menu"
-            className="bcheaderwside-sidenav"
-          >
+          <SideNav isChildOfHeader expanded={isSideNavExpanded} aria-label="Side menu" className="bcheaderwside-sidenav">
             <SideNavItems>
               {listItems.map((item: ListItems) => (
                 <div key={item.name}>

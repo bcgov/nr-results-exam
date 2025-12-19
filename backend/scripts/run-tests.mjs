@@ -44,7 +44,7 @@ const forwardedArgs = (() => {
 
 const child = spawn(process.execPath, ['--test', ...forwardedArgs, ...testFiles], {
   stdio: 'inherit',
-  env: { ...process.env },
+  env: { ...process.env }
 });
 
 child.on('error', (error) => {
@@ -59,3 +59,4 @@ child.on('exit', (code, signal) => {
   }
   process.exit(code ?? 0);
 });
+

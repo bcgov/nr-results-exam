@@ -12,7 +12,7 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => navigateMock,
+    useNavigate: () => navigateMock
   };
 });
 
@@ -22,20 +22,19 @@ vi.mock('@carbon/icons-react', async () => {
     ...actual,
     Home: () => <svg data-testid="icon-home" />,
     Dashboard: () => <svg data-testid="icon-dashboard" />,
-    UserAvatar: () => <svg data-testid="icon-avatar" />,
+    UserAvatar: () => <svg data-testid="icon-avatar" />
   };
 });
 
-const renderComponent = () =>
-  render(
-    <ThemePreference>
-      <AuthProvider>
-        <MemoryRouter>
-          <BCHeaderwSide />
-        </MemoryRouter>
-      </AuthProvider>
-    </ThemePreference>,
-  );
+const renderComponent = () => render(
+  <ThemePreference>
+    <AuthProvider>
+      <MemoryRouter>
+        <BCHeaderwSide />
+      </MemoryRouter>
+    </AuthProvider>
+  </ThemePreference>
+);
 
 describe('BCHeaderwSide', () => {
   beforeAll(() => {
@@ -93,3 +92,4 @@ describe('BCHeaderwSide', () => {
     });
   });
 });
+

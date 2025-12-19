@@ -1,9 +1,11 @@
-import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext, ReactNode, useContext, useEffect, useMemo, useState
+} from 'react';
 import { GlobalTheme } from '@carbon/react';
 
 interface ThemeContextData {
-  theme: string;
-  setTheme: React.Dispatch<React.SetStateAction<string>>;
+  theme: string,
+  setTheme: React.Dispatch<React.SetStateAction<string>>
 }
 
 const ThemePreferenceContext = createContext<ThemeContextData>({} as ThemeContextData);
@@ -18,7 +20,7 @@ function useThemePreference() {
 }
 
 interface ThemePreferenceProps {
-  children?: ReactNode;
+  children?: ReactNode
 }
 
 /**
@@ -38,13 +40,10 @@ function ThemePreference({ children }: ThemePreferenceProps) {
     }
   });
 
-  const value = useMemo(
-    () => ({
-      theme,
-      setTheme,
-    }),
-    [theme, setTheme],
-  );
+  const value = useMemo(() => ({
+    theme,
+    setTheme
+  }), [theme, setTheme]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-carbon-theme', theme);

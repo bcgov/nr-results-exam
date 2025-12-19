@@ -14,10 +14,11 @@ router.get('/', async (req, res) => {
       timestamp: Date.now(),
       lastCheckedAt: health.checkedAt,
       refreshInProgress: health.refreshInProgress,
-      dependencies: health.dependencies,
+      dependencies: health.dependencies
     };
 
-    const httpStatus = health.status === 'error' || health.status === 'degraded' ? 503 : 200;
+    const httpStatus =
+      health.status === 'error' || health.status === 'degraded' ? 503 : 200;
     res
       .status(httpStatus)
       .type('application/json')
@@ -26,7 +27,7 @@ router.get('/', async (req, res) => {
     console.error('Health check error:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Unable to compute health status',
+      message: 'Unable to compute health status'
     });
   }
 });

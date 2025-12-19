@@ -1,14 +1,13 @@
 import { env } from './env';
 
-const ZONE = (env.VITE_ZONE ?? 'DEV').toLocaleLowerCase();
+const ZONE = (env.VITE_ZONE ?? "DEV").toLocaleLowerCase();
 const redirectUri = window.location.origin;
-const logoutDomain = `https://logon${ZONE === 'prod' ? '' : 'test'}7.gov.bc.ca`;
-const returnUrlHost =
-  ZONE === 'prod' ? 'loginproxy' : ZONE === 'test' ? 'test.loginproxy' : 'dev.loginproxy';
+const logoutDomain = `https://logon${ZONE === "prod" ? '' : 'test'}7.gov.bc.ca`;
+const returnUrlHost = ZONE === "prod" ? "loginproxy" : ZONE === "test" ? "test.loginproxy" : "dev.loginproxy";
 const retUrl = `https://${returnUrlHost}.gov.bc.ca/auth/realms/standard/protocol/openid-connect/logout`;
 
 const redirectSignOut =
-  env.VITE_REDIRECT_SIGN_OUT && env.VITE_REDIRECT_SIGN_OUT.trim() !== ''
+  env.VITE_REDIRECT_SIGN_OUT && env.VITE_REDIRECT_SIGN_OUT.trim() !== ""
     ? env.VITE_REDIRECT_SIGN_OUT
     : `${logoutDomain}/clp-cgi/logoff.cgi?retnow=1&returl=${retUrl}?redirect_uri=${redirectUri}/`;
 
@@ -24,17 +23,15 @@ const amplifyconfig = {
       signUpVerificationMethod: verificationMethods, // 'code' | 'link'
       loginWith: {
         oauth: {
-          domain:
-            env.VITE_AWS_DOMAIN ||
-            'lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com',
-          scopes: ['openid'],
-          redirectSignIn: [`${window.location.origin}/dashboard`],
-          redirectSignOut: [redirectSignOut],
-          responseType: verificationMethods,
-        },
-      },
-    },
-  },
+          domain: env.VITE_AWS_DOMAIN || "lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com",
+          scopes: [ 'openid' ],
+          redirectSignIn: [ `${window.location.origin}/dashboard` ],
+          redirectSignOut: [ redirectSignOut ],
+          responseType: verificationMethods
+        }
+      }
+    }
+  }
 };
 
 export default amplifyconfig;

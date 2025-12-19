@@ -41,11 +41,13 @@ export const parseToken = (idToken: JWT | undefined): FamLoginUser | undefined =
   setAuthIdToken(idToken?.toString() || null);
   const decodedIdToken = idToken?.payload;
 
-  const displayName = (decodedIdToken?.['custom:idp_display_name'] as string) || '';
-  const idpProvider = ((decodedIdToken?.['custom:idp_name'] as string) || '').toUpperCase();
+  const displayName = decodedIdToken?.['custom:idp_display_name'] as string || '';
+  const idpProvider = (decodedIdToken?.['custom:idp_name'] as string || '').toUpperCase();
   const hasComma = displayName.includes(',');
 
-  let [lastName, firstName] = hasComma ? displayName.split(', ') : displayName.split(' ');
+  let [lastName, firstName] = hasComma
+    ? displayName.split(', ')
+    : displayName.split(' ');
 
   if (!hasComma) {
     // In case of "First Last" format, swap first and last names
@@ -54,8 +56,8 @@ export const parseToken = (idToken: JWT | undefined): FamLoginUser | undefined =
 
   const sanitizedFirstName = hasComma ? firstName.split(' ')[0].trim() : firstName;
 
-  const userName = (decodedIdToken?.['custom:idp_username'] as string) || '';
-  const email = (decodedIdToken?.['email'] as string) || '';
+  const userName = decodedIdToken?.['custom:idp_username'] as string || '';
+  const email = decodedIdToken?.['email'] as string || '';
 
   return {
     userName,
@@ -64,6 +66,6 @@ export const parseToken = (idToken: JWT | undefined): FamLoginUser | undefined =
     idpProvider,
     firstName: sanitizedFirstName,
     lastName,
-    providerUsername: `${idpProvider}\\${userName}`,
+    providerUsername: `${idpProvider}\\${userName}`
   };
 };

@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react';
-import BCHeader from '../../components/BCHeader';
+import React, { ReactNode } from "react";
+import BCHeader from "../../components/BCHeader";
 
-import './TopLayout.scss';
+import "./TopLayout.scss";
 
 interface TopLayoutProps {
   pageContent: ReactNode;

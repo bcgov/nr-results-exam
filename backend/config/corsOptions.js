@@ -7,7 +7,7 @@ const frontendUrl = process.env.FRONTEND_URL;
 function getDefaultWhitelist() {
   return [
     'http://localhost:3000', // For local development
-    frontendUrl, // Frontend URL from environment variable
+    frontendUrl // Frontend URL from environment variable
   ].filter(Boolean);
 }
 
@@ -47,8 +47,8 @@ function getCorsOptions(req, whitelist) {
             // Match by hostname (and port if specified in whitelist)
             // Always compare effective ports (explicit or default)
             return (
-              originUrl.hostname === allowedUrl.hostname &&
-              getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
+              originUrl.hostname === allowedUrl.hostname
+              && getEffectivePort(originUrl) === getEffectivePort(allowedUrl)
             );
           } catch (error) {
             // If whitelist entry is not a valid URL (TypeError from new URL()),
@@ -61,7 +61,8 @@ function getCorsOptions(req, whitelist) {
                 // Compare both hostname and port
                 // Use getEffectivePort for consistent port comparison with URL-based logic
                 return (
-                  originUrl.hostname === allowedHost && getEffectivePort(originUrl) === allowedPort
+                  originUrl.hostname === allowedHost
+                  && getEffectivePort(originUrl) === allowedPort
                 );
               }
               // Compare only hostname
@@ -88,11 +89,11 @@ function getCorsOptions(req, whitelist) {
           throw error;
         }
       }
-    },
+    }
   };
 }
 
 module.exports = {
   getCorsOptions,
-  getDefaultWhitelist,
+  getDefaultWhitelist
 };

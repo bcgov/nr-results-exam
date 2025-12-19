@@ -1,5 +1,8 @@
-import { SideNavLink, Loading } from '@carbon/react';
+import {
+  SideNavLink
+  , Loading } from '@carbon/react';
 import * as Icons from '@carbon/icons-react';
+
 
 import AvatarImage from '../AvatarImage';
 
@@ -9,7 +12,7 @@ import './MyProfile.scss';
 import { useAuth } from '../../contexts/AuthProvider';
 
 const MyProfile = () => {
-  const { user, logout } = useAuth();
+  const {user, logout} = useAuth();
   const { theme, setTheme } = useThemePreference();
 
   const changeTheme = () => {
@@ -23,8 +26,8 @@ const MyProfile = () => {
     }
   };
 
-  return user ? (
-    <>
+  return (
+    user?(<>
       <div className="user-info-section">
         <div className="user-image">
           <AvatarImage userName={`${user.firstName} ${user.lastName}`} size="large" />
@@ -33,6 +36,7 @@ const MyProfile = () => {
           <p className="user-name">{`${user.firstName} ${user.lastName}`}</p>
           <p>{`IDIR: ${user.userName}`}</p>
           <p>{`Email: ${user.email}`}</p>
+
         </div>
       </div>
       <hr className="divisory" />
@@ -40,27 +44,23 @@ const MyProfile = () => {
         <ul>
           <SideNavLink
             className="cursor-pointer"
-            renderIcon={theme === 'g10' ? Icons.Asleep : Icons.Light}
-            onClick={() => {
-              changeTheme();
-            }}
+            renderIcon={theme === 'g10'?Icons.Asleep:Icons.Light}
+            onClick={() => { changeTheme(); }}
           >
             Change theme
           </SideNavLink>
           <SideNavLink
             className="cursor-pointer"
             renderIcon={Icons.UserFollow}
-            onClick={() => {
-              logout();
-            }}
+            onClick={()=>{logout()}}
           >
             Log out
           </SideNavLink>
         </ul>
       </nav>
-    </>
-  ) : (
-    <Loading description="Loading user details" withOverlay={true} />
+    </>):(
+      <Loading description="Loading user details" withOverlay={true} />
+    )
   );
 };
 

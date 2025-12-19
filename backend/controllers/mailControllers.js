@@ -19,13 +19,13 @@ async function requestToken() {
 
     // Set the headers for x-www-form-urlencoded content type
     const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/x-www-form-urlencoded'
     };
 
     // Set up the basic authentication credentials
     const auth = {
       username: clientId,
-      password: clientSecret,
+      password: clientSecret
     };
 
     // Send the POST request using Axios to get the token
@@ -38,9 +38,7 @@ async function requestToken() {
     // Handle errors gracefully
     console.error('Error fetching token:', error.response?.data || error.message);
     if (error.response) {
-      throw new Error(
-        `Failed to fetch token: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
-      );
+      throw new Error(`Failed to fetch token: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
     }
     if (error.message === 'CHES credentials are not configured') {
       throw error;
@@ -67,13 +65,13 @@ async function sendEmail(token, emailDetails) {
       priority: 'normal',
       subject: emailDetails.subject,
       to: emailDetails.to,
-      tag: `email_${session_tag}`,
+      tag: `email_${session_tag}`
     };
 
     // Set the headers for the request
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`
     };
 
     // Send the POST request using Axios to send the email
@@ -86,13 +84,12 @@ async function sendEmail(token, emailDetails) {
     // Handle errors gracefully
     console.error('Error sending email:', error.response?.data || error.message);
     if (error.response) {
-      throw new Error(
-        `Failed to send email: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
-      );
+      throw new Error(`Failed to send email: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
     }
     throw new Error('Failed to send email');
   }
 }
+
 
 // @desc    Send Email report to both user and admin
 // @route   POST /api/mail
@@ -104,28 +101,28 @@ const sendMail = asyncHandler(async (req, res) => {
       return res.status(400).json({
         status: 400,
         message: 'Missing required field: fromEmail',
-        success: false,
+        success: false
       });
     }
     if (!req.body.toEmails || !Array.isArray(req.body.toEmails) || req.body.toEmails.length === 0) {
       return res.status(400).json({
         status: 400,
         message: 'Missing or invalid required field: toEmails (must be a non-empty array)',
-        success: false,
+        success: false
       });
     }
     if (!req.body.subject) {
       return res.status(400).json({
         status: 400,
         message: 'Missing required field: subject',
-        success: false,
+        success: false
       });
     }
     if (!req.body.mailBody) {
       return res.status(400).json({
         status: 400,
         message: 'Missing required field: mailBody',
-        success: false,
+        success: false
       });
     }
 
@@ -134,16 +131,16 @@ const sendMail = asyncHandler(async (req, res) => {
       from: req.body.fromEmail,
       to: req.body.toEmails,
       subject: req.body.subject,
-      mailBody: req.body.mailBody,
+      mailBody: req.body.mailBody
     };
-
+    
     const sentEmail = await sendEmail(accessToken, emailDetails);
 
     res.json({
       status: 200,
       message: 'Email sent successfully',
       success: true,
-      emailSent: sentEmail,
+      emailSent: sentEmail
     });
   } catch (error) {
     console.error('Error in sendMail controller:', error.message);
@@ -152,7 +149,7 @@ const sendMail = asyncHandler(async (req, res) => {
       status: 500,
       message: 'Failed to send email',
       success: false,
-      error: errorMessage,
+      error: errorMessage
     });
   }
 });

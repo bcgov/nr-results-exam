@@ -1,18 +1,18 @@
-import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { useThemePreference } from '../../utils/ThemePreference';
-import { toggleTheme } from '../../utils/ThemeFunction';
+import React from "react";
+import { Link, NavLink } from "react-router-dom";
+import { useThemePreference } from "../../utils/ThemePreference";
+import { toggleTheme } from "../../utils/ThemeFunction";
 import {
   HeaderContainer,
   Header,
   SkipToContent,
   HeaderGlobalBar,
   HeaderGlobalAction,
-  HeaderMenuButton,
-} from '@carbon/react';
-import * as Icons from '@carbon/icons-react';
+  HeaderMenuButton
+} from "@carbon/react";
+import * as Icons from "@carbon/icons-react";
 
-import './BCHeader.scss';
+import "./BCHeader.scss";
 
 const BCHeader: React.FC = () => {
   // Can only be imported at component level
@@ -21,13 +21,7 @@ const BCHeader: React.FC = () => {
   return (
     <>
       <HeaderContainer
-        render={({
-          isSideNavExpanded,
-          onClickSideNavExpand,
-        }: {
-          isSideNavExpanded: boolean;
-          onClickSideNavExpand: () => void;
-        }) => (
+        render={({ isSideNavExpanded, onClickSideNavExpand }: { isSideNavExpanded: boolean; onClickSideNavExpand: () => void }) => (
           <Header
             aria-label="React TS Carbon Quickstart"
             className="results-exam-header"
@@ -35,7 +29,7 @@ const BCHeader: React.FC = () => {
           >
             <SkipToContent />
             <HeaderMenuButton
-              aria-label={isSideNavExpanded ? 'Close menu' : 'Open menu'}
+              aria-label={isSideNavExpanded ? "Close menu" : "Open menu"}
               onClick={onClickSideNavExpand}
               isActive={isSideNavExpanded}
             />
@@ -60,14 +54,24 @@ const BCHeader: React.FC = () => {
             </HeaderNavigation> */}
             <HeaderGlobalBar>
               <HeaderGlobalAction
-                aria-label={theme === 'g10' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                aria-label={
+                  theme === "g10"
+                    ? "Switch to Dark Mode"
+                    : "Switch to Light Mode"
+                }
                 tooltipAlignment="end"
                 onClick={() => {
                   toggleTheme(theme, setTheme);
                 }}
               >
                 {/* Must have a child component */}
-                <>{theme === 'g10' ? <Icons.Asleep size={20} /> : <Icons.Light size={20} />}</>
+                <>
+                  {theme === "g10" ? (
+                    <Icons.Asleep size={20} />
+                  ) : (
+                    <Icons.Light size={20} />
+                  )}
+                </>
               </HeaderGlobalAction>
 
               <NavLink to="/help">
@@ -76,7 +80,10 @@ const BCHeader: React.FC = () => {
                 </HeaderGlobalAction>
               </NavLink>
 
-              <HeaderGlobalAction aria-label="App Switch" tooltipAlignment="end">
+              <HeaderGlobalAction
+                aria-label="App Switch"
+                tooltipAlignment="end"
+              >
                 <Icons.Switcher size={20} />
               </HeaderGlobalAction>
             </HeaderGlobalBar>

@@ -1,30 +1,34 @@
-import type { PropsWithChildren } from 'react';
+import type { PropsWithChildren } from "react";
 
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, beforeEach, expect, test, vi } from 'vitest';
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { describe, beforeEach, expect, test, vi } from "vitest";
 
-vi.mock('../../env', () => ({
+vi.mock("../../env", () => ({
   env: {
-    NODE_ENV: 'development',
-    VITE_ZONE: 'test',
-    VITE_USER_POOLS_WEB_CLIENT_ID: 'fake-client-id',
-  },
+    NODE_ENV: "development",
+    VITE_ZONE: "test",
+    VITE_USER_POOLS_WEB_CLIENT_ID: "fake-client-id"
+  }
 }));
 
-vi.mock('aws-amplify/auth', () => ({
+vi.mock("aws-amplify/auth", () => ({
   fetchAuthSession: vi.fn(),
   signInWithRedirect: vi.fn(),
-  signOut: vi.fn(),
+  signOut: vi.fn()
 }));
 
-vi.mock('../../services/AuthService', () => ({
+vi.mock("../../services/AuthService", () => ({
   parseToken: vi.fn(),
-  setAuthIdToken: vi.fn(),
+  setAuthIdToken: vi.fn()
 }));
 
-import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
-import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
-import { parseToken, setAuthIdToken } from '../../services/AuthService';
+import { AuthProvider, useAuth } from "../../contexts/AuthProvider";
+import {
+  fetchAuthSession,
+  signInWithRedirect,
+  signOut
+} from "aws-amplify/auth";
+import { parseToken, setAuthIdToken } from "../../services/AuthService";
 
 const mockFetchAuthSession = vi.mocked(fetchAuthSession);
 const mockSignInWithRedirect = vi.mocked(signInWithRedirect);
@@ -32,30 +36,32 @@ const mockSignOut = vi.mocked(signOut);
 const mockParseToken = vi.mocked(parseToken);
 const mockSetAuthIdToken = vi.mocked(setAuthIdToken);
 
-const wrapper = ({ children }: PropsWithChildren) => <AuthProvider>{children}</AuthProvider>;
+const wrapper = ({ children }: PropsWithChildren) => (
+  <AuthProvider>{children}</AuthProvider>
+);
 
-describe('AuthProvider', () => {
+describe("AuthProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  test('useAuth throws when not wrapped in provider', () => {
+  test("useAuth throws when not wrapped in provider", () => {
     expect(() => renderHook(() => useAuth())).toThrowError(
-      'useAuth must be used within an AuthProvider',
+      "useAuth must be used within an AuthProvider"
     );
   });
 
-  test('provides authenticated state when id token is available', async () => {
+  test("provides authenticated state when id token is available", async () => {
     const mockIdToken = {
-      toString: () => 'token-value',
-      payload: { sub: 'user-123' },
+      toString: () => "token-value",
+      payload: { sub: "user-123" }
     };
 
     mockFetchAuthSession.mockResolvedValueOnce({
-      tokens: { idToken: mockIdToken },
+      tokens: { idToken: mockIdToken }
     });
     mockParseToken.mockReturnValueOnce({
-      userName: 'jane.doe@gov.bc.ca',
+      userName: "jane.doe@gov.bc.ca"
     });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -64,10 +70,10 @@ describe('AuthProvider', () => {
 
     expect(result.current.isLoggedIn).toBe(true);
     expect(result.current.user).toEqual({
-      userName: 'jane.doe@gov.bc.ca',
+      userName: "jane.doe@gov.bc.ca"
     });
     expect(mockParseToken).toHaveBeenCalledWith(mockIdToken);
-    expect(mockSetAuthIdToken).toHaveBeenCalledWith('token-value');
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith("token-value");
 
     await act(async () => {
       await result.current.logout();
@@ -77,7 +83,7 @@ describe('AuthProvider', () => {
     expect(result.current.isLoggedIn).toBe(false);
   });
 
-  test('handles missing id token by resetting auth state', async () => {
+  test("handles missing id token by resetting auth state", async () => {
     mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -90,8 +96,8 @@ describe('AuthProvider', () => {
     expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
   });
 
-  test('recovers from session errors and formats login provider', async () => {
-    mockFetchAuthSession.mockRejectedValueOnce(new Error('session failed'));
+  test("recovers from session errors and formats login provider", async () => {
+    mockFetchAuthSession.mockRejectedValueOnce(new Error("session failed"));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -100,19 +106,19 @@ describe('AuthProvider', () => {
     expect(result.current.isLoggedIn).toBe(false);
 
     await act(async () => {
-      await result.current.login('idir');
+      await result.current.login("idir");
     });
 
     expect(mockSignInWithRedirect).toHaveBeenCalledWith({
-      provider: { custom: 'TEST-IDIR' },
+      provider: { custom: "TEST-IDIR" }
     });
 
     await act(async () => {
-      await result.current.login('bceid');
+      await result.current.login("bceid");
     });
 
     expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
-      provider: { custom: 'TEST-BCEIDBUSINESS' },
+      provider: { custom: "TEST-BCEIDBUSINESS" }
     });
   });
 });

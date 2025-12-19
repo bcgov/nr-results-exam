@@ -30,7 +30,7 @@ async function checkChes() {
   if (!clientId || !clientSecret) {
     return {
       status: 'skipped',
-      message: 'CHES credentials are not configured',
+      message: 'CHES credentials are not configured'
     };
   }
 
@@ -40,19 +40,19 @@ async function checkChes() {
     await axios.post(tokenUrl, 'grant_type=client_credentials', {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       auth: { username: clientId, password: clientSecret },
-      timeout: DEFAULT_TIMEOUT_MS,
+      timeout: DEFAULT_TIMEOUT_MS
     });
 
     return {
       status: 'ok',
       latencyMs: Date.now() - started,
-      endpoint: tokenUrl,
+      endpoint: tokenUrl
     };
   } catch (error) {
     return {
       status: 'error',
       latencyMs: Date.now() - started,
-      error: formatAxiosError(error),
+      error: formatAxiosError(error)
     };
   }
 }
@@ -79,7 +79,7 @@ function getMinioClient() {
     accessKey,
     secretKey,
     useSSL,
-    port,
+    port
   });
   minioConfigSignature = signature;
 
@@ -90,8 +90,8 @@ function withTimeout(promise, timeoutMs, message) {
   return Promise.race([
     promise,
     new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(message ?? 'Operation timed out')), timeoutMs),
-    ),
+      setTimeout(() => reject(new Error(message ?? 'Operation timed out')), timeoutMs)
+    )
   ]);
 }
 
@@ -100,7 +100,7 @@ async function checkObjectStore() {
   if (!bucketName) {
     return {
       status: 'skipped',
-      message: 'S3 bucket is not configured',
+      message: 'S3 bucket is not configured'
     };
   }
 
@@ -108,7 +108,7 @@ async function checkObjectStore() {
   if (!client) {
     return {
       status: 'skipped',
-      message: 'S3 credentials are not configured',
+      message: 'S3 credentials are not configured'
     };
   }
 
@@ -117,26 +117,26 @@ async function checkObjectStore() {
     const exists = await withTimeout(
       client.bucketExists(bucketName),
       DEFAULT_TIMEOUT_MS,
-      'Minio bucketExists timeout',
+      'Minio bucketExists timeout'
     );
     if (!exists) {
       return {
         status: 'error',
         latencyMs: Date.now() - started,
-        error: `Bucket ${bucketName} does not exist`,
+        error: `Bucket ${bucketName} does not exist`
       };
     }
 
     return {
       status: 'ok',
       latencyMs: Date.now() - started,
-      bucket: bucketName,
+      bucket: bucketName
     };
   } catch (error) {
     return {
       status: 'error',
       latencyMs: Date.now() - started,
-      error: error.message ?? 'Unable to reach bucket',
+      error: error.message ?? 'Unable to reach bucket'
     };
   }
 }
@@ -146,7 +146,7 @@ async function checkCognito() {
   if (!userPoolId) {
     return {
       status: 'skipped',
-      message: 'VITE_USER_POOLS_ID is not configured',
+      message: 'VITE_USER_POOLS_ID is not configured'
     };
   }
 
@@ -160,13 +160,13 @@ async function checkCognito() {
     return {
       status: 'ok',
       latencyMs: Date.now() - started,
-      endpoint: wellKnownUrl,
+      endpoint: wellKnownUrl
     };
   } catch (error) {
     return {
       status: 'error',
       latencyMs: Date.now() - started,
-      error: formatAxiosError(error),
+      error: formatAxiosError(error)
     };
   }
 }
@@ -175,7 +175,7 @@ async function runChecks() {
   const [ches, objectStorage, federatedAuth] = await Promise.all([
     checkChes(),
     checkObjectStore(),
-    checkCognito(),
+    checkCognito()
   ]);
 
   return { ches, objectStorage, federatedAuth };
@@ -228,10 +228,11 @@ async function getHealthStatus({ forceRefresh = false } = {}) {
     status,
     dependencies,
     checkedAt: lastUpdated,
-    refreshInProgress: Boolean(refreshPromise),
+    refreshInProgress: Boolean(refreshPromise)
   };
 }
 
 module.exports = {
-  getHealthStatus,
+  getHealthStatus
 };
+

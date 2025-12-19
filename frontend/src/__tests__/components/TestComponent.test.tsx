@@ -5,12 +5,15 @@ import TestComponent from '../../components/TestComponent';
 import { env } from '../../env';
 import type { FamLoginUser } from '../../services/AuthService';
 import type { Question } from '../../utils/examCalculations';
-import { sendAdminReport, sendUserReport } from '../../services/EmailService';
+import {
+  sendAdminReport,
+  sendUserReport
+} from '../../services/EmailService';
 import {
   calculateScorePercentage,
   generateResultJson,
   getRandomQuestions,
-  isPassing,
+  isPassing
 } from '../../utils/examCalculations';
 
 type FetchMock = ReturnType<typeof vi.fn>;
@@ -28,28 +31,28 @@ const mockQuestionBank: Question[] = [
     question: 'What is the capital of BC?',
     choices: [
       { option: 'Victoria', isCorrect: true },
-      { option: 'Vancouver', isCorrect: false },
-    ],
+      { option: 'Vancouver', isCorrect: false }
+    ]
   },
   {
     question: 'How many letters are in the word RESULTS?',
     choices: [
       { option: '6', isCorrect: false },
-      { option: '7', isCorrect: true },
-    ],
+      { option: '7', isCorrect: true }
+    ]
   },
   {
     question: 'Which colour is featured on the BC flag?',
     choices: [
       { option: 'Blue', isCorrect: true },
-      { option: 'Orange', isCorrect: false },
-    ],
-  },
+      { option: 'Orange', isCorrect: false }
+    ]
+  }
 ];
 
 vi.mock('../../services/EmailService', () => ({
   sendUserReport: vi.fn(),
-  sendAdminReport: vi.fn(),
+  sendAdminReport: vi.fn()
 }));
 
 vi.mock('../../utils/examCalculations', () => {
@@ -58,23 +61,23 @@ vi.mock('../../utils/examCalculations', () => {
       const expected = question.choices.findIndex((choice) => choice.isCorrect);
       return total + (answers[index] === expected ? 1 : 0);
     }, 0);
-    return questions.length === 0 ? 0 : Math.round((correct / questions.length) * 100);
+    return questions.length === 0
+      ? 0
+      : Math.round((correct / questions.length) * 100);
   });
 
   return {
     getRandomQuestions: vi.fn(() => mockQuestionBank),
     calculateScorePercentage: computeScore,
-    isPassing: vi.fn(
-      (questions: Question[], answers: number[]) => computeScore(questions, answers) >= 70,
-    ),
+    isPassing: vi.fn((questions: Question[], answers: number[]) => computeScore(questions, answers) >= 70),
     generateResultJson: vi.fn((questions: Question[], answers: number[]) =>
       questions.map((question, index) => ({
         question: question.question,
         userAnswered: answers[index] ?? null,
         answer: question.choices.find((choice) => choice.isCorrect)?.option ?? '',
-        isCorrect: answers[index] === question.choices.findIndex((choice) => choice.isCorrect),
-      })),
-    ),
+        isCorrect: answers[index] === question.choices.findIndex((choice) => choice.isCorrect)
+      }))
+    )
   };
 });
 
@@ -84,7 +87,7 @@ const user: FamLoginUser = {
   userName: 'jane.doe',
   email: 'jane.doe@gov.bc.ca',
   displayName: 'Jane Doe',
-  groups: [],
+  groups: []
 };
 
 const renderComponent = () =>
@@ -92,7 +95,7 @@ const renderComponent = () =>
 
 const resolveFetchWithQuestions = (fetchMock: FetchMock) => {
   fetchMock.mockResolvedValue({
-    json: vi.fn().mockResolvedValue(mockQuestionBank),
+    json: vi.fn().mockResolvedValue(mockQuestionBank)
   });
 };
 
@@ -126,10 +129,7 @@ describe('TestComponent', () => {
 
     await screen.findByText('Online Test');
     expect(getRandomQuestions).toHaveBeenCalledWith(mockQuestionBank, 10);
-    expect(global.fetch).toHaveBeenCalledWith(
-      '/api/questions/questionsA',
-      expect.objectContaining({}),
-    );
+    expect(global.fetch).toHaveBeenCalledWith('/api/questions/questionsA', expect.objectContaining({}));
 
     expectRadioSelections([0, 1, 0]);
 
@@ -141,7 +141,9 @@ describe('TestComponent', () => {
     });
 
     expect(screen.getByText(/Congratulations! You have passed/i)).toBeInTheDocument();
-    expect(screen.getByText(/Email report sent successfully/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Email report sent successfully/i)
+    ).toBeInTheDocument();
     expect(generateResultJson).toHaveBeenCalled();
     expect(calculateScorePercentage).toHaveBeenCalled();
     expect(isPassing).toHaveBeenCalled();
