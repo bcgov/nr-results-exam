@@ -32,9 +32,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 4. Create the AuthProvider component with explicit typing
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [ user, setUser ] = useState<FamLoginUser | undefined>(undefined);
-  const [ userRoles, setUserRoles ] = useState<string[] | undefined>(undefined);
-  const [ isLoading, setIsLoading ] = useState(true);
+  const [user, setUser] = useState<FamLoginUser | undefined>(undefined);
+  const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   const appEnv = env.VITE_ZONE ?? 'DEV';
 
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         provider: { custom: envProvider.toUpperCase() },
       });
     },
-    [ appEnv ],
+    [appEnv],
   );
 
   const logout = useCallback(async () => {
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       login,
       logout,
     }),
-    [ user, userRoles, isLoading, login, logout ],
+    [user, userRoles, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
@@ -116,7 +116,7 @@ const loadUserToken = async (): Promise<JWT | undefined> => {
     // This is for test only
     const token = getUserTokenFromCookie();
     if (token) {
-      const jwtBody = JSON.parse(atob(token.split('.')[ 1 ]));
+      const jwtBody = JSON.parse(atob(token.split('.')[1]));
       return { payload: jwtBody };
     }
     throw new Error('No token found');
@@ -137,5 +137,5 @@ const getCookie = (name: string): string => {
   const cookie = document.cookie
     .split(';')
     .find((cookieValue) => cookieValue.trim().startsWith(name));
-  return cookie ? cookie.split('=')[ 1 ] : '';
+  return cookie ? cookie.split('=')[1] : '';
 };
