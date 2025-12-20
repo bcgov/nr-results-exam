@@ -1,13 +1,13 @@
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
-import type { Mock } from "vitest";
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import type { Mock } from 'vitest';
 
-import ProtectedRoute from "../../routes/ProtectedRoute";
-import { useAuth } from "../../contexts/AuthProvider";
+import ProtectedRoute from '../../routes/ProtectedRoute';
+import { useAuth } from '../../contexts/AuthProvider';
 
-vi.mock("../../contexts/AuthProvider", () => ({
-  useAuth: vi.fn()
+vi.mock('../../contexts/AuthProvider', () => ({
+  useAuth: vi.fn(),
 }));
 
 type MockAuthState = {
@@ -28,44 +28,43 @@ const createAuthState = (overrides?: Partial<MockAuthState>): MockAuthState => (
   isLoading: false,
   login: vi.fn(),
   logout: vi.fn(),
-  ...overrides
+  ...overrides,
 });
 
 const renderWithRoutes = () =>
   render(
-    <MemoryRouter initialEntries={["/protected"]}>
+    <MemoryRouter initialEntries={['/protected']}>
       <Routes>
         <Route element={<ProtectedRoute redirectTo="/login" />}>
           <Route path="/protected" element={<div>Secure Content</div>} />
         </Route>
         <Route path="/login" element={<div>Login Page</div>} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 
-describe("ProtectedRoute", () => {
+describe('ProtectedRoute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  test("redirects unauthenticated users and triggers logout", () => {
+  test('redirects unauthenticated users and triggers logout', () => {
     const authState = createAuthState({ isLoggedIn: false });
     mockedUseAuth.mockReturnValue(authState);
 
     renderWithRoutes();
 
     expect(authState.logout).toHaveBeenCalledTimes(1);
-    expect(screen.getByText("Login Page")).toBeInTheDocument();
+    expect(screen.getByText('Login Page')).toBeInTheDocument();
   });
 
-  test("renders outlet when user is authenticated", () => {
+  test('renders outlet when user is authenticated', () => {
     const authState = createAuthState({ isLoggedIn: true });
     mockedUseAuth.mockReturnValue(authState);
 
     renderWithRoutes();
 
     expect(authState.logout).not.toHaveBeenCalled();
-    expect(screen.getByText("Secure Content")).toBeInTheDocument();
+    expect(screen.getByText('Secure Content')).toBeInTheDocument();
   });
 });
-

@@ -1,8 +1,8 @@
-import axios from 'axios'
-import { env } from '../env'
-import { getAuthIdToken } from './AuthService'
+import axios from 'axios';
+import { env } from '../env';
+import { getAuthIdToken } from './AuthService';
 
-const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '')
+const backendUrl = (env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 
 interface EmailParams {
   fromEmail: string;
@@ -11,9 +11,14 @@ interface EmailParams {
   mailBody: string;
 }
 
-export const sendUserReport = async (userName: string, userEmail: string, percentage: number, testName: string) => {
-  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
-  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
+export const sendUserReport = async (
+  userName: string,
+  userEmail: string,
+  percentage: number,
+  testName: string,
+) => {
+  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
+  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red';
 
   const emailBody = `
     <html>
@@ -37,32 +42,30 @@ export const sendUserReport = async (userName: string, userEmail: string, percen
         </div>
       </body>
     </html>
-  `
+  `;
 
-  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
+  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca';
 
   const emailParams: EmailParams = {
     fromEmail,
     toEmails: [userEmail],
     subject: `${testName} user attempt report : ${userName}`,
-    mailBody: emailBody
-  }
+    mailBody: emailBody,
+  };
 
   try {
-    const token = getAuthIdToken()
+    const token = getAuthIdToken();
     if (!token) {
-      console.warn('No authentication token available for user mail request')
+      console.warn('No authentication token available for user mail request');
     }
-    const config = token
-      ? { headers: { Authorization: `Bearer ${token}` } }
-      : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
-    return 'success'
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config);
+    return 'success';
   } catch (error) {
-    console.error('Error sending user report email:', error)
-    return 'error'
+    console.error('Error sending user report email:', error);
+    return 'error';
   }
-}
+};
 
 interface ResultItem {
   question: string;
@@ -71,17 +74,23 @@ interface ResultItem {
   isCorrect: boolean;
 }
 
-export const sendAdminReport = async (userName: string, userEmail: string, percentage: number, testName: string, results: ResultItem[]) => {
+export const sendAdminReport = async (
+  userName: string,
+  userEmail: string,
+  percentage: number,
+  testName: string,
+  results: ResultItem[],
+) => {
   // Only send admin emails in PROD and TEST environments, not in PR (dev) environments
-  const zone = String(env.VITE_ZONE || '').toLowerCase()
-  const isProdOrTest = zone === 'prod' || zone === 'test'
-  
+  const zone = String(env.VITE_ZONE || '').toLowerCase();
+  const isProdOrTest = zone === 'prod' || zone === 'test';
+
   if (!isProdOrTest) {
-    return 'success'
+    return 'success';
   }
 
-  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed'
-  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red'
+  const passOrFail = percentage >= 50 ? 'Passed' : 'Failed';
+  const passOrFailColor = passOrFail === 'Passed' ? 'green' : 'red';
 
   const emailBody = `
       <html>
@@ -102,47 +111,49 @@ export const sendAdminReport = async (userName: string, userEmail: string, perce
             </p>
             <h2>Questions Answered:</h2>
             <ul>
-              ${results.map(result => `
+              ${results
+                .map(
+                  (result) => `
                 <li>
                   <p><strong>Question:</strong> ${result.question}</p>
                   <p><strong>User Answered:</strong> ${result.userAnswered}</p>
                   <p><strong>Correct Answer:</strong> ${result.answer}</p>
                   <p><strong>Is Correct:</strong> ${result.isCorrect ? 'Yes' : 'No'}</p>
                 </li>
-              `).join('')}
+              `,
+                )
+                .join('')}
             </ul>
             <p>Regards,<br>RESULTS Bot</p>
           </div>
         </body>
       </html>
-    `
+    `;
 
-  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca'
-  const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca'
+  const fromEmail = env.VITE_CHES_FROM_EMAIL || 'resultsaccess@gov.bc.ca';
+  const adminEmail = env.VITE_CHES_ADMIN_EMAIL || 'resultsaccess@gov.bc.ca';
 
   // In TEST environment, send admin report to test taker's email
   // In PROD environment, send to admin email address
-  const recipientEmail = zone === 'test' ? userEmail : adminEmail
+  const recipientEmail = zone === 'test' ? userEmail : adminEmail;
 
   const emailParams: EmailParams = {
     fromEmail,
     toEmails: [recipientEmail],
     subject: `${testName} admin report : ${userName}`,
-    mailBody: emailBody
-  }
+    mailBody: emailBody,
+  };
 
   try {
-    const token = getAuthIdToken()
+    const token = getAuthIdToken();
     if (!token) {
-      console.warn('No authentication token available for admin mail request')
+      console.warn('No authentication token available for admin mail request');
     }
-    const config = token
-      ? { headers: { Authorization: `Bearer ${token}` } }
-      : {}
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config)
-    return 'success'
+    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    await axios.post(`${backendUrl}/api/mail`, emailParams, config);
+    return 'success';
   } catch (error) {
-    console.error('Error sending admin report email:', error)
-    return 'error'
+    console.error('Error sending admin report email:', error);
+    return 'error';
   }
-}
+};

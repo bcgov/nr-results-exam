@@ -1,6 +1,6 @@
-import React from "react";
-import { useAuth } from "../../contexts/AuthProvider";
-import TestComponent from "../../components/TestComponent";
+import React from 'react';
+import { useAuth } from '../../contexts/AuthProvider';
+import TestComponent from '../../components/TestComponent';
 
 const TestC: React.FC = () => {
   const { user } = useAuth();
