@@ -3,10 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import RightPanelTitle from '../../components/RightPanelTitle';
-import { IconButton } from '@carbon/react';
-import { Close } from '@carbon/icons-react';
 
-const renderComponent = (title: string, closeFn: Function) => {
+const renderComponent = (title: string, closeFn: () => void) => {
   render(<RightPanelTitle title={title} closeFn={closeFn} />);
 };
 

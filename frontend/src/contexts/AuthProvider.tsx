@@ -1,4 +1,12 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, ReactNode } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
 import { parseToken, FamLoginUser, setAuthIdToken } from '../services/AuthService';
 import { env } from '../env';
@@ -24,9 +32,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // 4. Create the AuthProvider component with explicit typing
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<FamLoginUser | undefined>(undefined);
-  const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  const [ user, setUser ] = useState<FamLoginUser | undefined>(undefined);
+  const [ userRoles, setUserRoles ] = useState<string[] | undefined>(undefined);
+  const [ isLoading, setIsLoading ] = useState(true);
 
   const appEnv = env.VITE_ZONE ?? 'DEV';
 
@@ -54,22 +62,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const login = async (provider: ProviderType) => {
-    const envProvider =
-      provider.localeCompare('idir') === 0
-        ? `${appEnv.toLocaleUpperCase()}-IDIR`
-        : `${appEnv.toLocaleUpperCase()}-BCEIDBUSINESS`;
+  const login = useCallback(
+    async (provider: ProviderType) => {
+      const envProvider =
+        provider.localeCompare('idir') === 0
+          ? `${appEnv.toLocaleUpperCase()}-IDIR`
+          : `${appEnv.toLocaleUpperCase()}-BCEIDBUSINESS`;
 
-    signInWithRedirect({
-      provider: { custom: envProvider.toUpperCase() },
-    });
-  };
+      signInWithRedirect({
+        provider: { custom: envProvider.toUpperCase() },
+      });
+    },
+    [ appEnv ],
+  );
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOut();
     setUser(undefined);
     setUserRoles(undefined);
-  };
+  }, []);
 
   const contextValue: AuthContextType = useMemo(
     () => ({
@@ -80,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       login,
       logout,
     }),
-    [user, userRoles, isLoading],
+    [ user, userRoles, isLoading, login, logout ],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
@@ -105,7 +116,7 @@ const loadUserToken = async (): Promise<JWT | undefined> => {
     // This is for test only
     const token = getUserTokenFromCookie();
     if (token) {
-      const jwtBody = JSON.parse(atob(token.split('.')[1]));
+      const jwtBody = JSON.parse(atob(token.split('.')[ 1 ]));
       return { payload: jwtBody };
     }
     throw new Error('No token found');
@@ -126,5 +137,5 @@ const getCookie = (name: string): string => {
   const cookie = document.cookie
     .split(';')
     .find((cookieValue) => cookieValue.trim().startsWith(name));
-  return cookie ? cookie.split('=')[1] : '';
+  return cookie ? cookie.split('=')[ 1 ] : '';
 };

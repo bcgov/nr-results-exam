@@ -39,7 +39,7 @@ describe('Dashboard', () => {
   it('should render the component', () => {
     (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({ user: null }); // Mock user as null (loading state)
     renderComponent();
-    expect(screen.getByText('Loading...')).toBeInTheDocument;
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('should display user details when user is available', () => {

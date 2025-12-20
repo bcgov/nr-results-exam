@@ -3,7 +3,7 @@ import Landing from '../../screens/Landing';
 import { describe, expect, it, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useLottie } from 'lottie-react';
-import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
+import { useAuth } from '../../contexts/AuthProvider';
 
 // Mock useLottie to control the lottie animation
 vi.mock('lottie-react', () => ({

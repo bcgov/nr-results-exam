@@ -1,6 +1,6 @@
 import React from 'react';
 import StandardCard from '../../components/StandardCard';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
