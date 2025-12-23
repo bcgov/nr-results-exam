@@ -198,4 +198,43 @@ describe('TestComponent', () => {
       expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
     });
   });
+
+  it('re-fetches questions when questionFileName prop changes', async () => {
+    resolveFetchWithQuestions(global.fetch as FetchMock);
+    const { rerender } = render(
+      <TestComponent user={user} questionFileName="A" testName="Access" />,
+    );
+
+    await screen.findByText('Online Test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/questions/questionsA',
+      expect.objectContaining({}),
+    );
+
+    const initialCallCount = (global.fetch as FetchMock).mock.calls.length;
+
+    rerender(<TestComponent user={user} questionFileName="B" testName="Access" />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsB',
+        expect.objectContaining({}),
+      );
+    });
+
+    expect((global.fetch as FetchMock).mock.calls.length).toBeGreaterThan(initialCallCount);
+  });
+
+  it('handles JSON parsing errors when fetching questions', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
+    } as unknown as Response);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
+    });
+  });
 });

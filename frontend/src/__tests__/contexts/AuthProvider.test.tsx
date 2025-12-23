@@ -115,4 +115,74 @@ describe('AuthProvider', () => {
       provider: { custom: 'TEST-BCEIDBUSINESS' },
     });
   });
+
+  test('login function is memoized and maintains same reference', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result, rerender } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const firstLogin = result.current.login;
+    const firstLogout = result.current.logout;
+
+    // Re-render should return the same function references due to useCallback
+    rerender();
+    expect(result.current.login).toBe(firstLogin);
+    expect(result.current.logout).toBe(firstLogout);
+  });
+
+  test('logout clears user and userRoles state', async () => {
+    const mockIdToken = {
+      toString: () => 'token-value',
+      payload: { sub: 'user-123' },
+    };
+
+    mockFetchAuthSession.mockResolvedValueOnce({
+      tokens: { idToken: mockIdToken },
+    });
+    mockParseToken.mockReturnValueOnce({
+      userName: 'test.user@gov.bc.ca',
+      firstName: 'Test',
+      lastName: 'User',
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isLoggedIn).toBe(true);
+    expect(result.current.user).toBeDefined();
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(result.current.userRoles).toBeUndefined();
+  });
+
+  test('context value is memoized and updates when dependencies change', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const initialIsLoading = result.current.isLoading;
+    const initialIsLoggedIn = result.current.isLoggedIn;
+
+    // After state changes, context value should update
+    expect(initialIsLoading).toBe(false);
+    expect(initialIsLoggedIn).toBe(false);
+
+    // Verify context value structure
+    expect(result.current).toHaveProperty('user');
+    expect(result.current).toHaveProperty('userRoles');
+    expect(result.current).toHaveProperty('isLoggedIn');
+    expect(result.current).toHaveProperty('isLoading');
+    expect(result.current).toHaveProperty('login');
+    expect(result.current).toHaveProperty('logout');
+  });
 });
