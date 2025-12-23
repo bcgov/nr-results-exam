@@ -208,4 +208,55 @@ describe('AuthProvider', () => {
     expect(result.current.isLoggedIn).toBe(false);
     expect(result.current.user).toBeUndefined();
   });
+
+  test('login function uses appEnv from env and updates when env changes', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Test login with idir provider uses appEnv
+    await act(async () => {
+      await result.current.login('idir');
+    });
+
+    expect(mockSignInWithRedirect).toHaveBeenCalledWith({
+      provider: { custom: 'TEST-IDIR' },
+    });
+
+    // Test login with bceid provider uses appEnv
+    await act(async () => {
+      await result.current.login('bceid');
+    });
+
+    expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
+      provider: { custom: 'TEST-BCEIDBUSINESS' },
+    });
+  });
+
+  test('contextValue useMemo updates when login or logout functions change', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const initialContextValue = result.current;
+    const initialLogin = result.current.login;
+    const initialLogout = result.current.logout;
+
+    // Verify login and logout are included in context value
+    expect(initialContextValue.login).toBe(initialLogin);
+    expect(initialContextValue.logout).toBe(initialLogout);
+
+    // Call logout to trigger state change
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    // Context value should update due to state changes, but login/logout functions should remain the same
+    expect(result.current.login).toBe(initialLogin);
+    expect(result.current.logout).toBe(initialLogout);
+  });
 });

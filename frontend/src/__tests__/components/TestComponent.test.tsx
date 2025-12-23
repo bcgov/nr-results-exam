@@ -251,4 +251,78 @@ describe('TestComponent', () => {
       expect(getRandomQuestions).toHaveBeenCalled();
     });
   });
+
+  it('handles fetch when token is not available', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const mockFetch = global.fetch as FetchMock;
+    resolveFetchWithQuestions(mockFetch);
+
+    // Import and clear the token to simulate no token scenario
+    const { setAuthIdToken } = await import('../../services/AuthService');
+    setAuthIdToken(null);
+
+    renderComponent();
+
+    await waitFor(() => {
+      // Fetch should still be called even without token
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsA',
+        expect.objectContaining({}),
+      );
+    });
+
+    // Verify warning was logged when token is null (covers the new code path)
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'No authentication token available for questions request',
+    );
+
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('handles error when getRandomQuestions throws', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockResolvedValue(mockQuestionBank),
+    } as unknown as Response);
+
+    // Mock getRandomQuestions to throw
+    (getRandomQuestions as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
+      throw new Error('Randomization failed');
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
+    });
+  });
+
+  it('useCallback dependency on questionFileName triggers refetch', async () => {
+    resolveFetchWithQuestions(global.fetch as FetchMock);
+
+    const { rerender } = render(
+      <TestComponent user={user} questionFileName="A" testName="Access" />,
+    );
+
+    await screen.findByText('Online Test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/questions/questionsA',
+      expect.objectContaining({}),
+    );
+
+    const callCountBefore = (global.fetch as FetchMock).mock.calls.length;
+
+    // Change questionFileName prop - should trigger useCallback to recreate fetchQuestions
+    rerender(<TestComponent user={user} questionFileName="C" testName="Access" />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsC',
+        expect.objectContaining({}),
+      );
+    });
+
+    // Verify fetch was called again due to dependency change
+    expect((global.fetch as FetchMock).mock.calls.length).toBeGreaterThan(callCountBefore);
+  });
 });
