@@ -15,13 +15,13 @@ function getJwksClient() {
     }
     const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
     const JWKS_URI = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
-    
+
     jwksClientInstance = jwksClient({
       jwksUri: JWKS_URI,
       cache: true,
       cacheMaxAge: 600000, // 10 minutes
       rateLimit: true,
-      jwksRequestsPerMinute: 10
+      jwksRequestsPerMinute: 10,
     });
   }
   return jwksClientInstance;
@@ -50,23 +50,25 @@ function getKey(header, callback) {
 const authenticateToken = (req, res, next) => {
   // Get the authorization header
   const authHeader = req.headers['authorization'];
-  
+
   if (!authHeader) {
     return res.status(401).json({
       success: false,
       message: 'Authentication required',
-      error: 'No authorization header provided'
+      error: 'No authorization header provided',
     });
   }
 
   // Extract the token from "Bearer <token>"
-  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : authHeader.trim();
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.substring(7).trim()
+    : authHeader.trim();
 
   if (!token) {
     return res.status(401).json({
       success: false,
       message: 'Authentication required',
-      error: 'No token provided'
+      error: 'No token provided',
     });
   }
 
@@ -77,7 +79,7 @@ const authenticateToken = (req, res, next) => {
     return res.status(500).json({
       success: false,
       message: 'Authentication configuration error',
-      error: 'User pool not configured'
+      error: 'User pool not configured',
     });
   }
 
@@ -85,27 +87,27 @@ const authenticateToken = (req, res, next) => {
   const handleVerification = (err, decoded) => {
     if (err) {
       console.error('Token verification error:', err.message);
-      
+
       if (err.name === 'TokenExpiredError') {
         return res.status(401).json({
           success: false,
           message: 'Token expired',
-          error: 'Your session has expired. Please log in again.'
+          error: 'Your session has expired. Please log in again.',
         });
       }
-      
+
       if (err.name === 'JsonWebTokenError') {
         return res.status(401).json({
           success: false,
           message: 'Invalid token',
-          error: 'Invalid or expired token'
+          error: 'Invalid or expired token',
         });
       }
-      
+
       return res.status(500).json({
         success: false,
         message: 'Authentication configuration error',
-        error: 'Unable to verify token'
+        error: 'Unable to verify token',
       });
     }
 
@@ -116,26 +118,31 @@ const authenticateToken = (req, res, next) => {
       displayName: decoded['custom:idp_display_name'],
       idpProvider: decoded['custom:idp_name'],
       sub: decoded.sub,
-      tokenPayload: decoded
+      tokenPayload: decoded,
     };
 
     next();
   };
 
   try {
-    jwt.verify(token, getKey, {
-      algorithms: ['RS256']
-    }, handleVerification);
+    jwt.verify(
+      token,
+      getKey,
+      {
+        algorithms: ['RS256'],
+      },
+      handleVerification,
+    );
   } catch (error) {
     console.error('Token verification error:', error.message);
     return res.status(500).json({
       success: false,
       message: 'Authentication configuration error',
-      error: 'Unable to verify token'
+      error: 'Unable to verify token',
     });
   }
 };
 
 module.exports = {
-  authenticateToken
+  authenticateToken,
 };

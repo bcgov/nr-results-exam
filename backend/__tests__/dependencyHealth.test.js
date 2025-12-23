@@ -13,7 +13,7 @@ const ENV_KEYS = [
   'S3_SECRETKEY',
   'S3_BUCKETNAME',
   'VITE_USER_POOLS_ID',
-  'VITE_COGNITO_REGION'
+  'VITE_COGNITO_REGION',
 ];
 
 const ORIGINAL_ENV = {};
@@ -107,4 +107,3 @@ describe('dependencyHealth', () => {
     assert.strictEqual(refreshed.status, 'error');
   });
 });
-

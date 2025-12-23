@@ -6,7 +6,7 @@ const ErrorHandling: React.FC = () => {
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 401) {
-      return <Navigate to={"/"} replace />
+      return <Navigate to={'/'} replace />;
     } else if (error.status === 403) {
       return <h1>Unauthorized</h1>;
     } else if (error.status === 404) {

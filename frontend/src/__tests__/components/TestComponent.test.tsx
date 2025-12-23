@@ -2,23 +2,17 @@ import React from 'react';
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import TestComponent from '../../components/TestComponent';
-import { env } from '../../env';
 import type { FamLoginUser } from '../../services/AuthService';
 import type { Question } from '../../utils/examCalculations';
-import {
-  sendAdminReport,
-  sendUserReport
-} from '../../services/EmailService';
+import { sendAdminReport, sendUserReport } from '../../services/EmailService';
 import {
   calculateScorePercentage,
   generateResultJson,
   getRandomQuestions,
-  isPassing
+  isPassing,
 } from '../../utils/examCalculations';
 
 type FetchMock = ReturnType<typeof vi.fn>;
-
-type EmailStatus = 'success' | 'error';
 
 declare global {
   interface Window {
@@ -31,28 +25,28 @@ const mockQuestionBank: Question[] = [
     question: 'What is the capital of BC?',
     choices: [
       { option: 'Victoria', isCorrect: true },
-      { option: 'Vancouver', isCorrect: false }
-    ]
+      { option: 'Vancouver', isCorrect: false },
+    ],
   },
   {
     question: 'How many letters are in the word RESULTS?',
     choices: [
       { option: '6', isCorrect: false },
-      { option: '7', isCorrect: true }
-    ]
+      { option: '7', isCorrect: true },
+    ],
   },
   {
     question: 'Which colour is featured on the BC flag?',
     choices: [
       { option: 'Blue', isCorrect: true },
-      { option: 'Orange', isCorrect: false }
-    ]
-  }
+      { option: 'Orange', isCorrect: false },
+    ],
+  },
 ];
 
 vi.mock('../../services/EmailService', () => ({
   sendUserReport: vi.fn(),
-  sendAdminReport: vi.fn()
+  sendAdminReport: vi.fn(),
 }));
 
 vi.mock('../../utils/examCalculations', () => {
@@ -61,23 +55,23 @@ vi.mock('../../utils/examCalculations', () => {
       const expected = question.choices.findIndex((choice) => choice.isCorrect);
       return total + (answers[index] === expected ? 1 : 0);
     }, 0);
-    return questions.length === 0
-      ? 0
-      : Math.round((correct / questions.length) * 100);
+    return questions.length === 0 ? 0 : Math.round((correct / questions.length) * 100);
   });
 
   return {
     getRandomQuestions: vi.fn(() => mockQuestionBank),
     calculateScorePercentage: computeScore,
-    isPassing: vi.fn((questions: Question[], answers: number[]) => computeScore(questions, answers) >= 70),
+    isPassing: vi.fn(
+      (questions: Question[], answers: number[]) => computeScore(questions, answers) >= 70,
+    ),
     generateResultJson: vi.fn((questions: Question[], answers: number[]) =>
       questions.map((question, index) => ({
         question: question.question,
         userAnswered: answers[index] ?? null,
         answer: question.choices.find((choice) => choice.isCorrect)?.option ?? '',
-        isCorrect: answers[index] === question.choices.findIndex((choice) => choice.isCorrect)
-      }))
-    )
+        isCorrect: answers[index] === question.choices.findIndex((choice) => choice.isCorrect),
+      })),
+    ),
   };
 });
 
@@ -87,7 +81,7 @@ const user: FamLoginUser = {
   userName: 'jane.doe',
   email: 'jane.doe@gov.bc.ca',
   displayName: 'Jane Doe',
-  groups: []
+  groups: [],
 };
 
 const renderComponent = () =>
@@ -95,7 +89,7 @@ const renderComponent = () =>
 
 const resolveFetchWithQuestions = (fetchMock: FetchMock) => {
   fetchMock.mockResolvedValue({
-    json: vi.fn().mockResolvedValue(mockQuestionBank)
+    json: vi.fn().mockResolvedValue(mockQuestionBank),
   });
 };
 
@@ -129,7 +123,10 @@ describe('TestComponent', () => {
 
     await screen.findByText('Online Test');
     expect(getRandomQuestions).toHaveBeenCalledWith(mockQuestionBank, 10);
-    expect(global.fetch).toHaveBeenCalledWith('/api/questions/questionsA', expect.objectContaining({}));
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/questions/questionsA',
+      expect.objectContaining({}),
+    );
 
     expectRadioSelections([0, 1, 0]);
 
@@ -141,9 +138,7 @@ describe('TestComponent', () => {
     });
 
     expect(screen.getByText(/Congratulations! You have passed/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Email report sent successfully/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Email report sent successfully/i)).toBeInTheDocument();
     expect(generateResultJson).toHaveBeenCalled();
     expect(calculateScorePercentage).toHaveBeenCalled();
     expect(isPassing).toHaveBeenCalled();
@@ -202,5 +197,132 @@ describe('TestComponent', () => {
     await waitFor(() => {
       expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
     });
+  });
+
+  it('re-fetches questions when questionFileName prop changes', async () => {
+    resolveFetchWithQuestions(global.fetch as FetchMock);
+    const { rerender } = render(
+      <TestComponent user={user} questionFileName="A" testName="Access" />,
+    );
+
+    await screen.findByText('Online Test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/questions/questionsA',
+      expect.objectContaining({}),
+    );
+
+    const initialCallCount = (global.fetch as FetchMock).mock.calls.length;
+
+    rerender(<TestComponent user={user} questionFileName="B" testName="Access" />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsB',
+        expect.objectContaining({}),
+      );
+    });
+
+    expect((global.fetch as FetchMock).mock.calls.length).toBeGreaterThan(initialCallCount);
+  });
+
+  it('handles JSON parsing errors when fetching questions', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
+    } as unknown as Response);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
+    });
+  });
+
+  it('handles empty question array from API', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockResolvedValue([]),
+    } as unknown as Response);
+
+    renderComponent();
+
+    await waitFor(() => {
+      // Component should handle empty array gracefully
+      expect(getRandomQuestions).toHaveBeenCalled();
+    });
+  });
+
+  it('handles fetch when token is not available', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const mockFetch = global.fetch as FetchMock;
+    resolveFetchWithQuestions(mockFetch);
+
+    // Import and clear the token to simulate no token scenario
+    const { setAuthIdToken } = await import('../../services/AuthService');
+    setAuthIdToken(null);
+
+    renderComponent();
+
+    await waitFor(() => {
+      // Fetch should still be called even without token
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsA',
+        expect.objectContaining({}),
+      );
+    });
+
+    // Verify warning was logged when token is null (covers the new code path)
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'No authentication token available for questions request',
+    );
+
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('handles error when getRandomQuestions throws', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockResolvedValue(mockQuestionBank),
+    } as unknown as Response);
+
+    // Mock getRandomQuestions to throw
+    (getRandomQuestions as ReturnType<typeof vi.fn>).mockImplementationOnce(() => {
+      throw new Error('Randomization failed');
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
+    });
+  });
+
+  it('useCallback dependency on questionFileName triggers refetch', async () => {
+    resolveFetchWithQuestions(global.fetch as FetchMock);
+
+    const { rerender } = render(
+      <TestComponent user={user} questionFileName="A" testName="Access" />,
+    );
+
+    await screen.findByText('Online Test');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/questions/questionsA',
+      expect.objectContaining({}),
+    );
+
+    const callCountBefore = (global.fetch as FetchMock).mock.calls.length;
+
+    // Change questionFileName prop - should trigger useCallback to recreate fetchQuestions
+    rerender(<TestComponent user={user} questionFileName="C" testName="Access" />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/questions/questionsC',
+        expect.objectContaining({}),
+      );
+    });
+
+    // Verify fetch was called again due to dependency change
+    expect((global.fetch as FetchMock).mock.calls.length).toBeGreaterThan(callCountBefore);
   });
 });

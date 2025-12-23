@@ -8,9 +8,7 @@ interface ProtectedRouteProps {
   redirectTo?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  redirectTo = '/'
-}) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ redirectTo = '/' }) => {
   const { isLoggedIn, logout } = useAuth();
 
   // 1. If authentication is required and the user is not logged in, redirect to login

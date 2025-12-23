@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
-import { Tile } from "@carbon/react";
-import * as Pictograms from "@carbon/pictograms-react";
+import { Tile } from '@carbon/react';
+import * as Pictograms from '@carbon/pictograms-react';
 
-import "./style.scss";
+import './style.scss';
 
 interface StandardCardProps {
   header: string;
@@ -12,12 +12,7 @@ interface StandardCardProps {
   image: string;
 }
 
-const StandardCard = ({
-  header,
-  description,
-  url,
-  image
-}: StandardCardProps) => {
+const StandardCard = ({ header, description, url, image }: StandardCardProps) => {
   const navigate = useNavigate();
   const Image = Pictograms[image];
   return (
@@ -29,10 +24,7 @@ const StandardCard = ({
             <p>{description}</p>
           </div>
 
-          <Image
-            className="std-card-pictogram"
-            data-testid="std-card-pictogram"
-          />
+          <Image className="std-card-pictogram" data-testid="std-card-pictogram" />
         </div>
       </div>
     </Tile>

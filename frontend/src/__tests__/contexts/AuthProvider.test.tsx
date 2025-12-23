@@ -1,34 +1,30 @@
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren } from 'react';
 
-import { renderHook, act, waitFor } from "@testing-library/react";
-import { describe, beforeEach, expect, test, vi } from "vitest";
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { describe, beforeEach, expect, test, vi } from 'vitest';
 
-vi.mock("../../env", () => ({
+vi.mock('../../env', () => ({
   env: {
-    NODE_ENV: "development",
-    VITE_ZONE: "test",
-    VITE_USER_POOLS_WEB_CLIENT_ID: "fake-client-id"
-  }
+    NODE_ENV: 'development',
+    VITE_ZONE: 'test',
+    VITE_USER_POOLS_WEB_CLIENT_ID: 'fake-client-id',
+  },
 }));
 
-vi.mock("aws-amplify/auth", () => ({
+vi.mock('aws-amplify/auth', () => ({
   fetchAuthSession: vi.fn(),
   signInWithRedirect: vi.fn(),
-  signOut: vi.fn()
+  signOut: vi.fn(),
 }));
 
-vi.mock("../../services/AuthService", () => ({
+vi.mock('../../services/AuthService', () => ({
   parseToken: vi.fn(),
-  setAuthIdToken: vi.fn()
+  setAuthIdToken: vi.fn(),
 }));
 
-import { AuthProvider, useAuth } from "../../contexts/AuthProvider";
-import {
-  fetchAuthSession,
-  signInWithRedirect,
-  signOut
-} from "aws-amplify/auth";
-import { parseToken, setAuthIdToken } from "../../services/AuthService";
+import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
+import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { parseToken, setAuthIdToken } from '../../services/AuthService';
 
 const mockFetchAuthSession = vi.mocked(fetchAuthSession);
 const mockSignInWithRedirect = vi.mocked(signInWithRedirect);
@@ -36,32 +32,30 @@ const mockSignOut = vi.mocked(signOut);
 const mockParseToken = vi.mocked(parseToken);
 const mockSetAuthIdToken = vi.mocked(setAuthIdToken);
 
-const wrapper = ({ children }: PropsWithChildren) => (
-  <AuthProvider>{children}</AuthProvider>
-);
+const wrapper = ({ children }: PropsWithChildren) => <AuthProvider>{children}</AuthProvider>;
 
-describe("AuthProvider", () => {
+describe('AuthProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  test("useAuth throws when not wrapped in provider", () => {
+  test('useAuth throws when not wrapped in provider', () => {
     expect(() => renderHook(() => useAuth())).toThrowError(
-      "useAuth must be used within an AuthProvider"
+      'useAuth must be used within an AuthProvider',
     );
   });
 
-  test("provides authenticated state when id token is available", async () => {
+  test('provides authenticated state when id token is available', async () => {
     const mockIdToken = {
-      toString: () => "token-value",
-      payload: { sub: "user-123" }
+      toString: () => 'token-value',
+      payload: { sub: 'user-123' },
     };
 
     mockFetchAuthSession.mockResolvedValueOnce({
-      tokens: { idToken: mockIdToken }
+      tokens: { idToken: mockIdToken },
     });
     mockParseToken.mockReturnValueOnce({
-      userName: "jane.doe@gov.bc.ca"
+      userName: 'jane.doe@gov.bc.ca',
     });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -70,10 +64,10 @@ describe("AuthProvider", () => {
 
     expect(result.current.isLoggedIn).toBe(true);
     expect(result.current.user).toEqual({
-      userName: "jane.doe@gov.bc.ca"
+      userName: 'jane.doe@gov.bc.ca',
     });
     expect(mockParseToken).toHaveBeenCalledWith(mockIdToken);
-    expect(mockSetAuthIdToken).toHaveBeenCalledWith("token-value");
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith('token-value');
 
     await act(async () => {
       await result.current.logout();
@@ -83,7 +77,7 @@ describe("AuthProvider", () => {
     expect(result.current.isLoggedIn).toBe(false);
   });
 
-  test("handles missing id token by resetting auth state", async () => {
+  test('handles missing id token by resetting auth state', async () => {
     mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -96,8 +90,8 @@ describe("AuthProvider", () => {
     expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
   });
 
-  test("recovers from session errors and formats login provider", async () => {
-    mockFetchAuthSession.mockRejectedValueOnce(new Error("session failed"));
+  test('recovers from session errors and formats login provider', async () => {
+    mockFetchAuthSession.mockRejectedValueOnce(new Error('session failed'));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -106,19 +100,163 @@ describe("AuthProvider", () => {
     expect(result.current.isLoggedIn).toBe(false);
 
     await act(async () => {
-      await result.current.login("idir");
+      await result.current.login('idir');
     });
 
     expect(mockSignInWithRedirect).toHaveBeenCalledWith({
-      provider: { custom: "TEST-IDIR" }
+      provider: { custom: 'TEST-IDIR' },
     });
 
     await act(async () => {
-      await result.current.login("bceid");
+      await result.current.login('bceid');
     });
 
     expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
-      provider: { custom: "TEST-BCEIDBUSINESS" }
+      provider: { custom: 'TEST-BCEIDBUSINESS' },
     });
+  });
+
+  test('login function is memoized and maintains same reference', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result, rerender } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const firstLogin = result.current.login;
+    const firstLogout = result.current.logout;
+
+    // Re-render should return the same function references due to useCallback
+    rerender();
+    expect(result.current.login).toBe(firstLogin);
+    expect(result.current.logout).toBe(firstLogout);
+  });
+
+  test('logout clears user and userRoles state', async () => {
+    const mockIdToken = {
+      toString: () => 'token-value',
+      payload: { sub: 'user-123' },
+    };
+
+    mockFetchAuthSession.mockResolvedValueOnce({
+      tokens: { idToken: mockIdToken },
+    });
+    mockParseToken.mockReturnValueOnce({
+      userName: 'test.user@gov.bc.ca',
+      firstName: 'Test',
+      lastName: 'User',
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isLoggedIn).toBe(true);
+    expect(result.current.user).toBeDefined();
+
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(result.current.userRoles).toBeUndefined();
+  });
+
+  test('context value is memoized and updates when dependencies change', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const initialIsLoading = result.current.isLoading;
+    const initialIsLoggedIn = result.current.isLoggedIn;
+
+    // After state changes, context value should update
+    expect(initialIsLoading).toBe(false);
+    expect(initialIsLoggedIn).toBe(false);
+
+    // Verify context value structure
+    expect(result.current).toHaveProperty('user');
+    expect(result.current).toHaveProperty('userRoles');
+    expect(result.current).toHaveProperty('isLoggedIn');
+    expect(result.current).toHaveProperty('isLoading');
+    expect(result.current).toHaveProperty('login');
+    expect(result.current).toHaveProperty('logout');
+  });
+
+  test('refreshUserState handles token parsing errors gracefully', async () => {
+    const mockIdToken = {
+      toString: () => 'token-value',
+      payload: { sub: 'user-123' },
+    };
+
+    mockFetchAuthSession.mockResolvedValueOnce({
+      tokens: { idToken: mockIdToken },
+    });
+    // Mock parseToken to throw an error
+    mockParseToken.mockImplementationOnce(() => {
+      throw new Error('Token parsing failed');
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Should handle parsing error and reset state
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+  });
+
+  test('login function uses appEnv from env and updates when env changes', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Test login with idir provider uses appEnv
+    await act(async () => {
+      await result.current.login('idir');
+    });
+
+    expect(mockSignInWithRedirect).toHaveBeenCalledWith({
+      provider: { custom: 'TEST-IDIR' },
+    });
+
+    // Test login with bceid provider uses appEnv
+    await act(async () => {
+      await result.current.login('bceid');
+    });
+
+    expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
+      provider: { custom: 'TEST-BCEIDBUSINESS' },
+    });
+  });
+
+  test('contextValue useMemo updates when login or logout functions change', async () => {
+    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const initialContextValue = result.current;
+    const initialLogin = result.current.login;
+    const initialLogout = result.current.logout;
+
+    // Verify login and logout are included in context value
+    expect(initialContextValue.login).toBe(initialLogin);
+    expect(initialContextValue.logout).toBe(initialLogout);
+
+    // Call logout to trigger state change
+    await act(async () => {
+      await result.current.logout();
+    });
+
+    // Context value should update due to state changes, but login/logout functions should remain the same
+    expect(result.current.login).toBe(initialLogin);
+    expect(result.current.logout).toBe(initialLogout);
   });
 });

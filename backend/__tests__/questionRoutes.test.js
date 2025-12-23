@@ -1,6 +1,4 @@
-const {
-  test, describe, beforeEach, afterEach
-} = require('node:test');
+const { test, describe, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
@@ -16,7 +14,7 @@ const originalEnv = {
   hasS3Endpoint: Object.prototype.hasOwnProperty.call(process.env, 'S3_ENDPOINT'),
   hasS3AccessKey: Object.prototype.hasOwnProperty.call(process.env, 'S3_ACCESSKEY'),
   hasS3SecretKey: Object.prototype.hasOwnProperty.call(process.env, 'S3_SECRETKEY'),
-  hasS3BucketName: Object.prototype.hasOwnProperty.call(process.env, 'S3_BUCKETNAME')
+  hasS3BucketName: Object.prototype.hasOwnProperty.call(process.env, 'S3_BUCKETNAME'),
 };
 
 // Create a mock authenticateToken middleware that bypasses JWT verification
@@ -26,7 +24,7 @@ function createMockAuthMiddleware() {
   return (req, res, next) => {
     req.user = {
       sub: 'test-user-id',
-      email: 'test@example.com'
+      email: 'test@example.com',
     };
     next();
   };
@@ -51,7 +49,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
 
   beforeEach(() => {
     sinon.restore();
-    
+
     // Set up environment variables BEFORE loading modules
     process.env.S3_ENDPOINT = 'test-endpoint';
     process.env.S3_ACCESSKEY = 'test-access-key';
@@ -64,16 +62,16 @@ describe('Question Routes', { concurrency: 1 }, () => {
     minioClientStub = sinon.stub(Minio, 'Client');
     getObjectStub = sinon.stub();
     minioClientStub.returns({
-      getObject: getObjectStub
+      getObject: getObjectStub,
     });
 
     // Clear require cache to reload module with stubbed Minio
     delete require.cache[require.resolve('../controllers/questionController')];
     delete require.cache[require.resolve('../routes/questionRoutes')];
-    
+
     // Re-require routes to pick up the stub
     questionRoutes = require('../routes/questionRoutes');
-    
+
     sinon.stub(console, 'error');
   });
 
@@ -122,7 +120,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
           setImmediate(() => handler());
         }
         return this;
-      }
+      },
     };
     getObjectStub.returns(mockStream);
 
@@ -146,7 +144,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
           setImmediate(() => handler());
         }
         return this;
-      }
+      },
     };
 
     getObjectStub.returns(mockStream);
@@ -195,7 +193,7 @@ describe('Question Routes', { concurrency: 1 }, () => {
           setImmediate(() => handler(streamError));
         }
         return this;
-      }
+      },
     };
     getObjectStub.returns(mockStream);
 
@@ -218,15 +216,13 @@ describe('Question Routes', { concurrency: 1 }, () => {
       on: function (_event, _handler) {
         // Don't emit any events - just verify the stub was called with correct args
         return this;
-      }
+      },
     };
     getObjectStub.returns(mockStream);
 
     // Request will hang waiting for stream events, so use timeout
     try {
-      await request(buildApp(questionRoutes))
-        .get('/api/questions/my-questions')
-        .timeout(500);
+      await request(buildApp(questionRoutes)).get('/api/questions/my-questions').timeout(500);
     } catch (_err) {
       // Expected - request times out waiting for stream
     }
