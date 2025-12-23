@@ -45,34 +45,34 @@ describe('examCalculations', () => {
   });
 
   it('should calculate score percentage', () => {
-    const userAnswers = [ 0, 3, 2 ];
+    const userAnswers = [0, 3, 2];
     const score = calculateScorePercentage(questions, userAnswers);
     expect(score).toBe(100);
   });
   it('should check if the user is passing', () => {
-    const userAnswers = [ 0, 3, 2 ];
+    const userAnswers = [0, 3, 2];
     const passing = isPassing(questions, userAnswers);
     expect(passing).toBe(true);
     //check the failing case
-    const userAnswers2 = [ 0, 2, 1 ];
+    const userAnswers2 = [0, 2, 1];
     const passing2 = isPassing(questions, userAnswers2);
     expect(passing2).toBe(false);
   });
   it('should generate result json', () => {
-    const userAnswers = [ 0, 3, 2 ];
+    const userAnswers = [0, 3, 2];
     const result = generateResultJson(questions, userAnswers);
     expect(result).toHaveLength(3);
-    expect(result[ 0 ].isCorrect).toBe(true);
-    expect(result[ 1 ].isCorrect).toBe(true);
-    expect(result[ 2 ].isCorrect).toBe(true);
+    expect(result[0].isCorrect).toBe(true);
+    expect(result[1].isCorrect).toBe(true);
+    expect(result[2].isCorrect).toBe(true);
   });
   it('should generate result json with incorrect answers', () => {
-    const userAnswers = [ 0, 2, 1 ];
+    const userAnswers = [0, 2, 1];
     const result = generateResultJson(questions, userAnswers);
     expect(result).toHaveLength(3);
-    expect(result[ 0 ].isCorrect).toBe(true);
-    expect(result[ 1 ].isCorrect).toBe(false);
-    expect(result[ 2 ].isCorrect).toBe(false);
+    expect(result[0].isCorrect).toBe(true);
+    expect(result[1].isCorrect).toBe(false);
+    expect(result[2].isCorrect).toBe(false);
   });
   // test the Choice interface
   it('should create a choice', () => {
