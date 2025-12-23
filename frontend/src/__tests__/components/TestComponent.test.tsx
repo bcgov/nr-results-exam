@@ -237,4 +237,18 @@ describe('TestComponent', () => {
       expect(screen.getByText(/Sorry, failed to fetch the questions/i)).toBeInTheDocument();
     });
   });
+
+  it('handles empty question array from API', async () => {
+    const mockFetch = global.fetch as FetchMock;
+    mockFetch.mockResolvedValue({
+      json: vi.fn().mockResolvedValue([]),
+    } as unknown as Response);
+
+    renderComponent();
+
+    await waitFor(() => {
+      // Component should handle empty array gracefully
+      expect(getRandomQuestions).toHaveBeenCalled();
+    });
+  });
 });

@@ -185,4 +185,27 @@ describe('AuthProvider', () => {
     expect(result.current).toHaveProperty('login');
     expect(result.current).toHaveProperty('logout');
   });
+
+  test('refreshUserState handles token parsing errors gracefully', async () => {
+    const mockIdToken = {
+      toString: () => 'token-value',
+      payload: { sub: 'user-123' },
+    };
+
+    mockFetchAuthSession.mockResolvedValueOnce({
+      tokens: { idToken: mockIdToken },
+    });
+    // Mock parseToken to throw an error
+    mockParseToken.mockImplementationOnce(() => {
+      throw new Error('Token parsing failed');
+    });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    // Should handle parsing error and reset state
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+  });
 });
