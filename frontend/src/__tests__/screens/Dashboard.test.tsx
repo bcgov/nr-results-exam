@@ -54,7 +54,7 @@ describe('Dashboard', () => {
     renderComponent();
     expect(screen.getByText('John Doe')).toBeInTheDocument();
   });
-  it('should dispaly all the three cards', () => {
+  it('should display all the three cards', () => {
     (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
       user: {
         firstName: 'John',
