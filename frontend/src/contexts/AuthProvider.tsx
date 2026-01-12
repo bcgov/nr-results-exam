@@ -75,8 +75,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // This will automatically refresh tokens if they're expiring soon
     const interval = setInterval(async () => {
       try {
+        // loadUserToken() handles token refresh automatically if needed
         await loadUserToken();
-        // Refresh user state to update UI if token was refreshed
+        // Refresh user state to ensure UI is up to date
+        // (This is lightweight - just re-parses the token we just retrieved)
         await refreshUserState();
       } catch (error) {
         // Token refresh failed, user will need to re-login
@@ -85,7 +87,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }, 2 * 60 * 1000); // Check every 2 minutes
     return () => clearInterval(interval);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // refreshUserState is stable, no need to include in deps
 
   const login = useCallback(
     (provider: ProviderType) => {

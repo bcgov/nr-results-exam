@@ -17,7 +17,7 @@ describe('CognitoAuthService', () => {
     // Clear cookies before each test
     document.cookie.split(';').forEach((cookie) => {
       const eqPos = cookie.indexOf('=');
-      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
       document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
     });
     vi.clearAllMocks();
@@ -163,8 +163,14 @@ describe('CognitoAuthService', () => {
     });
 
     test('exchanges code for tokens on successful callback', async () => {
+      // Create a valid JWT token for the test
+      const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ sub: 'user-123', email: 'test@gov.bc.ca' }));
+      const signature = 'signature';
+      const mockIdToken = `${header}.${payload}.${signature}`;
+
       const mockTokenResponse = {
-        id_token: 'mock-id-token',
+        id_token: mockIdToken,
         access_token: 'mock-access-token',
         refresh_token: 'mock-refresh-token',
         expires_in: 3600,

@@ -11,7 +11,7 @@ import { JWT } from '../types/amplify';
 interface TokenResponse {
   id_token: string;
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string; // Optional - only returned if token rotated
   expires_in: number;
   token_type: string;
 }
@@ -31,6 +31,13 @@ class CognitoAuthService {
   private readonly region: string;
   private readonly redirectUri: string;
   private readonly cookieOptions: CookieOptions;
+
+  /**
+   * Gets the base cookie name for Cognito tokens
+   */
+  private getBaseCookieName(): string {
+    return `CognitoIdentityServiceProvider.${this.clientId}`;
+  }
 
   constructor() {
     this.userPoolId = env.VITE_USER_POOLS_ID || '';
@@ -90,7 +97,13 @@ class CognitoAuthService {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
+      // Log detailed error for debugging without exposing in thrown error
+      console.error('Cognito token exchange error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+      throw new Error(`Token exchange failed with status ${response.status}`);
     }
 
     return (await response.json()) as TokenResponse;
@@ -100,7 +113,7 @@ class CognitoAuthService {
    * Refreshes tokens using the refresh token
    */
   private async refreshTokens(): Promise<TokenResponse | null> {
-    const baseCookieName = `CognitoIdentityServiceProvider.${this.clientId}`;
+    const baseCookieName = this.getBaseCookieName();
     const userId = this.getCookie(`${baseCookieName}.LastAuthUser`);
 
     if (!userId) {
@@ -136,7 +149,18 @@ class CognitoAuthService {
         return null;
       }
 
-      return (await response.json()) as TokenResponse;
+      const refreshedTokens = (await response.json()) as TokenResponse;
+      
+      // If refresh_token is not returned (token not rotated), preserve the existing one
+      if (!refreshedTokens.refresh_token) {
+        const baseCookieName = this.getBaseCookieName();
+        const existingRefreshToken = this.getCookie(`${baseCookieName}.${userId}.refreshToken`);
+        if (existingRefreshToken) {
+          refreshedTokens.refresh_token = existingRefreshToken;
+        }
+      }
+
+      return refreshedTokens;
     } catch (error) {
       console.error('Error refreshing tokens:', error);
       return null;
@@ -171,7 +195,7 @@ class CognitoAuthService {
     const expiresDate = new Date();
     expiresDate.setTime(expiresDate.getTime() + options.expires * 24 * 60 * 60 * 1000);
 
-    const cookieValue = `${name}=${encodeURIComponent(value)}; expires=${expiresDate.toUTCString()}; path=${options.path}; domain=${options.domain}; SameSite=${options.sameSite}; ${options.secure ? 'Secure' : ''}`;
+    const cookieValue = `${name}=${encodeURIComponent(value)}; expires=${expiresDate.toUTCString()}; path=${options.path}; domain=${options.domain}; SameSite=${options.sameSite}${options.secure ? '; Secure' : ''}`;
 
     document.cookie = cookieValue;
   }
@@ -203,14 +227,36 @@ class CognitoAuthService {
   }
 
   /**
+   * Validates that a token is a properly formatted JWT
+   */
+  private isValidJWT(token: string): boolean {
+    const parts = token.split('.');
+    return parts.length === 3 && parts.every((part) => part.length > 0);
+  }
+
+  /**
    * Stores tokens in cookies (matching Amplify's cookie format)
    */
   private storeTokens(tokens: TokenResponse): void {
-    // Decode the ID token to get user ID
-    const idTokenPayload = JSON.parse(atob(tokens.id_token.split('.')[1]));
-    const userId = encodeURIComponent(idTokenPayload.sub);
+    // Validate JWT format before attempting to decode
+    if (!this.isValidJWT(tokens.id_token)) {
+      console.error('Invalid JWT format in id_token');
+      return;
+    }
 
-    const baseCookieName = `CognitoIdentityServiceProvider.${this.clientId}`;
+    // Decode the ID token to get user ID with error handling
+    let userId: string;
+    try {
+      const payloadPart = tokens.id_token.split('.')[1];
+      const decodedPayload = atob(payloadPart);
+      const idTokenPayload = JSON.parse(decodedPayload);
+      userId = encodeURIComponent(idTokenPayload.sub);
+    } catch (error) {
+      console.error('Failed to decode id_token payload for storing tokens', error);
+      return;
+    }
+
+    const baseCookieName = this.getBaseCookieName();
 
     // Store LastAuthUser
     this.setCookie(`${baseCookieName}.LastAuthUser`, userId, this.cookieOptions);
@@ -222,11 +268,15 @@ class CognitoAuthService {
       tokens.access_token,
       this.cookieOptions,
     );
-    this.setCookie(
-      `${baseCookieName}.${userId}.refreshToken`,
-      tokens.refresh_token,
-      this.cookieOptions,
-    );
+
+    // Only store refresh_token if it's present (may not be returned if not rotated)
+    if (tokens.refresh_token) {
+      this.setCookie(
+        `${baseCookieName}.${userId}.refreshToken`,
+        tokens.refresh_token,
+        this.cookieOptions,
+      );
+    }
 
     // Store clock drift (set to 0 for simplicity, Amplify uses this for token validation)
     this.setCookie(`${baseCookieName}.${userId}.clockDrift`, '0', this.cookieOptions);
@@ -236,7 +286,7 @@ class CognitoAuthService {
    * Retrieves ID token from cookies, automatically refreshing if expired or about to expire
    */
   async getTokens(): Promise<{ idToken: JWT | undefined } | undefined> {
-    const baseCookieName = `CognitoIdentityServiceProvider.${this.clientId}`;
+    const baseCookieName = this.getBaseCookieName();
     const userId = this.getCookie(`${baseCookieName}.LastAuthUser`);
 
     if (!userId) {
@@ -254,11 +304,8 @@ class CognitoAuthService {
       const refreshedTokens = await this.refreshTokens();
       if (refreshedTokens) {
         this.storeTokens(refreshedTokens);
-        // Update idTokenString with the new token
-        const newUserId = encodeURIComponent(
-          JSON.parse(atob(refreshedTokens.id_token.split('.')[1])).sub,
-        );
-        idTokenString = this.getCookie(`${baseCookieName}.${newUserId}.idToken`) || idTokenString;
+        // Use the freshly refreshed id_token directly instead of reading from cookies
+        idTokenString = refreshedTokens.id_token;
       } else {
         // Refresh failed, token may be expired - return undefined to trigger re-login
         return undefined;
@@ -299,10 +346,11 @@ class CognitoAuthService {
     const code = urlParams.get('code');
     const error = urlParams.get('error');
 
+    // Clean up URL immediately after extracting code to minimize exposure window
+    window.history.replaceState({}, document.title, window.location.pathname);
+
     if (error) {
       console.error('OAuth error:', error, urlParams.get('error_description'));
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
       return false;
     }
 
@@ -313,15 +361,9 @@ class CognitoAuthService {
     try {
       const tokens = await this.exchangeCodeForTokens(code);
       this.storeTokens(tokens);
-
-      // Clean up URL by removing query parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
-
       return true;
     } catch (error) {
       console.error('Error exchanging code for tokens:', error);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
       return false;
     }
   }
@@ -330,7 +372,7 @@ class CognitoAuthService {
    * Signs out user by clearing cookies and redirecting to logout URL
    */
   signOut(): void {
-    const baseCookieName = `CognitoIdentityServiceProvider.${this.clientId}`;
+    const baseCookieName = this.getBaseCookieName();
     const userId = this.getCookie(`${baseCookieName}.LastAuthUser`);
 
     // Clear all cookies
