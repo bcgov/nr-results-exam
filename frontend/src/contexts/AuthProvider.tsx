@@ -73,12 +73,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     handleCallback();
     // Refresh tokens every 2-3 minutes (similar to Amplify's session manager)
     // This will automatically refresh tokens if they're expiring soon
+    // Note: refreshUserState() internally calls loadUserToken(), so we don't need to call it separately
     const interval = setInterval(async () => {
       try {
-        // loadUserToken() handles token refresh automatically if needed
-        await loadUserToken();
-        // Refresh user state to ensure UI is up to date
-        // (This is lightweight - just re-parses the token we just retrieved)
+        // refreshUserState() will:
+        // 1. Call loadUserToken() which calls getTokens()
+        // 2. getTokens() automatically refreshes if expiring soon
+        // 3. Parse token and update user state
         await refreshUserState();
       } catch (error) {
         // Token refresh failed, user will need to re-login
