@@ -92,6 +92,80 @@ describe('CognitoAuthService', () => {
         .find((c) => c.includes(`${baseCookieName}.${userId}.idToken`));
       expect(storedToken).toBeDefined();
     });
+
+    test('handles token refresh failure when endpoint returns non-OK response', async () => {
+      // Create a token that expires soon
+      const nearExp = Math.floor(Date.now() / 1000) + 120; // 2 minutes from now
+      const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ sub: 'user-123', email: 'test@gov.bc.ca', exp: nearExp }));
+      const signature = 'signature';
+      const oldToken = `${header}.${payload}.${signature}`;
+
+      const baseCookieName = 'CognitoIdentityServiceProvider.test-client-id';
+      const userId = 'user-123';
+
+      // Set cookies with old token and refresh token
+      document.cookie = `${baseCookieName}.LastAuthUser=${encodeURIComponent(userId)}; path=/`;
+      document.cookie = `${baseCookieName}.${userId}.idToken=${oldToken}; path=/`;
+      document.cookie = `${baseCookieName}.${userId}.refreshToken=invalid-refresh-token; path=/`;
+
+      // Mock the refresh token endpoint to return error
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: async () => 'Invalid refresh token',
+      });
+
+      const tokens = await cognitoAuth.getTokens();
+      // Should return undefined when refresh fails
+      expect(tokens).toBeUndefined();
+      expect(global.fetch).toHaveBeenCalled();
+    });
+
+    test('handles malformed JWT tokens gracefully', async () => {
+      const baseCookieName = 'CognitoIdentityServiceProvider.test-client-id';
+      const userId = 'user-123';
+
+      // Set cookie with malformed token (not a valid JWT)
+      document.cookie = `${baseCookieName}.LastAuthUser=${encodeURIComponent(userId)}; path=/`;
+      document.cookie = `${baseCookieName}.${userId}.idToken=not-a-valid-jwt; path=/`;
+
+      const tokens = await cognitoAuth.getTokens();
+      // Should return undefined for malformed tokens
+      expect(tokens).toBeUndefined();
+    });
+
+    test('handles tokens without expiration claims', async () => {
+      // Create a token without exp claim
+      const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({ sub: 'user-123', email: 'test@gov.bc.ca' })); // No exp field
+      const signature = 'signature';
+      const tokenWithoutExp = `${header}.${payload}.${signature}`;
+
+      const baseCookieName = 'CognitoIdentityServiceProvider.test-client-id';
+      const userId = 'user-123';
+
+      // Set cookies
+      document.cookie = `${baseCookieName}.LastAuthUser=${encodeURIComponent(userId)}; path=/`;
+      document.cookie = `${baseCookieName}.${userId}.idToken=${tokenWithoutExp}; path=/`;
+      document.cookie = `${baseCookieName}.${userId}.refreshToken=refresh-token-value; path=/`;
+
+      // Token without exp should be treated as expiring soon, triggering refresh
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id_token: tokenWithoutExp, // Return same token (refresh would normally give new one)
+          access_token: 'new-access-token',
+          refresh_token: 'new-refresh-token',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        }),
+      });
+
+      const tokens = await cognitoAuth.getTokens();
+      // Should attempt refresh and return token (or undefined if refresh fails)
+      expect(global.fetch).toHaveBeenCalled();
+    });
   });
 
   describe('signInWithRedirect', () => {
@@ -163,9 +237,10 @@ describe('CognitoAuthService', () => {
     });
 
     test('exchanges code for tokens on successful callback', async () => {
-      // Create a valid JWT token for the test
+      // Create a valid JWT token for the test with expiration
+      const futureExp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
       const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-      const payload = btoa(JSON.stringify({ sub: 'user-123', email: 'test@gov.bc.ca' }));
+      const payload = btoa(JSON.stringify({ sub: 'user-123', email: 'test@gov.bc.ca', exp: futureExp }));
       const signature = 'signature';
       const mockIdToken = `${header}.${payload}.${signature}`;
 
@@ -204,8 +279,62 @@ describe('CognitoAuthService', () => {
       );
 
       // Verify tokens were stored in cookies
-      const tokens = cognitoAuth.getTokens();
+      const tokens = await cognitoAuth.getTokens();
       expect(tokens).toBeDefined();
+
+      window.history.replaceState = originalReplaceState;
+      Object.defineProperty(window, 'location', {
+        value: { search: originalSearch },
+        writable: true,
+      });
+    });
+
+    test('handles token exchange failure during callback', async () => {
+      const originalSearch = window.location.search;
+      const originalReplaceState = window.history.replaceState;
+      window.history.replaceState = vi.fn();
+
+      // Mock fetch to return error response
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: async () => 'Invalid authorization code',
+      });
+
+      Object.defineProperty(window, 'location', {
+        value: { search: '?code=invalid-code', pathname: '/dashboard' },
+        writable: true,
+      });
+
+      const result = await cognitoAuth.handleCallback();
+      expect(result).toBe(false);
+      expect(global.fetch).toHaveBeenCalled();
+      expect(window.history.replaceState).toHaveBeenCalled(); // URL should be cleaned up
+
+      window.history.replaceState = originalReplaceState;
+      Object.defineProperty(window, 'location', {
+        value: { search: originalSearch },
+        writable: true,
+      });
+    });
+
+    test('handles network error during token exchange', async () => {
+      const originalSearch = window.location.search;
+      const originalReplaceState = window.history.replaceState;
+      window.history.replaceState = vi.fn();
+
+      // Mock fetch to throw network error
+      global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
+
+      Object.defineProperty(window, 'location', {
+        value: { search: '?code=test-code', pathname: '/dashboard' },
+        writable: true,
+      });
+
+      const result = await cognitoAuth.handleCallback();
+      expect(result).toBe(false);
+      expect(global.fetch).toHaveBeenCalled();
+      expect(window.history.replaceState).toHaveBeenCalled(); // URL should be cleaned up
 
       window.history.replaceState = originalReplaceState;
       Object.defineProperty(window, 'location', {
