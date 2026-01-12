@@ -8,11 +8,11 @@ This document provides detailed information about cookies used in the NR Results
 
 ### 1. AWS Cognito Authentication Cookies
 
-The application uses AWS Amplify with Cognito for authentication, which sets the following cookies:
+The application uses direct Cognito OAuth integration (without AWS Amplify) for authentication, which sets the following cookies:
 
 #### Application-Controlled Cookies
 
-**Cookies Set by AWS Amplify CookieStorage:**
+**Cookies Set by CognitoAuthService:**
 - `CognitoIdentityServiceProvider.<client-id>.LastAuthUser` - Stores the last authenticated user identifier
 - `CognitoIdentityServiceProvider.<client-id>.<user-id>.idToken` - JWT ID token containing user identity
 - `CognitoIdentityServiceProvider.<client-id>.<user-id>.accessToken` - JWT access token for API authorization
@@ -33,7 +33,7 @@ The application uses AWS Amplify with Cognito for authentication, which sets the
   - OAuth redirect flows work correctly with `Lax` mode
   - Provides better CSRF protection than `None`
 - `Secure=true` ensures cookies are only transmitted over encrypted connections
-- HttpOnly is NOT set on these cookies because AWS Amplify JavaScript SDK needs to read them for token management
+- HttpOnly is NOT set on these cookies because the application JavaScript needs programmatic access to read them for token management and API requests
 
 #### Cognito-Hosted UI Cookies
 
@@ -47,11 +47,11 @@ These cookies are managed entirely by AWS Cognito and cannot be configured by th
 
 ### Why Not HttpOnly?
 
-The AWS Amplify JavaScript SDK requires programmatic access to authentication tokens stored in cookies. Setting `HttpOnly=true` would prevent the SDK from:
+The application requires programmatic access to authentication tokens stored in cookies. Setting `HttpOnly=true` would prevent the application from:
 - Reading tokens for API requests
 - Validating token expiration
-- Refreshing expired tokens
 - Managing user session state
+- Exchanging authorization codes for tokens during OAuth callback
 
 **Mitigation:** While cookies are not HttpOnly, the application implements:
 - Content Security Policy (CSP) headers to prevent XSS attacks
@@ -81,24 +81,24 @@ The AWS Amplify JavaScript SDK requires programmatic access to authentication to
 
 ## Configuration
 
-The cookie security configuration is set in `/frontend/src/index.tsx`:
+The cookie security configuration is set in `/frontend/src/services/CognitoAuthService.ts`:
 
 ```typescript
-cognitoUserPoolsTokenProvider.setKeyValueStorage(
-  new CookieStorage({
-    domain: window.location.hostname,
-    path: '/',
-    expires: 365,
-    sameSite: 'lax',
-    secure: true
-  })
-);
+this.cookieOptions = {
+  domain: window.location.hostname,
+  path: '/',
+  expires: 365, // days
+  sameSite: 'lax',
+  secure: true,
+};
 ```
+
+This configuration is applied when storing authentication tokens in cookies via the `setCookie()` method.
 
 ## Testing
 
 Cookie security configuration is validated in automated tests:
-- `/frontend/src/__tests__/index.test.tsx` - Verifies CookieStorage initialization with correct parameters
+- `/frontend/src/__tests__/services/CognitoAuthService.test.ts` - Verifies cookie management and security settings
 
 ## Compliance
 
@@ -136,16 +136,17 @@ This configuration aligns with:
 
 - Regular security scans with OWASP ZAP
 - Annual review of cookie security settings
-- Monitor AWS Amplify/Cognito updates for security improvements
+- Monitor AWS Cognito updates for security improvements
 - Track browser changes to SameSite cookie handling
+- Review OAuth implementation for security best practices
 
 ## References
 
 - [OWASP Cookie Security](https://owasp.org/www-community/controls/SecureFlag)
 - [MDN SameSite Cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite)
-- [AWS Amplify Authentication](https://docs.amplify.aws/javascript/build-a-backend/auth/)
-- [AWS Amplify Cookie Storage](https://docs.amplify.aws/javascript/build-a-backend/auth/connect-your-frontend/manage-user-session/)
+- [AWS Cognito OAuth 2.0](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-oauth-flows.html)
+- [OAuth 2.0 Authorization Code Flow](https://oauth.net/2/grant-types/authorization-code/)
 
 ## Last Updated
 
-2025-11-10 - Initial documentation
+2025-01-XX - Updated to reflect direct Cognito OAuth implementation (removed AWS Amplify dependency)
