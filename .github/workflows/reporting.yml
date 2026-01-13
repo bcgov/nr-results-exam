@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
         with:
           target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
-          output: 'nuclei-results.txt'
+          args: '-json -o nuclei-results.json'
 
       - name: Parse ZAP Results
         id: zap_parse
@@ -89,24 +89,41 @@ jobs:
         id: nuclei_parse
         continue-on-error: true
         run: |
-          # Parse Nuclei results to extract vulnerability counts
-          if [ -f nuclei-results.txt ]; then
-            CRITICAL=$(grep -i "critical" nuclei-results.txt | wc -l || echo "0")
-            HIGH=$(grep -i "high" nuclei-results.txt | grep -v "critical" | wc -l || echo "0")
-            MEDIUM=$(grep -i "medium" nuclei-results.txt | wc -l || echo "0")
-            LOW=$(grep -i "low" nuclei-results.txt | wc -l || echo "0")
+          # Parse Nuclei JSON results to extract vulnerability counts
+          # Nuclei outputs JSON with severity field: "info", "low", "medium", "high", "critical"
+          if [ -f nuclei-results.json ]; then
+            # Count by severity (case-insensitive matching)
+            CRITICAL=$(jq '[.[] | select(.info.severity? == "critical" or .info.severity? == "CRITICAL")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            HIGH=$(jq '[.[] | select(.info.severity? == "high" or .info.severity? == "HIGH")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.[] | select(.info.severity? == "medium" or .info.severity? == "MEDIUM")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            LOW=$(jq '[.[] | select(.info.severity? == "low" or .info.severity? == "LOW")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            INFO=$(jq '[.[] | select(.info.severity? == "info" or .info.severity? == "INFO")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            TOTAL=$(jq 'length' nuclei-results.json 2>/dev/null || echo "0")
+            
+            # Also create a text version for artifacts
+            jq -r '.[] | "\(.info.severity // "unknown")|\(.info.name // "Unknown")|\(.matched-at // "N/A")"' nuclei-results.json > nuclei-results.txt 2>/dev/null || echo "" > nuclei-results.txt
+          elif [ -f nuclei-results.txt ]; then
+            # Fallback: parse text format if JSON not available
+            CRITICAL=$(grep -iE "^critical|critical" nuclei-results.txt | wc -l || echo "0")
+            HIGH=$(grep -iE "^high|high" nuclei-results.txt | grep -vi "critical" | wc -l || echo "0")
+            MEDIUM=$(grep -iE "^medium|medium" nuclei-results.txt | wc -l || echo "0")
+            LOW=$(grep -iE "^low|low" nuclei-results.txt | wc -l || echo "0")
+            INFO=$(grep -iE "^info|info" nuclei-results.txt | wc -l || echo "0")
             TOTAL=$(wc -l < nuclei-results.txt 2>/dev/null || echo "0")
           else
             CRITICAL=0
             HIGH=0
             MEDIUM=0
             LOW=0
+            INFO=0
             TOTAL=0
+            echo "" > nuclei-results.txt
           fi
           echo "nuclei_critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "nuclei_high=$HIGH" >> $GITHUB_OUTPUT
           echo "nuclei_medium=$MEDIUM" >> $GITHUB_OUTPUT
           echo "nuclei_low=$LOW" >> $GITHUB_OUTPUT
+          echo "nuclei_info=$INFO" >> $GITHUB_OUTPUT
           echo "nuclei_total=$TOTAL" >> $GITHUB_OUTPUT
 
       - name: Get Security Alerts Summary
@@ -192,8 +209,11 @@ jobs:
             STATUS_DESC="Security posture is acceptable"
           fi
           
+          # Get Nuclei info count
+          NUCLEI_INFO="${{ steps.nuclei_parse.outputs.nuclei_info || '0' }}"
+          
           # Calculate low/info total
-          LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW))
+          LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW + NUCLEI_INFO))
           
           cat > management-report.md << EOF
           # Vulnerability Scan & Management Report
@@ -393,33 +413,24 @@ jobs:
           EOF
           echo "report_path=management-report.md" >> $GITHUB_OUTPUT
 
-      - name: Generate PDF Report
+      - name: Generate HTML Report
         continue-on-error: true
         run: |
-          # Install pandoc (lightweight, ~50MB)
+          # Install pandoc (lightweight, ~50MB) - only for HTML generation
           sudo apt-get update && sudo apt-get install -y pandoc
           
-          # Generate HTML version (always works, lightweight)
+          # Generate HTML version (always works, lightweight, no LaTeX required)
+          # HTML can be printed to PDF from browser (File > Print > Save as PDF)
           pandoc management-report.md -o management-report.html \
             --standalone \
+            --from markdown \
+            --to html \
             --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css \
-            --metadata title="Management Report - $(date '+%Y-%m-%d')"
+            --metadata title="Management Report - $(date '+%Y-%m-%d')" \
+            --metadata lang=en
           
-          # Try to generate PDF - note: full LaTeX requires ~500MB packages
-          # For now, generate HTML which can be printed to PDF by users
-          # To enable full PDF: install texlive-latex-base texlive-fonts-recommended (~500MB, adds 2-3 min)
-          if command -v wkhtmltopdf &> /dev/null; then
-            wkhtmltopdf management-report.html management-report.pdf 2>/dev/null || \
-            echo "PDF generation skipped (wkhtmltopdf not available, HTML available instead)"
-          else
-            echo "PDF generation skipped (LaTeX/wkhtmltopdf not installed to save build time)"
-            echo "HTML version available in artifacts - can be printed to PDF from browser"
-          fi
-          
-          # Create a placeholder PDF if generation failed (so artifact upload doesn't fail)
-          if [ ! -f management-report.pdf ]; then
-            echo "PDF generation not available - using HTML version" > management-report.pdf.txt
-          fi
+          echo "HTML report generated successfully"
+          echo "Note: To generate PDF, open HTML in browser and use Print > Save as PDF"
 
       - name: Upload Reports as Artifacts
         uses: actions/upload-artifact@v4
@@ -428,8 +439,8 @@ jobs:
           path: |
             management-report.md
             management-report.html
-            management-report.pdf*
             zap-report.html
+            nuclei-results.json
             nuclei-results.txt
           retention-days: 90
           if-no-files-found: warn
