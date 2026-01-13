@@ -100,8 +100,15 @@ jobs:
             INFO=$(jq '[.[] | select(.info.severity? == "info" or .info.severity? == "INFO")] | length' nuclei-results.json 2>/dev/null || echo "0")
             TOTAL=$(jq 'length' nuclei-results.json 2>/dev/null || echo "0")
             
-            # Also create a text version for artifacts
-            jq -r '.[] | "\(.info.severity // "unknown")|\(.info.name // "Unknown")|\(.matched-at // "N/A")"' nuclei-results.json > nuclei-results.txt 2>/dev/null || echo "" > nuclei-results.txt
+            # Create a readable text version for artifacts
+            echo "Nuclei Scan Results - $(date)" > nuclei-results.txt
+            echo "=================================" >> nuclei-results.txt
+            echo "" >> nuclei-results.txt
+            if [ "$TOTAL" -gt 0 ]; then
+              jq -r '.[] | "Severity: \(.info.severity // "unknown")\nName: \(.info.name // "Unknown")\nMatched At: \(.matched-at // "N/A")\nTemplate: \(.template-id // "N/A")\n---"' nuclei-results.json >> nuclei-results.txt 2>/dev/null
+            else
+              echo "No vulnerabilities found" >> nuclei-results.txt
+            fi
           elif [ -f nuclei-results.txt ]; then
             # Fallback: parse text format if JSON not available
             CRITICAL=$(grep -iE "^critical|critical" nuclei-results.txt | wc -l || echo "0")
@@ -117,7 +124,8 @@ jobs:
             LOW=0
             INFO=0
             TOTAL=0
-            echo "" > nuclei-results.txt
+            echo "Nuclei scan completed - no vulnerabilities detected or scan failed" > nuclei-results.txt
+            echo "Check workflow logs for Nuclei scan details" >> nuclei-results.txt
           fi
           echo "nuclei_critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "nuclei_high=$HIGH" >> $GITHUB_OUTPUT
