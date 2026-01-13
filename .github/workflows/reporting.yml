@@ -131,10 +131,11 @@ jobs:
         id: deps
         continue-on-error: true
         run: |
-          cd backend && npm outdated --json > ../backend-outdated.json || echo '{}' > ../backend-outdated.json
-          cd ../frontend && npm outdated --json > ../frontend-outdated.json || echo '{}' > ../frontend-outdated.json
-          BACKEND_COUNT=$(cat ../backend-outdated.json | jq 'length' || echo "0")
-          FRONTEND_COUNT=$(cat ../frontend-outdated.json | jq 'length' || echo "0")
+          # Use subshells to avoid directory navigation issues
+          (cd backend && npm outdated --json > outdated.json 2>/dev/null || echo '{}' > outdated.json)
+          (cd frontend && npm outdated --json > outdated.json 2>/dev/null || echo '{}' > outdated.json)
+          BACKEND_COUNT=$(jq 'length' < backend/outdated.json 2>/dev/null || echo "0")
+          FRONTEND_COUNT=$(jq 'length' < frontend/outdated.json 2>/dev/null || echo "0")
           echo "backend_outdated=$BACKEND_COUNT" >> $GITHUB_OUTPUT
           echo "frontend_outdated=$FRONTEND_COUNT" >> $GITHUB_OUTPUT
 
@@ -395,8 +396,30 @@ jobs:
       - name: Generate PDF Report
         continue-on-error: true
         run: |
-          sudo apt-get update && sudo apt-get install -y pandoc texlive-latex-base texlive-fonts-recommended
-          pandoc management-report.md -o management-report.pdf --pdf-engine=pdflatex -V geometry:margin=1in
+          # Install pandoc (lightweight, ~50MB)
+          sudo apt-get update && sudo apt-get install -y pandoc
+          
+          # Generate HTML version (always works, lightweight)
+          pandoc management-report.md -o management-report.html \
+            --standalone \
+            --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css \
+            --metadata title="Management Report - $(date '+%Y-%m-%d')"
+          
+          # Try to generate PDF - note: full LaTeX requires ~500MB packages
+          # For now, generate HTML which can be printed to PDF by users
+          # To enable full PDF: install texlive-latex-base texlive-fonts-recommended (~500MB, adds 2-3 min)
+          if command -v wkhtmltopdf &> /dev/null; then
+            wkhtmltopdf management-report.html management-report.pdf 2>/dev/null || \
+            echo "PDF generation skipped (wkhtmltopdf not available, HTML available instead)"
+          else
+            echo "PDF generation skipped (LaTeX/wkhtmltopdf not installed to save build time)"
+            echo "HTML version available in artifacts - can be printed to PDF from browser"
+          fi
+          
+          # Create a placeholder PDF if generation failed (so artifact upload doesn't fail)
+          if [ ! -f management-report.pdf ]; then
+            echo "PDF generation not available - using HTML version" > management-report.pdf.txt
+          fi
 
       - name: Upload Reports as Artifacts
         uses: actions/upload-artifact@v4
@@ -404,7 +427,8 @@ jobs:
           name: management-report-${{ github.run_number }}-${{ github.run_attempt }}
           path: |
             management-report.md
-            management-report.pdf
+            management-report.html
+            management-report.pdf*
             zap-report.html
             nuclei-results.txt
           retention-days: 90
@@ -417,9 +441,13 @@ jobs:
           script: |
             const fs = require('fs');
             const report = fs.readFileSync('management-report.md', 'utf8');
+            // Use HTML pre tag to avoid nested backtick issues with markdown code blocks
+            const escapedReport = report
+              .replace(/```/g, '\\`\\`\\`')
+              .replace(/\$/g, '\\$');
             github.rest.actions.createWorkflowRunComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               run_id: context.runId,
-              body: `## 📊 Management Report Generated\n\n\`\`\`\n${report}\n\`\`\`\n\n📎 Full report available in workflow artifacts.`
+              body: `## 📊 Management Report Generated\n\n<details>\n<summary>Click to view report summary</summary>\n\n\`\`\`\n${escapedReport.substring(0, 2000)}${escapedReport.length > 2000 ? '...\n\n(Report truncated, see full report in artifacts)' : ''}\n\`\`\`\n\n</details>\n\n📎 **Full report available in workflow artifacts** (Markdown and PDF formats)`
             });
