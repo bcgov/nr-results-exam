@@ -144,15 +144,35 @@ jobs:
           REPORT_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
           SCAN_TARGET="results-exam-test.apps.silver.devops.gov.bc.ca"
           
-          # Calculate total vulnerabilities
-          ZAP_TOTAL=${{ steps.zap_parse.outputs.zap_total || 0 }}
-          NUCLEI_TOTAL=${{ steps.nuclei_parse.outputs.nuclei_total || 0 }}
-          TOTAL_VULNS=$((ZAP_TOTAL + NUCLEI_TOTAL))
+          # Extract GitHub Actions outputs to bash variables
+          ZAP_CRITICAL="${{ steps.zap_parse.outputs.zap_critical || '0' }}"
+          ZAP_HIGH="${{ steps.zap_parse.outputs.zap_high || '0' }}"
+          ZAP_MEDIUM="${{ steps.zap_parse.outputs.zap_medium || '0' }}"
+          ZAP_LOW="${{ steps.zap_parse.outputs.zap_low || '0' }}"
+          ZAP_INFO="${{ steps.zap_parse.outputs.zap_info || '0' }}"
+          ZAP_TOTAL="${{ steps.zap_parse.outputs.zap_total || '0' }}"
+          
+          NUCLEI_CRITICAL="${{ steps.nuclei_parse.outputs.nuclei_critical || '0' }}"
+          NUCLEI_HIGH="${{ steps.nuclei_parse.outputs.nuclei_high || '0' }}"
+          NUCLEI_MEDIUM="${{ steps.nuclei_parse.outputs.nuclei_medium || '0' }}"
+          NUCLEI_LOW="${{ steps.nuclei_parse.outputs.nuclei_low || '0' }}"
+          NUCLEI_TOTAL="${{ steps.nuclei_parse.outputs.nuclei_total || '0' }}"
+          
+          BACKEND_COVERAGE="${{ steps.coverage.outputs.backend_coverage || 'N/A' }}"
+          FRONTEND_COVERAGE="${{ steps.coverage.outputs.frontend_coverage || 'N/A' }}"
+          BACKEND_OUTDATED="${{ steps.deps.outputs.backend_outdated || '0' }}"
+          FRONTEND_OUTDATED="${{ steps.deps.outputs.frontend_outdated || '0' }}"
+          GITHUB_ALERTS="${{ steps.security_alerts.outputs.github_critical || '0' }}"
+          
+          # Calculate totals (ensure numeric values)
+          ZAP_TOTAL_NUM=${ZAP_TOTAL:-0}
+          NUCLEI_TOTAL_NUM=${NUCLEI_TOTAL:-0}
+          TOTAL_VULNS=$((ZAP_TOTAL_NUM + NUCLEI_TOTAL_NUM))
           
           # Calculate risk score (0-100, lower is better)
-          CRITICAL_COUNT=$(({{ steps.zap_parse.outputs.zap_critical || 0 }} + {{ steps.nuclei_parse.outputs.nuclei_critical || 0 }}))
-          HIGH_COUNT=$(({{ steps.zap_parse.outputs.zap_high || 0 }} + {{ steps.nuclei_parse.outputs.nuclei_high || 0 }}))
-          MEDIUM_COUNT=$(({{ steps.zap_parse.outputs.zap_medium || 0 }} + {{ steps.nuclei_parse.outputs.nuclei_medium || 0 }}))
+          CRITICAL_COUNT=$((ZAP_CRITICAL + NUCLEI_CRITICAL))
+          HIGH_COUNT=$((ZAP_HIGH + NUCLEI_HIGH))
+          MEDIUM_COUNT=$((ZAP_MEDIUM + NUCLEI_MEDIUM))
           RISK_SCORE=$((CRITICAL_COUNT * 10 + HIGH_COUNT * 5 + MEDIUM_COUNT * 2))
           if [ $RISK_SCORE -gt 100 ]; then RISK_SCORE=100; fi
           
@@ -170,6 +190,9 @@ jobs:
             SECURITY_STATUS="🟢 LOW RISK"
             STATUS_DESC="Security posture is acceptable"
           fi
+          
+          # Calculate low/info total
+          LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW))
           
           cat > management-report.md << EOF
           # Vulnerability Scan & Management Report
@@ -199,7 +222,7 @@ jobs:
           | **Critical** | $CRITICAL_COUNT | $([ $CRITICAL_COUNT -eq 0 ] && echo "✅ None" || echo "🔴 Immediate Action Required") |
           | **High** | $HIGH_COUNT | $([ $HIGH_COUNT -eq 0 ] && echo "✅ None" || echo "🟠 Address Promptly") |
           | **Medium** | $MEDIUM_COUNT | $([ $MEDIUM_COUNT -eq 0 ] && echo "✅ None" || echo "🟡 Monitor") |
-          | **Low/Informational** | $(({{ steps.zap_parse.outputs.zap_low || 0 }} + {{ steps.zap_parse.outputs.zap_info || 0 }} + {{ steps.nuclei_parse.outputs.nuclei_low || 0 }})) | ℹ️ Informational |
+          | **Low/Informational** | $LOW_INFO_TOTAL | ℹ️ Informational |
           
           ---
           
@@ -207,7 +230,7 @@ jobs:
           
           ### ZAP Security Scan Results
           
-          **Scan Status**: ${{ steps.zap.outcome == 'success' && '✅ Completed Successfully' || '⚠️ Completed with Issues' }}  
+          **Scan Status**: $(if [ "${{ steps.zap.outcome }}" = "success" ]; then echo "✅ Completed Successfully"; else echo "⚠️ Completed with Issues"; fi)  
           **Scan Type**: Baseline Security Scan  
           **Target**: $SCAN_TARGET  
           **Scan Tool**: OWASP ZAP (Zed Attack Proxy)
@@ -216,18 +239,18 @@ jobs:
           
           | Severity | Count | CVSS Range | Remediation Timeline |
           |----------|-------|------------|---------------------|
-          | 🔴 Critical | ${{ steps.zap_parse.outputs.zap_critical || 0 }} | 9.0 - 10.0 | Immediate (0-7 days) |
-          | 🟠 High | ${{ steps.zap_parse.outputs.zap_high || 0 }} | 7.0 - 8.9 | Urgent (7-30 days) |
-          | 🟡 Medium | ${{ steps.zap_parse.outputs.zap_medium || 0 }} | 4.0 - 6.9 | Important (30-90 days) |
-          | 🔵 Low | ${{ steps.zap_parse.outputs.zap_low || 0 }} | 0.1 - 3.9 | As resources allow |
-          | ℹ️ Informational | ${{ steps.zap_parse.outputs.zap_info || 0 }} | N/A | Best practices |
-          | **Total** | **${{ steps.zap_parse.outputs.zap_total || 0 }}** | **All Severities** | **See details below** |
+          | 🔴 Critical | $ZAP_CRITICAL | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | $ZAP_HIGH | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | $ZAP_MEDIUM | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | $ZAP_LOW | 0.1 - 3.9 | As resources allow |
+          | ℹ️ Informational | $ZAP_INFO | N/A | Best practices |
+          | **Total** | **$ZAP_TOTAL** | **All Severities** | **See details below** |
           
           > **Note**: Detailed vulnerability descriptions, affected components, and remediation guidance are available in the ZAP HTML report artifact.
           
           ### Nuclei Vulnerability Scan Results
           
-          **Scan Status**: ${{ steps.nuclei.outcome == 'success' && '✅ Completed Successfully' || '⚠️ Completed with Issues' }}  
+          **Scan Status**: $(if [ "${{ steps.nuclei.outcome }}" = "success" ]; then echo "✅ Completed Successfully"; else echo "⚠️ Completed with Issues"; fi)  
           **Scan Type**: Template-based Vulnerability Detection  
           **Target**: $SCAN_TARGET  
           **Scan Tool**: ProjectDiscovery Nuclei
@@ -236,17 +259,17 @@ jobs:
           
           | Severity | Count | CVSS Range | Remediation Timeline |
           |----------|-------|------------|---------------------|
-          | 🔴 Critical | ${{ steps.nuclei_parse.outputs.nuclei_critical || 0 }} | 9.0 - 10.0 | Immediate (0-7 days) |
-          | 🟠 High | ${{ steps.nuclei_parse.outputs.nuclei_high || 0 }} | 7.0 - 8.9 | Urgent (7-30 days) |
-          | 🟡 Medium | ${{ steps.nuclei_parse.outputs.nuclei_medium || 0 }} | 4.0 - 6.9 | Important (30-90 days) |
-          | 🔵 Low | ${{ steps.nuclei_parse.outputs.nuclei_low || 0 }} | 0.1 - 3.9 | As resources allow |
-          | **Total** | **${{ steps.nuclei_parse.outputs.nuclei_total || 0 }}** | **All Severities** | **See details below** |
+          | 🔴 Critical | $NUCLEI_CRITICAL | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | $NUCLEI_HIGH | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | $NUCLEI_MEDIUM | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | $NUCLEI_LOW | 0.1 - 3.9 | As resources allow |
+          | **Total** | **$NUCLEI_TOTAL** | **All Severities** | **See details below** |
           
           > **Note**: Detailed vulnerability information, affected endpoints, and CVE references are available in the Nuclei results artifact.
           
           ### GitHub Security Alerts
           
-          **Dependabot/CodeQL Alerts**: ${{ steps.security_alerts.outputs.github_critical || 0 }} open alerts
+          **Dependabot/CodeQL Alerts**: $GITHUB_ALERTS open alerts
           
           > **Note**: Detailed scan reports are available in workflow artifacts for technical review.
 
@@ -258,8 +281,8 @@ jobs:
           
           | Component | Coverage | Threshold | Status |
           |-----------|----------|-----------|--------|
-          | Backend | ${{ steps.coverage.outputs.backend_coverage || 'N/A' }}% | 70% | $([ "${{ steps.coverage.outputs.backend_coverage }}" -ge 70 ] 2>/dev/null && echo "✅ Pass" || echo "⚠️ Below Threshold") |
-          | Frontend | ${{ steps.coverage.outputs.frontend_coverage || 'N/A' }}% | 70% | $([ "${{ steps.coverage.outputs.frontend_coverage }}" -ge 70 ] 2>/dev/null && echo "✅ Pass" || echo "⚠️ Below Threshold") |
+          | Backend | ${BACKEND_COVERAGE}% | 70% | $(if [ "$BACKEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
+          | Frontend | ${FRONTEND_COVERAGE}% | 70% | $(if [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
           
           **Overall Status**: Both components exceed 70% threshold ✅
           
@@ -267,8 +290,8 @@ jobs:
           
           | Component | Outdated Packages | Status |
           |-----------|-------------------|--------|
-          | Backend | ${{ steps.deps.outputs.backend_outdated || '0' }} | $([ "${{ steps.deps.outputs.backend_outdated }}" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
-          | Frontend | ${{ steps.deps.outputs.frontend_outdated || '0' }} | $([ "${{ steps.deps.outputs.frontend_outdated }}" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
+          | Backend | $BACKEND_OUTDATED | $([ "$BACKEND_OUTDATED" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
+          | Frontend | $FRONTEND_OUTDATED | $([ "$FRONTEND_OUTDATED" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
           
           **Note**: Renovate automerge handles most dependency updates automatically. Manual review may be required for major version updates.
           
@@ -279,7 +302,7 @@ jobs:
           ### Application Status
           
           - **Maintenance Mode**: ✅ ACTIVE
-          - **Test Coverage**: Exceeds all thresholds (Backend: ${{ steps.coverage.outputs.backend_coverage || 'N/A' }}%, Frontend: ${{ steps.coverage.outputs.frontend_coverage || 'N/A' }}%)
+          - **Test Coverage**: Exceeds all thresholds (Backend: ${BACKEND_COVERAGE}%, Frontend: ${FRONTEND_COVERAGE}%)
           - **Dependency Management**: Automated via Renovate
           - **Automerge**: Enabled for dependency updates
           
