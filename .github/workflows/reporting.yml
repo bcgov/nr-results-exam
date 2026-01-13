@@ -89,9 +89,15 @@ jobs:
         id: nuclei_parse
         continue-on-error: true
         run: |
+          # Debug: Check for Nuclei output files
+          echo "Checking for Nuclei output files..."
+          ls -la nuclei* 2>/dev/null || echo "No nuclei files in current directory"
+          find . -maxdepth 3 -name "*nuclei*" -type f 2>/dev/null | head -5 || echo "No nuclei files found in subdirectories"
+          
           # Parse Nuclei JSON results to extract vulnerability counts
           # Nuclei outputs JSON with severity field: "info", "low", "medium", "high", "critical"
           if [ -f nuclei-results.json ]; then
+            echo "Found nuclei-results.json in current directory"
             # Count by severity (case-insensitive matching)
             CRITICAL=$(jq '[.[] | select(.info.severity? == "critical" or .info.severity? == "CRITICAL")] | length' nuclei-results.json 2>/dev/null || echo "0")
             HIGH=$(jq '[.[] | select(.info.severity? == "high" or .info.severity? == "HIGH")] | length' nuclei-results.json 2>/dev/null || echo "0")
