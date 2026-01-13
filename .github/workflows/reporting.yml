@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
         with:
           target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
-          args: '-json -o nuclei-results.json'
+          flags: '-json -o nuclei-results.json'
 
       - name: Parse ZAP Results
         id: zap_parse
