@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '0 9 * * 1'  # Weekly Monday 9AM PST
   workflow_dispatch:
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
