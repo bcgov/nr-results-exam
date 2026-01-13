@@ -58,7 +58,7 @@ jobs:
         id: zap_parse
         continue-on-error: true
         run: |
-          # Extract vulnerability counts from ZAP JSON report if available
+          # Extract vulnerability counts and top vulnerabilities from ZAP JSON report if available
           if [ -f zap-report.json ]; then
             CRITICAL=$(jq '[.site[]?.alerts[]? | select(.riskcode == "4")] | length' zap-report.json 2>/dev/null || echo "0")
             HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' zap-report.json 2>/dev/null || echo "0")
@@ -66,6 +66,9 @@ jobs:
             LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' zap-report.json 2>/dev/null || echo "0")
             INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' zap-report.json 2>/dev/null || echo "0")
             TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW + INFO))
+            
+            # Extract top 5 critical/high vulnerabilities for detailed reporting
+            jq -r '.site[]?.alerts[]? | select(.riskcode == "4" or .riskcode == "3") | "\(.name)|\(.riskcode)|\(.desc)"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
           else
             CRITICAL=0
             HIGH=0
@@ -73,6 +76,7 @@ jobs:
             LOW=0
             INFO=0
             TOTAL=0
+            touch zap-top-vulns.txt
           fi
           echo "zap_critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "zap_high=$HIGH" >> $GITHUB_OUTPUT
@@ -205,30 +209,40 @@ jobs:
           
           **Scan Status**: ${{ steps.zap.outcome == 'success' && '✅ Completed Successfully' || '⚠️ Completed with Issues' }}  
           **Scan Type**: Baseline Security Scan  
-          **Target**: $SCAN_TARGET
+          **Target**: $SCAN_TARGET  
+          **Scan Tool**: OWASP ZAP (Zed Attack Proxy)
           
-          | Severity | Count | Description |
-          |----------|-------|-------------|
-          | 🔴 Critical | ${{ steps.zap_parse.outputs.zap_critical || 0 }} | Immediate remediation required |
-          | 🟠 High | ${{ steps.zap_parse.outputs.zap_high || 0 }} | Address within 30 days |
-          | 🟡 Medium | ${{ steps.zap_parse.outputs.zap_medium || 0 }} | Address within 90 days |
-          | 🔵 Low | ${{ steps.zap_parse.outputs.zap_low || 0 }} | Address as resources allow |
-          | ℹ️ Informational | ${{ steps.zap_parse.outputs.zap_info || 0 }} | Best practice recommendations |
-          | **Total** | **${{ steps.zap_parse.outputs.zap_total || 0 }}** | **All ZAP findings** |
+          #### Result Overview
+          
+          | Severity | Count | CVSS Range | Remediation Timeline |
+          |----------|-------|------------|---------------------|
+          | 🔴 Critical | ${{ steps.zap_parse.outputs.zap_critical || 0 }} | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | ${{ steps.zap_parse.outputs.zap_high || 0 }} | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | ${{ steps.zap_parse.outputs.zap_medium || 0 }} | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | ${{ steps.zap_parse.outputs.zap_low || 0 }} | 0.1 - 3.9 | As resources allow |
+          | ℹ️ Informational | ${{ steps.zap_parse.outputs.zap_info || 0 }} | N/A | Best practices |
+          | **Total** | **${{ steps.zap_parse.outputs.zap_total || 0 }}** | **All Severities** | **See details below** |
+          
+          > **Note**: Detailed vulnerability descriptions, affected components, and remediation guidance are available in the ZAP HTML report artifact.
           
           ### Nuclei Vulnerability Scan Results
           
           **Scan Status**: ${{ steps.nuclei.outcome == 'success' && '✅ Completed Successfully' || '⚠️ Completed with Issues' }}  
           **Scan Type**: Template-based Vulnerability Detection  
-          **Target**: $SCAN_TARGET
+          **Target**: $SCAN_TARGET  
+          **Scan Tool**: ProjectDiscovery Nuclei
           
-          | Severity | Count | Description |
-          |----------|-------|-------------|
-          | 🔴 Critical | ${{ steps.nuclei_parse.outputs.nuclei_critical || 0 }} | Immediate remediation required |
-          | 🟠 High | ${{ steps.nuclei_parse.outputs.nuclei_high || 0 }} | Address within 30 days |
-          | 🟡 Medium | ${{ steps.nuclei_parse.outputs.nuclei_medium || 0 }} | Address within 90 days |
-          | 🔵 Low | ${{ steps.nuclei_parse.outputs.nuclei_low || 0 }} | Address as resources allow |
-          | **Total** | **${{ steps.nuclei_parse.outputs.nuclei_total || 0 }}** | **All Nuclei findings** |
+          #### Result Overview
+          
+          | Severity | Count | CVSS Range | Remediation Timeline |
+          |----------|-------|------------|---------------------|
+          | 🔴 Critical | ${{ steps.nuclei_parse.outputs.nuclei_critical || 0 }} | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | ${{ steps.nuclei_parse.outputs.nuclei_high || 0 }} | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | ${{ steps.nuclei_parse.outputs.nuclei_medium || 0 }} | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | ${{ steps.nuclei_parse.outputs.nuclei_low || 0 }} | 0.1 - 3.9 | As resources allow |
+          | **Total** | **${{ steps.nuclei_parse.outputs.nuclei_total || 0 }}** | **All Severities** | **See details below** |
+          
+          > **Note**: Detailed vulnerability information, affected endpoints, and CVE references are available in the Nuclei results artifact.
           
           ### GitHub Security Alerts
           
@@ -279,20 +293,28 @@ jobs:
           
           ## Remediation Recommendations
           
-          ### Priority Actions
+          ### Priority Actions (Based on Severity)
           
-          $([ $CRITICAL_COUNT -gt 0 ] && echo "1. **IMMEDIATE**: Address $CRITICAL_COUNT critical vulnerability/vulnerabilities identified in security scans" || echo "1. ✅ No critical vulnerabilities requiring immediate action")
+          $([ $CRITICAL_COUNT -gt 0 ] && echo "1. **🔴 IMMEDIATE ACTION REQUIRED (0-7 days)**: Address $CRITICAL_COUNT critical vulnerability/vulnerabilities identified in security scans. These pose the highest risk and should be remediated immediately to prevent potential security breaches." || echo "1. ✅ **No Critical Vulnerabilities**: No critical vulnerabilities requiring immediate action.")
           
-          $([ $HIGH_COUNT -gt 0 ] && echo "2. **HIGH PRIORITY**: Remediate $HIGH_COUNT high-risk vulnerability/vulnerabilities within 30 days" || echo "2. ✅ No high-risk vulnerabilities requiring urgent attention")
+          $([ $HIGH_COUNT -gt 0 ] && echo "2. **🟠 HIGH PRIORITY (7-30 days)**: Remediate $HIGH_COUNT high-risk vulnerability/vulnerabilities within 30 days. These vulnerabilities could be exploited and should be addressed promptly." || echo "2. ✅ **No High-Risk Vulnerabilities**: No high-risk vulnerabilities requiring urgent attention.")
           
-          $([ $MEDIUM_COUNT -gt 5 ] && echo "3. **MEDIUM PRIORITY**: Review and address $MEDIUM_COUNT medium-risk vulnerabilities within 90 days" || echo "3. ✅ Medium-risk vulnerabilities are within acceptable limits")
+          $([ $MEDIUM_COUNT -gt 5 ] && echo "3. **🟡 MEDIUM PRIORITY (30-90 days)**: Review and address $MEDIUM_COUNT medium-risk vulnerabilities within 90 days. While not immediately critical, these should be addressed as part of regular security maintenance." || echo "3. ✅ **Medium-Risk Status**: Medium-risk vulnerabilities are within acceptable limits.")
           
-          ### Ongoing Activities
+          ### Remediation Guidance
+          
+          - **Detailed Reports**: Review full vulnerability details in workflow artifacts (ZAP HTML report, Nuclei results)
+          - **CVSS Scores**: Prioritize vulnerabilities with higher CVSS scores (9.0-10.0 = Critical, 7.0-8.9 = High)
+          - **Impact Assessment**: Consider business impact when prioritizing remediation efforts
+          - **References**: Each vulnerability includes references and remediation guidance in the detailed reports
+          
+          ### Ongoing Security Activities
           
           4. **Monitor**: Review dependency updates via Renovate PRs
           5. **Review**: Check SonarCloud dashboard for detailed code quality metrics
           6. **Track**: Monitor GitHub Security tab for new vulnerability alerts
           7. **Maintain**: Continue weekly automated security scanning
+          8. **Document**: Update accepted alerts documentation when vulnerabilities are accepted as low risk
           
           ---
           
@@ -302,9 +324,23 @@ jobs:
           
           - **Report Generated**: $REPORT_DATE
           - **Scan Target**: $SCAN_TARGET
-          - **Scan Tools**: OWASP ZAP (Baseline), Nuclei, CodeQL, Trivy
+          - **Scan Tools**: 
+            - OWASP ZAP (Baseline Scan) - Web application security testing
+            - ProjectDiscovery Nuclei - Template-based vulnerability detection
+            - GitHub CodeQL - Static code analysis (via analysis.yml)
+            - Trivy - Dependency and container scanning (via analysis.yml)
           - **Report Frequency**: Weekly (Mondays at 9:00 AM PST)
           - **Report Retention**: 90 days
+          - **Report Format**: Markdown (this document) and PDF (generated artifact)
+          
+          ### Vulnerability Scoring
+          
+          Vulnerabilities are scored using the Common Vulnerability Scoring System (CVSS):
+          - **Critical (9.0-10.0)**: Exploitable vulnerabilities that could lead to complete system compromise
+          - **High (7.0-8.9)**: Serious vulnerabilities that could lead to significant data exposure or system compromise
+          - **Medium (4.0-6.9)**: Moderate risk vulnerabilities that could lead to limited data exposure
+          - **Low (0.1-3.9)**: Minor vulnerabilities with limited impact
+          - **Informational (0.0)**: Best practice recommendations and informational findings
           
           ### Compliance Status
           

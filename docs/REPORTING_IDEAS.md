@@ -4,16 +4,59 @@ This document outlines additional reporting ideas for management and identifies 
 
 ## Reporting Style Inspiration
 
-The reporting workflow (`reporting.yml`) is designed with inspiration from OpenVAS (Greenbone) executive reports, which management has historically found valuable. Key elements incorporated:
+The reporting workflow (`reporting.yml`) is designed with inspiration from OpenVAS (Greenbone) executive reports, which management has historically found valuable. Based on analysis of historical OpenVAS reports, the following key elements have been incorporated:
 
-- **Executive Summary**: High-level overview with clear status indicators
-- **Vulnerability Breakdown by Severity**: Tables showing Critical, High, Medium, Low, and Informational findings
-- **Risk Scoring**: Quantitative risk assessment (0-100 scale)
-- **Scan Metadata**: Target, timestamp, duration, and scan type information
-- **Visual Status Indicators**: Color-coded status (🔴 Critical, 🟠 High, 🟡 Medium, 🔵 Low, ℹ️ Informational)
-- **Remediation Recommendations**: Prioritized action items based on severity
-- **Compliance Status**: Clear indicators of compliance with security standards
-- **PDF Format**: Professional PDF output suitable for management review
+### Core OpenVAS Report Elements
+
+1. **Result Overview Table**: 
+   - Clear tabular format showing host/target, total vulnerabilities, and breakdown by severity
+   - Severity categories: Critical, High, Medium, Low, Log/Informational, False Positive
+   - Easy-to-scan format for quick assessment
+
+2. **CVSS-Based Severity Classification**:
+   - Critical (9.0-10.0): Immediate remediation required
+   - High (7.0-8.9): Urgent action within 7-30 days
+   - Medium (4.0-6.9): Important, address within 30-90 days
+   - Low (0.1-3.9): Address as resources allow
+   - Informational (0.0): Best practice recommendations
+
+3. **Detailed Vulnerability Information** (in artifact reports):
+   - Threat Level with CVSS score
+   - Vulnerability name/description (NVT equivalent)
+   - Summary of the issue
+   - Vulnerability Detection Result (evidence)
+   - Affected Software/OS/Components
+   - Workaround/Solution guidance
+   - Vulnerability Insight (impact explanation)
+   - Impact Level (Application, System, Network, etc.)
+   - References (CVE links, OWASP references, etc.)
+
+4. **Scan Metadata**:
+   - Report date and time
+   - Scan target/host
+   - Scan start and end times
+   - Scan duration
+   - Scan type/task name
+   - Tool versions
+
+5. **Visual Status Indicators**: 
+   - Color-coded status (🔴 Critical, 🟠 High, 🟡 Medium, 🔵 Low, ℹ️ Informational)
+   - Clear visual hierarchy for quick scanning
+
+6. **Remediation Recommendations**: 
+   - Prioritized action items based on severity
+   - Timeline guidance aligned with CVSS scores
+   - Impact assessment considerations
+
+7. **Compliance & Audit Trail**:
+   - Compliance status indicators
+   - Report retention information
+   - Scan frequency documentation
+
+8. **Professional Format**:
+   - PDF output suitable for management review
+   - Markdown source for version control
+   - Structured sections with clear headings
 
 ## Current Reporting Coverage
 
