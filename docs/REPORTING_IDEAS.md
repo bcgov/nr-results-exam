@@ -2,6 +2,19 @@
 
 This document outlines additional reporting ideas for management and identifies gaps in our current testing strategy.
 
+## Reporting Style Inspiration
+
+The reporting workflow (`reporting.yml`) is designed with inspiration from OpenVAS (Greenbone) executive reports, which management has historically found valuable. Key elements incorporated:
+
+- **Executive Summary**: High-level overview with clear status indicators
+- **Vulnerability Breakdown by Severity**: Tables showing Critical, High, Medium, Low, and Informational findings
+- **Risk Scoring**: Quantitative risk assessment (0-100 scale)
+- **Scan Metadata**: Target, timestamp, duration, and scan type information
+- **Visual Status Indicators**: Color-coded status (🔴 Critical, 🟠 High, 🟡 Medium, 🔵 Low, ℹ️ Informational)
+- **Remediation Recommendations**: Prioritized action items based on severity
+- **Compliance Status**: Clear indicators of compliance with security standards
+- **PDF Format**: Professional PDF output suitable for management review
+
 ## Current Reporting Coverage
 
 ### ✅ What We Have
