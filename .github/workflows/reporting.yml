@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       security-events: write
+      contents: write
       issues: write
     timeout-minutes: 30
     steps:
@@ -745,6 +746,259 @@ jobs:
           *For detailed technical information, see the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).*
           EOF
           echo "report_path=management-report.md" >> $GITHUB_OUTPUT
+
+      - name: Generate HTML Report
+        continue-on-error: true
+        run: |
+          # Install pandoc (lightweight, ~50MB) - only for HTML generation
+          sudo apt-get update && sudo apt-get install -y pandoc
+          
+          # Generate HTML version (always works, lightweight, no LaTeX required)
+          # HTML can be printed to PDF from browser (File > Print > Save as PDF)
+          pandoc management-report.md -o management-report.html \
+            --standalone \
+            --from markdown \
+            --to html \
+            --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css \
+            --metadata title="Management Report - $(date '+%Y-%m-%d')" \
+            --metadata lang=en
+          
+          echo "HTML report generated successfully"
+          echo "Note: To generate PDF, open HTML in browser and use Print > Save as PDF"
+
+      # ============================================================================
+      # REPORT PUBLISHING
+      # ============================================================================
+      - name: Prepare Reports for GitHub Pages
+        continue-on-error: true
+        run: |
+          # Create reports directory structure
+          mkdir -p docs/reports/archive
+          
+          # Copy latest report
+          REPORT_DATE=$(date '+%Y-%m-%d')
+          cp management-report.html docs/reports/latest.html
+          cp management-report.md docs/reports/latest.md
+          
+          # Archive this report with date
+          cp management-report.html docs/reports/archive/${REPORT_DATE}.html
+          cp management-report.md docs/reports/archive/${REPORT_DATE}.md
+          
+          # Create dashboard index.html
+          cat > docs/reports/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Security & Quality Reports - APP_NAME_PLACEHOLDER</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+            <style>
+              body {
+                box-sizing: border-box;
+                min-width: 200px;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 45px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                background: #fff;
+              }
+              .header {
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .header h1 {
+                margin-top: 0;
+                color: #24292e;
+              }
+              .card {
+                border: 1px solid #e1e4e8;
+                border-radius: 6px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: #f6f8fa;
+              }
+              .card h3 {
+                margin-top: 0;
+                color: #0366d6;
+              }
+              .btn {
+                display: inline-block;
+                padding: 8px 16px;
+                background: #0366d6;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                margin-right: 10px;
+                margin-top: 10px;
+                font-weight: 500;
+              }
+              .btn:hover {
+                background: #0256cc;
+              }
+              .btn-secondary {
+                background: #6a737d;
+              }
+              .btn-secondary:hover {
+                background: #586069;
+              }
+              .archive-list {
+                list-style: none;
+                padding: 0;
+              }
+              .archive-list li {
+                padding: 8px 0;
+                border-bottom: 1px solid #e1e4e8;
+              }
+              .archive-list li:last-child {
+                border-bottom: none;
+              }
+              .archive-list a {
+                color: #0366d6;
+                text-decoration: none;
+              }
+              .archive-list a:hover {
+                text-decoration: underline;
+              }
+              .status-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 3px;
+                font-size: 12px;
+                font-weight: 600;
+                margin-left: 8px;
+              }
+              .status-success {
+                background: #28a745;
+                color: white;
+              }
+              .status-info {
+                background: #17a2b8;
+                color: white;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>🔒 Security & Quality Reports</h1>
+              <p><strong>APP_NAME_PLACEHOLDER</strong> - Automated Security Scanning & Management Reports</p>
+              <p><em>Last updated: DATE_PLACEHOLDER</em></p>
+            </div>
+            
+            <div class="card">
+              <h3>📊 Latest Report</h3>
+              <p>View the most recent security and quality assessment report generated from automated scans.</p>
+              <a href="latest.html" class="btn">View Latest Report (HTML)</a>
+              <a href="latest.md" class="btn btn-secondary">Download Markdown</a>
+            </div>
+            
+            <div class="card">
+              <h3>📚 Report Archive</h3>
+              <p>Historical security reports are archived by date. Each report includes a complete snapshot of security posture at the time of generation.</p>
+              <p><strong>Note:</strong> Reports are generated weekly on Mondays at 6:00 AM PST.</p>
+              <p><em>Archive listing will be enhanced in a future update to automatically list all archived reports.</em></p>
+            </div>
+            
+            <div class="card">
+              <h3>🔗 Quick Links</h3>
+              <ul>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/security">🔒 GitHub Security Tab</a> - View all security alerts and detailed findings</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER">📊 SonarCloud - Backend</a> - Code quality metrics</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER">📊 SonarCloud - Frontend</a> - Code quality metrics</li>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/actions/workflows/reporting.yml">⚙️ Workflow Runs</a> - View workflow execution history</li>
+              </ul>
+            </div>
+            
+            <div class="card">
+              <h3>ℹ️ About These Reports</h3>
+              <p>Reports are generated automatically every Monday at 6:00 AM PST. Each report includes:</p>
+              <ul>
+                <li><strong>Security Vulnerability Scans</strong>: ZAP Full Penetration Test, Nuclei Template-based Detection, CodeQL Static Analysis, Trivy Dependency & Container Scanning</li>
+                <li><strong>Code Quality Metrics</strong>: Test coverage, code quality scores from SonarCloud</li>
+                <li><strong>Dependency Health Status</strong>: Outdated package tracking</li>
+                <li><strong>Remediation Recommendations</strong>: Prioritized action items based on severity</li>
+              </ul>
+              <p><strong>Report Format:</strong> HTML (viewable in browser, printable to PDF) and Markdown (source format)</p>
+            </div>
+            
+            <div class="card">
+              <h3>📋 Report Schedule</h3>
+              <ul>
+                <li><strong>Frequency:</strong> Weekly (Mondays)</li>
+                <li><strong>Time:</strong> 6:00 AM PST (2:00 PM UTC)</li>
+                <li><strong>Retention:</strong> 90 days (archived reports)</li>
+                <li><strong>Next Scan:</strong> Next Monday at 6:00 AM PST</li>
+              </ul>
+            </div>
+          </body>
+          </html>
+          EOF
+          
+          # Replace placeholders in index.html
+          REPO_NAME="${{ github.repository }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
+          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
+          UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          sed -i "s|REPO_PLACEHOLDER|$REPO_NAME|g" docs/reports/index.html
+          sed -i "s|APP_NAME_PLACEHOLDER|$APP_NAME|g" docs/reports/index.html
+          sed -i "s|SONAR_BACKEND_PLACEHOLDER|$SONAR_BACKEND_PROJECT|g" docs/reports/index.html
+          sed -i "s|SONAR_FRONTEND_PLACEHOLDER|$SONAR_FRONTEND_PROJECT|g" docs/reports/index.html
+          sed -i "s|DATE_PLACEHOLDER|$UPDATE_DATE|g" docs/reports/index.html
+          
+          echo "Reports prepared for GitHub Pages"
+
+      - name: Publish Reports to GitHub Pages
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/reports
+          destination_dir: ./reports
+
+      - name: Upload Reports as Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: management-report-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            management-report.md
+            management-report.html
+            zap-report.html
+            nuclei-results.json
+            nuclei-results.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Add Report Summary to Job Summary
+        continue-on-error: true
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🔒 Security Scan Complete
+          
+          Security scans have completed successfully. Reports are now available:
+          
+          **📊 View Reports:**
+          - [Latest Report (GitHub Pages)](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/latest.html)
+          - [Report Dashboard](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/)
+          - [Download Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          **Scans performed:**
+          - ZAP Full Penetration Test (SARIF uploaded to Security Tab)
+          - Nuclei Vulnerability Scan (SARIF uploaded to Security Tab)
+          - CodeQL Static Analysis (via existing workflows)
+          - Trivy Dependency & Container Scan (via existing workflows)
+          
+          **Access:**
+          - [GitHub Security Tab](https://github.com/${{ github.repository }}/security) - All security findings
+          - [GitHub Pages Reports](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/) - Management reports
+          EOF
+          
+          # Replace placeholders in job summary
+          REPO_OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" $GITHUB_STEP_SUMMARY
+          sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" $GITHUB_STEP_SUMMARY
 
       # ============================================================================
       # WORKFLOW NOTIFICATION
