@@ -86,7 +86,7 @@ jobs:
       - name: Upload ZAP SARIF to Security Tab
         continue-on-error: true
         # Only upload if SARIF file was successfully created
-        if: steps.zap_sarif.outcome == 'success' && (steps.zap_sarif.conclusion == 'success' || steps.zap_sarif.conclusion == null)
+        if: steps.zap_sarif.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: zap-report.sarif
