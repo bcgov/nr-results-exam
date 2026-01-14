@@ -2,8 +2,7 @@ name: Scanning and Reporting
 
 on:
   schedule:
-    - cron: '0 11 * * 6'  # 3 AM PST = 12 PM UDT, Saturdays (Full penetration test)
-    - cron: '0 9 * * 1'   # Weekly Monday 9AM PST (Management reporting)
+    - cron: '0 14 * * 1'   # 6 AM PST = 2 PM UTC, Mondays
   workflow_dispatch:
 
 concurrency:
@@ -541,7 +540,7 @@ jobs:
             - ProjectDiscovery Nuclei - Template-based vulnerability detection
             - GitHub CodeQL - Static code analysis (via analysis.yml)
             - Trivy - Dependency and container scanning (via analysis.yml)
-          - **Report Frequency**: Weekly (Mondays at 9:00 AM PST)
+          - **Report Frequency**: Weekly (Mondays at 6:00 AM PST)
           - **Report Retention**: 90 days
           - **Report Format**: Markdown (this document) and HTML (generated artifact). HTML can be printed to PDF from browser.
           
@@ -565,7 +564,7 @@ jobs:
           
           ## Next Review Dates
           
-          - **Next Automated Scan**: Next Monday at 9:00 AM PST
+          - **Next Automated Scan**: Next Monday at 6:00 AM PST
           - **Monthly Manual Review**: Recommended (see README.md)
           - **Quarterly Comprehensive Audit**: Recommended
           
@@ -613,8 +612,7 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
-      - name: Comment on Workflow Run (if manual)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Comment on Workflow Run
         uses: actions/github-script@v7
         with:
           script: |
