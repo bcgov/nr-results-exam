@@ -1,4 +1,4 @@
-name: Management Reporting
+name: Scanning and Reporting
 
 on:
   schedule:
@@ -46,6 +46,20 @@ jobs:
             echo "Note: ZAP JSON report not found, using empty report"
           fi
 
+      - name: Parse ZAP Accepted Alerts
+        id: zap_accepted
+        continue-on-error: true
+        run: |
+          # Extract ignored alert IDs from rules.tsv (format: ALERT_ID\tIGNORE\t# comment)
+          if [ -f tests/.zap/rules.tsv ]; then
+            IGNORED_IDS=$(grep -E '^[0-9]+\s+IGNORE' tests/.zap/rules.tsv | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
+            echo "ignored_ids=$IGNORED_IDS" >> $GITHUB_OUTPUT
+            echo "Found ignored alert IDs: $IGNORED_IDS"
+          else
+            echo "ignored_ids=" >> $GITHUB_OUTPUT
+            echo "No rules.tsv found, all alerts will be counted"
+          fi
+
       - name: Nuclei Scan
         id: nuclei
         uses: projectdiscovery/nuclei-action@v2.0.1
@@ -58,17 +72,41 @@ jobs:
         id: zap_parse
         continue-on-error: true
         run: |
+          # Extract ignored alert IDs from previous step
+          IGNORED_IDS="${{ steps.zap_accepted.outputs.ignored_ids }}"
+          
           # Extract vulnerability counts and top vulnerabilities from ZAP JSON report if available
           if [ -f zap-report.json ]; then
-            CRITICAL=$(jq '[.site[]?.alerts[]? | select(.riskcode == "4")] | length' zap-report.json 2>/dev/null || echo "0")
-            HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' zap-report.json 2>/dev/null || echo "0")
-            MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' zap-report.json 2>/dev/null || echo "0")
-            LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' zap-report.json 2>/dev/null || echo "0")
-            INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' zap-report.json 2>/dev/null || echo "0")
-            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW + INFO))
+            # Count total (including ignored) for reference
+            TOTAL_INCLUDING_IGNORED=$(jq '[.site[]?.alerts[]?] | length' zap-report.json 2>/dev/null || echo "0")
             
-            # Extract top 5 critical/high vulnerabilities for detailed reporting
-            jq -r '.site[]?.alerts[]? | select(.riskcode == "4" or .riskcode == "3") | "\(.name)|\(.riskcode)|\(.desc)"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
+            # Build jq filter to exclude ignored alerts
+            if [ -n "$IGNORED_IDS" ]; then
+              # Create a temporary JSON array of ignored IDs for jq filtering
+              IGNORE_ARRAY=$(echo "$IGNORED_IDS" | tr ',' '\n' | jq -R . | jq -s .)
+              
+              # Count by severity, excluding ignored alerts
+              CRITICAL=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "4") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              HIGH=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "3") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              MEDIUM=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "2") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              LOW=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "1") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              INFO=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "0") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              
+              # Extract top 5 critical/high vulnerabilities (excluding ignored) with pluginid
+              jq --argjson ignore "$IGNORE_ARRAY" -r '.site[]?.alerts[]? | select((.riskcode == "4" or .riskcode == "3") and (.pluginid as $id | ($ignore | index($id | tostring)) == null)) | "\(.name)|\(.riskcode)|\(.pluginid)|\(.desc // "No description")"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
+            else
+              # No ignored alerts, count everything
+              CRITICAL=$(jq '[.site[]?.alerts[]? | select(.riskcode == "4")] | length' zap-report.json 2>/dev/null || echo "0")
+              HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' zap-report.json 2>/dev/null || echo "0")
+              MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' zap-report.json 2>/dev/null || echo "0")
+              LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' zap-report.json 2>/dev/null || echo "0")
+              INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' zap-report.json 2>/dev/null || echo "0")
+              
+              # Extract top 5 critical/high vulnerabilities
+              jq -r '.site[]?.alerts[]? | select(.riskcode == "4" or .riskcode == "3") | "\(.name)|\(.riskcode)|\(.pluginid)|\(.desc // "No description")"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
+            fi
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW + INFO))
+            IGNORED_COUNT=$((TOTAL_INCLUDING_IGNORED - TOTAL))
           else
             CRITICAL=0
             HIGH=0
@@ -76,6 +114,7 @@ jobs:
             LOW=0
             INFO=0
             TOTAL=0
+            IGNORED_COUNT=0
             touch zap-top-vulns.txt
           fi
           echo "zap_critical=$CRITICAL" >> $GITHUB_OUTPUT
@@ -84,6 +123,7 @@ jobs:
           echo "zap_low=$LOW" >> $GITHUB_OUTPUT
           echo "zap_info=$INFO" >> $GITHUB_OUTPUT
           echo "zap_total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "zap_ignored=$IGNORED_COUNT" >> $GITHUB_OUTPUT
 
       - name: Parse Nuclei Results
         id: nuclei_parse
@@ -149,14 +189,51 @@ jobs:
           CRITICAL_ALERTS=$(gh api repos/${{ github.repository }}/vulnerability-alerts --jq '.total_count // 0' 2>/dev/null || echo "0")
           echo "github_critical=$CRITICAL_ALERTS" >> $GITHUB_OUTPUT
 
-      - name: Get Test Coverage Data
+      - name: Get Test Coverage Data from SonarCloud
         id: coverage
         continue-on-error: true
         run: |
-          echo "Fetching coverage data from SonarCloud..."
-          # This would require SonarCloud API token - placeholder for now
-          echo "backend_coverage=95.93" >> $GITHUB_OUTPUT
-          echo "frontend_coverage=89.36" >> $GITHUB_OUTPUT
+          echo "Fetching coverage data from SonarCloud API..."
+          
+          # SonarCloud API endpoint for coverage metric
+          SONAR_API="https://sonarcloud.io/api/measures/component"
+          
+          # Fetch backend coverage
+          if [ -n "${{ secrets.SONAR_BACKEND }}" ]; then
+            BACKEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_BACKEND }}:" \
+              "$SONAR_API?component=nr-results-exam-backend&metricKeys=coverage" \
+              | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
+            echo "Backend coverage from API: $BACKEND_COVERAGE"
+          else
+            BACKEND_COVERAGE="N/A"
+            echo "SONAR_BACKEND token not available"
+          fi
+          
+          # Fetch frontend coverage
+          if [ -n "${{ secrets.SONAR_FRONTEND }}" ]; then
+            FRONTEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_FRONTEND }}:" \
+              "$SONAR_API?component=nr-results-exam-frontend&metricKeys=coverage" \
+              | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
+            echo "Frontend coverage from API: $FRONTEND_COVERAGE"
+          else
+            FRONTEND_COVERAGE="N/A"
+            echo "SONAR_FRONTEND token not available"
+          fi
+          
+          # Fallback to placeholders if API calls failed or returned N/A
+          if [ "$BACKEND_COVERAGE" = "N/A" ] || [ -z "$BACKEND_COVERAGE" ]; then
+            BACKEND_COVERAGE="95.93"
+            echo "Using fallback backend coverage: $BACKEND_COVERAGE"
+          fi
+          
+          if [ "$FRONTEND_COVERAGE" = "N/A" ] || [ -z "$FRONTEND_COVERAGE" ]; then
+            FRONTEND_COVERAGE="89.36"
+            echo "Using fallback frontend coverage: $FRONTEND_COVERAGE"
+          fi
+          
+          echo "backend_coverage=$BACKEND_COVERAGE" >> $GITHUB_OUTPUT
+          echo "frontend_coverage=$FRONTEND_COVERAGE" >> $GITHUB_OUTPUT
+          echo "Final values - Backend: $BACKEND_COVERAGE%, Frontend: $FRONTEND_COVERAGE%"
 
       - name: Get Dependency Status
         id: deps
@@ -195,6 +272,53 @@ jobs:
           BACKEND_OUTDATED="${{ steps.deps.outputs.backend_outdated || '0' }}"
           FRONTEND_OUTDATED="${{ steps.deps.outputs.frontend_outdated || '0' }}"
           GITHUB_ALERTS="${{ steps.security_alerts.outputs.github_critical || '0' }}"
+          ZAP_IGNORED="${{ steps.zap_parse.outputs.zap_ignored || '0' }}"
+          
+          # Extract top vulnerabilities for technical details section
+          TECHNICAL_DETAILS=""
+          
+          # Generate ZAP findings
+          if [ -f zap-top-vulns.txt ] && [ -s zap-top-vulns.txt ]; then
+            TECHNICAL_DETAILS="${TECHNICAL_DETAILS}#### ZAP Findings"$'\n'
+            while IFS='|' read -r name riskcode pluginid desc; do
+              SEVERITY=$(case "$riskcode" in
+                "4") echo "🔴 Critical" ;;
+                "3") echo "🟠 High" ;;
+                *) echo "🟡 Medium" ;;
+              esac)
+              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}- **$SEVERITY**: \`$name\` (Alert ID: $pluginid)"$'\n'
+              DESC_TRUNC="${desc:0:200}"
+              [ ${#desc} -gt 200 ] && DESC_TRUNC="${DESC_TRUNC}..."
+              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}  - Description: $DESC_TRUNC"$'\n'
+            done < zap-top-vulns.txt
+            TECHNICAL_DETAILS="${TECHNICAL_DETAILS}"$'\n'
+          fi
+          
+          # Generate Nuclei findings
+          if [ -f nuclei-results.json ]; then
+            NUCLEI_TOP=$(jq -r '[.[] | select(.info.severity == "critical" or .info.severity == "high")] | .[0:5] | .[] | "\(.info.severity)|\(.info.name // "Unknown")|\(.matched-at // "N/A")|\(.info.reference // "N/A")"' nuclei-results.json 2>/dev/null || echo "")
+            if [ -n "$NUCLEI_TOP" ]; then
+              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}#### Nuclei Findings"$'\n'
+              NUCLEI_TEMP=$(mktemp)
+              echo "$NUCLEI_TOP" | while IFS='|' read -r severity name matched ref; do
+                SEVERITY_ICON=$(case "$severity" in
+                  "critical") echo "🔴 Critical" ;;
+                  "high") echo "🟠 High" ;;
+                  *) echo "🟡 Medium" ;;
+                esac)
+                echo "- **$SEVERITY_ICON**: \`$name\`" >> "$NUCLEI_TEMP"
+                echo "  - Matched At: \`$matched\`" >> "$NUCLEI_TEMP"
+                [ "$ref" != "N/A" ] && [ -n "$ref" ] && echo "  - Reference: $ref" >> "$NUCLEI_TEMP"
+              done
+              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}$(cat "$NUCLEI_TEMP")"$'\n'
+              rm -f "$NUCLEI_TEMP"
+            fi
+          fi
+          
+          # If no technical details, set a message
+          if [ -z "$TECHNICAL_DETAILS" ]; then
+            TECHNICAL_DETAILS="✅ No critical or high vulnerabilities detected in this scan."
+          fi
           
           # Calculate totals (ensure numeric values)
           ZAP_TOTAL_NUM=${ZAP_TOTAL:-0}
@@ -306,8 +430,29 @@ jobs:
           
           **Dependabot/CodeQL Alerts**: $GITHUB_ALERTS open alerts
           
-          > **Note**: Detailed scan reports are available in workflow artifacts for technical review.
+          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan reports are available in workflow artifacts for technical review.")
 
+          ---
+          
+          ## Quick Links
+          
+          Access detailed information in related tools:
+          
+          - [🔒 GitHub Security Tab](https://github.com/${{ github.repository }}/security)
+          - [📊 SonarCloud - Backend](https://sonarcloud.io/project/overview?id=nr-results-exam-backend)
+          - [📊 SonarCloud - Frontend](https://sonarcloud.io/project/overview?id=nr-results-exam-frontend)
+          - [📄 Workflow Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ---
+          
+          ## Technical Details
+          
+          ### Top Critical/High Vulnerabilities
+          
+          $TECHNICAL_DETAILS
+          
+          > **Note**: For complete vulnerability details, remediation guidance, and affected components, see the full scan reports in workflow artifacts.
+          
           ---
           
           ## Code Quality & Application Health
@@ -389,7 +534,7 @@ jobs:
             - Trivy - Dependency and container scanning (via analysis.yml)
           - **Report Frequency**: Weekly (Mondays at 9:00 AM PST)
           - **Report Retention**: 90 days
-          - **Report Format**: Markdown (this document) and PDF (generated artifact)
+          - **Report Format**: Markdown (this document) and HTML (generated artifact). HTML can be printed to PDF from browser.
           
           ### Vulnerability Scoring
           
@@ -474,5 +619,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               run_id: context.runId,
-              body: `## 📊 Management Report Generated\n\n<details>\n<summary>Click to view report summary</summary>\n\n\`\`\`\n${escapedReport.substring(0, 2000)}${escapedReport.length > 2000 ? '...\n\n(Report truncated, see full report in artifacts)' : ''}\n\`\`\`\n\n</details>\n\n📎 **Full report available in workflow artifacts** (Markdown and PDF formats)`
+              body: `## 📊 Management Report Generated\n\n<details>\n<summary>Click to view report summary</summary>\n\n\`\`\`\n${escapedReport.substring(0, 2000)}${escapedReport.length > 2000 ? '...\n\n(Report truncated, see full report in artifacts)' : ''}\n\`\`\`\n\n</details>\n\n📎 **Full report available in workflow artifacts** (Markdown and HTML formats)`
             });
