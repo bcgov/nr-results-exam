@@ -22,12 +22,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      # ============================================================================
+      # CONFIGURATION (Future Action Inputs)
+      # ============================================================================
+      - name: Set Configuration Variables
+        id: config
+        run: |
+          # These will become action inputs when extracted to reusable action
+          echo "scan_target=https://results-exam-test.apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+          echo "sonar_backend_project=nr-results-exam-backend" >> $GITHUB_OUTPUT
+          echo "sonar_frontend_project=nr-results-exam-frontend" >> $GITHUB_OUTPUT
+          echo "sonar_org=bcgov-sonarcloud" >> $GITHUB_OUTPUT
+          echo "zap_rules_file=tests/.zap/rules.tsv" >> $GITHUB_OUTPUT
+          echo "report_title=Vulnerability Scan & Management Report" >> $GITHUB_OUTPUT
+          echo "app_name=NR Results Exam" >> $GITHUB_OUTPUT
+
+      # ============================================================================
+      # SECURITY SCANNING
+      # ============================================================================
       - name: ZAP Full Scan
         id: zap
         uses: zaproxy/action-full-scan@v0.13.0
         continue-on-error: true
         with:
-          target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
+          target: '${{ steps.config.outputs.scan_target }}'
           allow_issue_writing: true
           artifact_name: 'zap-report'
           # -l WARN: Only report WARN and FAIL level alerts (Medium/High risk) for GitHub issues
@@ -37,7 +55,7 @@ jobs:
           # -f html: HTML format
           # -I: Include informational alerts
           cmd_options: '-l WARN -a -J -r zap-report.html -f html -I'
-          rules_file_name: 'tests/.zap/rules.tsv'
+          rules_file_name: '${{ steps.config.outputs.zap_rules_file }}'
           issue_title: 'ZAP Penetration Test'
           
       - name: Extract ZAP JSON Report
@@ -72,8 +90,9 @@ jobs:
         continue-on-error: true
         run: |
           # Extract ignored alert IDs from rules.tsv (format: ALERT_ID\tIGNORE\t# comment)
-          if [ -f tests/.zap/rules.tsv ]; then
-            IGNORED_IDS=$(grep -E '^[0-9]+\s+IGNORE' tests/.zap/rules.tsv | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
+          ZAP_RULES_FILE="${{ steps.config.outputs.zap_rules_file }}"
+          if [ -f "$ZAP_RULES_FILE" ]; then
+            IGNORED_IDS=$(grep -E '^[0-9]+\s+IGNORE' "$ZAP_RULES_FILE" | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
             echo "ignored_ids=$IGNORED_IDS" >> $GITHUB_OUTPUT
             echo "Found ignored alert IDs: $IGNORED_IDS"
           else
@@ -86,7 +105,7 @@ jobs:
         uses: projectdiscovery/nuclei-action@v2.0.1
         continue-on-error: true
         with:
-          target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
+          target: '${{ steps.config.outputs.scan_target }}'
           flags: '-json -o nuclei-results.json'
           sarif-export: nuclei-results.sarif
 
@@ -97,6 +116,9 @@ jobs:
         with:
           sarif_file: nuclei-results.sarif
 
+      # ============================================================================
+      # DATA AGGREGATION
+      # ============================================================================
       - name: Parse ZAP Results
         id: zap_parse
         continue-on-error: true
@@ -209,6 +231,9 @@ jobs:
           echo "nuclei_info=$INFO" >> $GITHUB_OUTPUT
           echo "nuclei_total=$TOTAL" >> $GITHUB_OUTPUT
 
+      # ============================================================================
+      # EXTERNAL DATA SOURCES
+      # ============================================================================
       - name: Get Security Alerts Summary
         id: security_alerts
         continue-on-error: true
@@ -307,9 +332,10 @@ jobs:
           SONAR_API="https://sonarcloud.io/api/measures/component"
           
           # Fetch backend coverage
+          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
           if [ -n "${{ secrets.SONAR_BACKEND }}" ]; then
             BACKEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_BACKEND }}:" \
-              "$SONAR_API?component=nr-results-exam-backend&metricKeys=coverage" \
+              "$SONAR_API?component=${SONAR_BACKEND_PROJECT}&metricKeys=coverage" \
               | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
             echo "Backend coverage from API: $BACKEND_COVERAGE"
           else
@@ -318,9 +344,10 @@ jobs:
           fi
           
           # Fetch frontend coverage
+          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
           if [ -n "${{ secrets.SONAR_FRONTEND }}" ]; then
             FRONTEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_FRONTEND }}:" \
-              "$SONAR_API?component=nr-results-exam-frontend&metricKeys=coverage" \
+              "$SONAR_API?component=${SONAR_FRONTEND_PROJECT}&metricKeys=coverage" \
               | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
             echo "Frontend coverage from API: $FRONTEND_COVERAGE"
           else
@@ -343,6 +370,9 @@ jobs:
           echo "frontend_coverage=$FRONTEND_COVERAGE" >> $GITHUB_OUTPUT
           echo "Final values - Backend: $BACKEND_COVERAGE%, Frontend: $FRONTEND_COVERAGE%"
 
+      # ============================================================================
+      # REPORT GENERATION
+      # ============================================================================
       - name: Get Dependency Status
         id: deps
         continue-on-error: true
@@ -359,7 +389,9 @@ jobs:
         id: report
         run: |
           REPORT_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
-          SCAN_TARGET="results-exam-test.apps.silver.devops.gov.bc.ca"
+          SCAN_TARGET="${{ steps.config.outputs.scan_target }}"
+          REPORT_TITLE="${{ steps.config.outputs.report_title }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
           
           # Extract GitHub Actions outputs to bash variables
           ZAP_CRITICAL="${{ steps.zap_parse.outputs.zap_critical || '0' }}"
@@ -473,7 +505,7 @@ jobs:
           LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW + NUCLEI_INFO))
           
           cat > management-report.md << EOF
-          # Vulnerability Scan & Management Report
+          # $REPORT_TITLE
           
           **Report Date**: $REPORT_DATE  
           **Scan Target**: $SCAN_TARGET  
@@ -483,7 +515,7 @@ jobs:
           
           ## Executive Summary
           
-          This automated vulnerability assessment report provides a comprehensive overview of the security posture, code quality, and operational status of the NR Results Exam application. The report consolidates findings from multiple security scanning tools and quality metrics.
+          This automated vulnerability assessment report provides a comprehensive overview of the security posture, code quality, and operational status of the $APP_NAME application. The report consolidates findings from multiple security scanning tools and quality metrics.
           
           ### Overall Security Status
           
@@ -585,8 +617,8 @@ jobs:
           Access detailed information in related tools:
           
           - [🔒 GitHub Security Tab](https://github.com/${{ github.repository }}/security)
-          - [📊 SonarCloud - Backend](https://sonarcloud.io/project/overview?id=nr-results-exam-backend)
-          - [📊 SonarCloud - Frontend](https://sonarcloud.io/project/overview?id=nr-results-exam-frontend)
+          - [📊 SonarCloud - Backend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_backend_project }})
+          - [📊 SonarCloud - Frontend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_frontend_project }})
           - [📄 Workflow Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           ---
@@ -718,6 +750,9 @@ jobs:
           EOF
           echo "report_path=management-report.md" >> $GITHUB_OUTPUT
 
+      # ============================================================================
+      # REPORT PUBLISHING
+      # ============================================================================
       - name: Generate HTML Report
         continue-on-error: true
         run: |
@@ -820,7 +855,7 @@ jobs:
           <body>
             <div class="header">
               <h1>🔒 Security & Quality Reports</h1>
-              <p>NR Results Exam - Automated Security Scanning & Management Reports</p>
+              <p>APP_NAME_PLACEHOLDER - Automated Security Scanning & Management Reports</p>
             </div>
             
             <div class="card">
@@ -840,8 +875,8 @@ jobs:
               <h3>🔗 Quick Links</h3>
               <ul>
                 <li><a href="https://github.com/REPO_PLACEHOLDER/security">GitHub Security Tab</a> - View all security alerts</li>
-                <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-backend">SonarCloud - Backend</a> - Code quality metrics</li>
-                <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-frontend">SonarCloud - Frontend</a> - Code quality metrics</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER">SonarCloud - Backend</a> - Code quality metrics</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER">SonarCloud - Frontend</a> - Code quality metrics</li>
                 <li><a href="https://github.com/REPO_PLACEHOLDER/actions">GitHub Actions</a> - View workflow runs and artifacts</li>
               </ul>
             </div>
@@ -863,8 +898,14 @@ jobs:
           
           # Replace placeholders in index.html
           REPO_NAME="${{ github.repository }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
+          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
           UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
           sed -i "s|REPO_PLACEHOLDER|$REPO_NAME|g" docs/reports/index.html
+          sed -i "s|APP_NAME_PLACEHOLDER|$APP_NAME|g" docs/reports/index.html
+          sed -i "s|SONAR_BACKEND_PLACEHOLDER|$SONAR_BACKEND_PROJECT|g" docs/reports/index.html
+          sed -i "s|SONAR_FRONTEND_PLACEHOLDER|$SONAR_FRONTEND_PROJECT|g" docs/reports/index.html
           sed -i "s|DATE_PLACEHOLDER|$UPDATE_DATE|g" docs/reports/index.html
           
           echo "Reports prepared for GitHub Pages"
