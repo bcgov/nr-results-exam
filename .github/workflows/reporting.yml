@@ -74,6 +74,8 @@ jobs:
 
       - name: Convert ZAP Results to SARIF
         continue-on-error: true
+        # Note: This action only provides @main branch, no version tags available
+        # Consider pinning to a specific commit SHA for production stability
         uses: SvanBoxel/zaproxy-to-ghas@main
         with:
           zap_json: zap-report.json
@@ -355,15 +357,15 @@ jobs:
             echo "SONAR_FRONTEND token not available"
           fi
           
-          # Fallback to placeholders if API calls failed or returned N/A
+          # Handle cases where API calls failed or returned N/A
           if [ "$BACKEND_COVERAGE" = "N/A" ] || [ -z "$BACKEND_COVERAGE" ]; then
-            BACKEND_COVERAGE="95.93"
-            echo "Using fallback backend coverage: $BACKEND_COVERAGE"
+            echo "WARNING: Backend coverage unavailable from SonarCloud API; reporting as N/A."
+            BACKEND_COVERAGE="N/A"
           fi
           
           if [ "$FRONTEND_COVERAGE" = "N/A" ] || [ -z "$FRONTEND_COVERAGE" ]; then
-            FRONTEND_COVERAGE="89.36"
-            echo "Using fallback frontend coverage: $FRONTEND_COVERAGE"
+            echo "WARNING: Frontend coverage unavailable from SonarCloud API; reporting as N/A."
+            FRONTEND_COVERAGE="N/A"
           fi
           
           echo "backend_coverage=$BACKEND_COVERAGE" >> $GITHUB_OUTPUT
@@ -638,10 +640,10 @@ jobs:
           
           | Component | Coverage | Threshold | Status |
           |-----------|----------|-----------|--------|
-          | Backend | ${BACKEND_COVERAGE}% | 70% | $(if [ "$BACKEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
-          | Frontend | ${FRONTEND_COVERAGE}% | 70% | $(if [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
+          | Backend | ${BACKEND_COVERAGE}% | 70% | $(if [ "$BACKEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
+          | Frontend | ${FRONTEND_COVERAGE}% | 70% | $(if [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
           
-          **Overall Status**: Both components exceed 70% threshold ✅
+          **Overall Status**: $(if [ "$BACKEND_COVERAGE" = "N/A" ] || [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Coverage data unavailable for one or more components"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Both components exceed 70% threshold"; else echo "⚠️ One or more components below 70% threshold"; fi)
           
           ### Dependency Health Status
           
