@@ -216,7 +216,86 @@ jobs:
           # Get Dependabot and CodeQL alerts count from GitHub API
           # This requires GITHUB_TOKEN which is available by default
           CRITICAL_ALERTS=$(gh api repos/${{ github.repository }}/vulnerability-alerts --jq '.total_count // 0' 2>/dev/null || echo "0")
+          
+          # Get detailed code scanning alerts information
+          ALERTS_JSON=$(gh api repos/${{ github.repository }}/code-scanning/alerts --paginate --jq '.' 2>/dev/null || echo "[]")
+          
+          # Calculate metrics from code scanning alerts
+          if [ "$ALERTS_JSON" != "[]" ] && [ -n "$ALERTS_JSON" ]; then
+            # Total code scanning alerts
+            TOTAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq 'length' 2>/dev/null || echo "0")
+            
+            # Alerts by status
+            OPEN_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open")] | length' 2>/dev/null || echo "0")
+            FIXED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "fixed")] | length' 2>/dev/null || echo "0")
+            DISMISSED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "dismissed")] | length' 2>/dev/null || echo "0")
+            
+            # Alerts by severity
+            CRITICAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "error")] | length' 2>/dev/null || echo "0")
+            HIGH_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "warning")] | length' 2>/dev/null || echo "0")
+            MEDIUM_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "note")] | length' 2>/dev/null || echo "0")
+            
+            # Unassigned alerts
+            UNASSIGNED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open" and (.assignees == null or (.assignees | length) == 0))] | length' 2>/dev/null || echo "0")
+            
+            # Calculate average and oldest alert age (in days) for open alerts
+            CURRENT_TIME=$(date +%s)
+            OPEN_ALERTS_JSON=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
+            if [ "$(echo "$OPEN_ALERTS_JSON" | jq 'length')" -gt 0 ]; then
+              # Calculate average age using jq
+              AVG_AGE=$(echo "$OPEN_ALERTS_JSON" | jq --arg now "$CURRENT_TIME" '
+                [.[] | 
+                  (.created_at | fromdateiso8601) as $created |
+                  (($now | tonumber) - $created) / 86400 | floor
+                ] | 
+                if length > 0 then (add / length | floor) else 0 end
+              ' 2>/dev/null || echo "0")
+              
+              # Calculate oldest alert age
+              OLDEST_AGE=$(echo "$OPEN_ALERTS_JSON" | jq --arg now "$CURRENT_TIME" '
+                [.[] | 
+                  (.created_at | fromdateiso8601) as $created |
+                  (($now | tonumber) - $created) / 86400 | floor
+                ] | 
+                max // 0
+              ' 2>/dev/null || echo "0")
+            else
+              AVG_AGE=0
+              OLDEST_AGE=0
+            fi
+            
+            # Resolution rate (fixed / total)
+            if [ "$TOTAL_CODE_ALERTS" -gt 0 ]; then
+              RESOLUTION_RATE=$(echo "scale=1; $FIXED_ALERTS * 100 / $TOTAL_CODE_ALERTS" | bc 2>/dev/null || echo "0")
+            else
+              RESOLUTION_RATE=0
+            fi
+          else
+            TOTAL_CODE_ALERTS=0
+            OPEN_ALERTS=0
+            FIXED_ALERTS=0
+            DISMISSED_ALERTS=0
+            CRITICAL_CODE_ALERTS=0
+            HIGH_CODE_ALERTS=0
+            MEDIUM_CODE_ALERTS=0
+            UNASSIGNED_ALERTS=0
+            AVG_AGE=0
+            OLDEST_AGE=0
+            RESOLUTION_RATE=0
+          fi
+          
           echo "github_critical=$CRITICAL_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_total=$TOTAL_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_open=$OPEN_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_fixed=$FIXED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_dismissed=$DISMISSED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_critical=$CRITICAL_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_high=$HIGH_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_medium=$MEDIUM_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_unassigned=$UNASSIGNED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_avg_age=$AVG_AGE" >> $GITHUB_OUTPUT
+          echo "code_scanning_oldest_age=$OLDEST_AGE" >> $GITHUB_OUTPUT
+          echo "code_scanning_resolution_rate=$RESOLUTION_RATE" >> $GITHUB_OUTPUT
 
       - name: Get Test Coverage Data from SonarCloud
         id: coverage
@@ -301,6 +380,17 @@ jobs:
           BACKEND_OUTDATED="${{ steps.deps.outputs.backend_outdated || '0' }}"
           FRONTEND_OUTDATED="${{ steps.deps.outputs.frontend_outdated || '0' }}"
           GITHUB_ALERTS="${{ steps.security_alerts.outputs.github_critical || '0' }}"
+          CODE_SCANNING_TOTAL="${{ steps.security_alerts.outputs.code_scanning_total || '0' }}"
+          CODE_SCANNING_OPEN="${{ steps.security_alerts.outputs.code_scanning_open || '0' }}"
+          CODE_SCANNING_FIXED="${{ steps.security_alerts.outputs.code_scanning_fixed || '0' }}"
+          CODE_SCANNING_DISMISSED="${{ steps.security_alerts.outputs.code_scanning_dismissed || '0' }}"
+          CODE_SCANNING_CRITICAL="${{ steps.security_alerts.outputs.code_scanning_critical || '0' }}"
+          CODE_SCANNING_HIGH="${{ steps.security_alerts.outputs.code_scanning_high || '0' }}"
+          CODE_SCANNING_MEDIUM="${{ steps.security_alerts.outputs.code_scanning_medium || '0' }}"
+          CODE_SCANNING_UNASSIGNED="${{ steps.security_alerts.outputs.code_scanning_unassigned || '0' }}"
+          CODE_SCANNING_AVG_AGE="${{ steps.security_alerts.outputs.code_scanning_avg_age || '0' }}"
+          CODE_SCANNING_OLDEST_AGE="${{ steps.security_alerts.outputs.code_scanning_oldest_age || '0' }}"
+          CODE_SCANNING_RESOLUTION_RATE="${{ steps.security_alerts.outputs.code_scanning_resolution_rate || '0' }}"
           ZAP_IGNORED="${{ steps.zap_parse.outputs.zap_ignored || '0' }}"
           
           # Extract top vulnerabilities for technical details section
@@ -457,7 +547,34 @@ jobs:
           
           ### GitHub Security Alerts
           
-          **Dependabot/CodeQL Alerts**: $GITHUB_ALERTS open alerts
+          **Dependabot Alerts**: $GITHUB_ALERTS open alerts
+          
+          #### Code Scanning Alerts (CodeQL, Trivy, ZAP, Nuclei)
+          
+          | Metric | Count | Status |
+          |--------|-------|--------|
+          | **Total Alerts** | $CODE_SCANNING_TOTAL | $([ "$CODE_SCANNING_TOTAL" -eq 0 ] && echo "✅ None" || echo "⚠️ Requires Review") |
+          | **Open** | $CODE_SCANNING_OPEN | $([ "$CODE_SCANNING_OPEN" -eq 0 ] && echo "✅ All Resolved" || echo "🟡 Active") |
+          | **Fixed** | $CODE_SCANNING_FIXED | ✅ Resolved |
+          | **Dismissed** | $CODE_SCANNING_DISMISSED | ℹ️ Dismissed |
+          | **Unassigned** | $CODE_SCANNING_UNASSIGNED | $([ "$CODE_SCANNING_UNASSIGNED" -eq 0 ] && echo "✅ All Assigned" || echo "🟠 Needs Assignment") |
+          
+          #### Alert Severity Breakdown
+          
+          | Severity | Count |
+          |----------|-------|
+          | 🔴 Critical (Error) | $CODE_SCANNING_CRITICAL |
+          | 🟠 High (Warning) | $CODE_SCANNING_HIGH |
+          | 🟡 Medium (Note) | $CODE_SCANNING_MEDIUM |
+          
+          #### Remediation Metrics
+          
+          - **Average Alert Age**: $CODE_SCANNING_AVG_AGE days
+          - **Oldest Open Alert**: $CODE_SCANNING_OLDEST_AGE days
+          - **Resolution Rate**: ${CODE_SCANNING_RESOLUTION_RATE}%
+          
+          $([ "$CODE_SCANNING_UNASSIGNED" -gt 0 ] && echo "> **⚠️ Action Required**: $CODE_SCANNING_UNASSIGNED unassigned alert(s) need attention. Assign alerts to team members for faster remediation." || echo "")
+          $([ "$CODE_SCANNING_OLDEST_AGE" -gt 30 ] && echo "> **⚠️ Attention**: Oldest open alert is $CODE_SCANNING_OLDEST_AGE days old. Consider prioritizing older alerts for remediation." || echo "")
           
           $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan reports are available in workflow artifacts for technical review.")
 
