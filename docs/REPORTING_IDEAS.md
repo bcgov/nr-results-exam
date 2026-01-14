@@ -63,7 +63,7 @@ The reporting workflow (`reporting.yml`) is designed with inspiration from OpenV
 ### ✅ What We Have
 
 1. **Security Scanning**
-   - ZAP penetration tests (weekly via `pentests.yml`)
+   - ZAP penetration tests (weekly via `reporting.yml`)
    - CodeQL analysis (on PRs and scheduled via `analysis.yml`)
    - Trivy vulnerability scanning (on PRs and scheduled)
    - Security headers validation (in PR validate workflow)
