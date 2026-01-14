@@ -737,6 +737,146 @@ jobs:
           echo "HTML report generated successfully"
           echo "Note: To generate PDF, open HTML in browser and use Print > Save as PDF"
 
+      - name: Prepare Reports for GitHub Pages
+        continue-on-error: true
+        run: |
+          # Create reports directory structure
+          mkdir -p docs/reports/archive
+          
+          # Copy latest report
+          REPORT_DATE=$(date '+%Y-%m-%d')
+          cp management-report.html docs/reports/latest.html
+          cp management-report.md docs/reports/latest.md
+          
+          # Archive this report with date
+          cp management-report.html docs/reports/archive/${REPORT_DATE}.html
+          
+          # Create simple index.html dashboard
+          cat > docs/reports/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Security & Quality Reports - NR Results Exam</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+            <style>
+              body {
+                box-sizing: border-box;
+                min-width: 200px;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 45px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+              }
+              .header {
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .card {
+                border: 1px solid #e1e4e8;
+                border-radius: 6px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: #f6f8fa;
+              }
+              .card h3 {
+                margin-top: 0;
+              }
+              .btn {
+                display: inline-block;
+                padding: 8px 16px;
+                background: #0366d6;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                margin-right: 10px;
+                margin-top: 10px;
+              }
+              .btn:hover {
+                background: #0256cc;
+              }
+              .archive-list {
+                list-style: none;
+                padding: 0;
+              }
+              .archive-list li {
+                padding: 8px 0;
+                border-bottom: 1px solid #e1e4e8;
+              }
+              .archive-list li:last-child {
+                border-bottom: none;
+              }
+              .archive-list a {
+                color: #0366d6;
+                text-decoration: none;
+              }
+              .archive-list a:hover {
+                text-decoration: underline;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>🔒 Security & Quality Reports</h1>
+              <p>NR Results Exam - Automated Security Scanning & Management Reports</p>
+            </div>
+            
+            <div class="card">
+              <h3>📊 Latest Report</h3>
+              <p>View the most recent security and quality assessment report.</p>
+              <a href="latest.html" class="btn">View Latest Report</a>
+              <a href="latest.md" class="btn">Download Markdown</a>
+            </div>
+            
+            <div class="card">
+              <h3>📚 Report Archive</h3>
+              <p>Historical security reports are available in workflow artifacts. Archived reports are stored with date stamps.</p>
+              <p><strong>Note:</strong> Historical archive viewing will be enhanced in a future update.</p>
+            </div>
+            
+            <div class="card">
+              <h3>🔗 Quick Links</h3>
+              <ul>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/security">GitHub Security Tab</a> - View all security alerts</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-backend">SonarCloud - Backend</a> - Code quality metrics</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-frontend">SonarCloud - Frontend</a> - Code quality metrics</li>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/actions">GitHub Actions</a> - View workflow runs and artifacts</li>
+              </ul>
+            </div>
+            
+            <div class="card">
+              <h3>ℹ️ About These Reports</h3>
+              <p>Reports are generated automatically every Monday at 6:00 AM PST. Each report includes:</p>
+              <ul>
+                <li>Security vulnerability scans (ZAP, Nuclei, Trivy, CodeQL)</li>
+                <li>Code quality metrics (SonarCloud)</li>
+                <li>Dependency health status</li>
+                <li>Remediation recommendations</li>
+              </ul>
+              <p><em>Last updated: DATE_PLACEHOLDER</em></p>
+            </div>
+          </body>
+          </html>
+          EOF
+          
+          # Replace placeholders in index.html
+          REPO_NAME="${{ github.repository }}"
+          UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          sed -i "s|REPO_PLACEHOLDER|$REPO_NAME|g" docs/reports/index.html
+          sed -i "s|DATE_PLACEHOLDER|$UPDATE_DATE|g" docs/reports/index.html
+          
+          echo "Reports prepared for GitHub Pages"
+
+      - name: Publish Reports to GitHub Pages
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/reports
+          destination_dir: ./reports
+
       - name: Upload Reports as Artifacts
         uses: actions/upload-artifact@v4
         with:
