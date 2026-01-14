@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       security-events: write
-      contents: write
       issues: write
     timeout-minutes: 30
     steps:
@@ -557,7 +556,7 @@ jobs:
           | ℹ️ Informational | $ZAP_INFO | N/A | Best practices |
           | **Total** | **$ZAP_TOTAL** | **All Severities** | **See details below** |
           
-          > **Note**: Detailed vulnerability descriptions, affected components, and remediation guidance are available in the ZAP HTML report artifact.
+          > **Note**: Detailed vulnerability descriptions, affected components, and remediation guidance are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
           
           ### Nuclei Vulnerability Scan Results
           
@@ -576,7 +575,7 @@ jobs:
           | 🔵 Low | $NUCLEI_LOW | 0.1 - 3.9 | As resources allow |
           | **Total** | **$NUCLEI_TOTAL** | **All Severities** | **See details below** |
           
-          > **Note**: Detailed vulnerability information, affected endpoints, and CVE references are available in the Nuclei results artifact.
+          > **Note**: Detailed vulnerability information, affected endpoints, and CVE references are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
           
           ### GitHub Security Alerts
           
@@ -609,7 +608,7 @@ jobs:
           $([ "$CODE_SCANNING_UNASSIGNED" -gt 0 ] && echo "> **⚠️ Action Required**: $CODE_SCANNING_UNASSIGNED unassigned alert(s) need attention. Assign alerts to team members for faster remediation." || echo "")
           $([ "$CODE_SCANNING_OLDEST_AGE" -gt 30 ] && echo "> **⚠️ Attention**: Oldest open alert is $CODE_SCANNING_OLDEST_AGE days old. Consider prioritizing older alerts for remediation." || echo "")
           
-          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan reports are available in workflow artifacts for technical review.")
+          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan results are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).")
 
           ---
           
@@ -617,10 +616,9 @@ jobs:
           
           Access detailed information in related tools:
           
-          - [🔒 GitHub Security Tab](https://github.com/${{ github.repository }}/security)
+          - [🔒 GitHub Security Tab](https://github.com/${{ github.repository }}/security) - View all security alerts and scan results
           - [📊 SonarCloud - Backend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_backend_project }})
           - [📊 SonarCloud - Frontend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_frontend_project }})
-          - [📄 Workflow Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           ---
           
@@ -630,7 +628,7 @@ jobs:
           
           $TECHNICAL_DETAILS
           
-          > **Note**: For complete vulnerability details, remediation guidance, and affected components, see the full scan reports in workflow artifacts.
+          > **Note**: For complete vulnerability details, remediation guidance, and affected components, see the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
           
           ---
           
@@ -685,7 +683,7 @@ jobs:
           
           ### Remediation Guidance
           
-          - **Detailed Reports**: Review full vulnerability details in workflow artifacts (ZAP HTML report, Nuclei results)
+          - **Detailed Reports**: Review full vulnerability details in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security)
           - **CVSS Scores**: Prioritize vulnerabilities with higher CVSS scores (9.0-10.0 = Critical, 7.0-8.9 = High)
           - **Impact Assessment**: Consider business impact when prioritizing remediation efforts
           - **References**: Each vulnerability includes references and remediation guidance in the detailed reports
@@ -713,7 +711,7 @@ jobs:
             - Trivy - Dependency and container scanning (via analysis.yml)
           - **Report Frequency**: Weekly (Mondays at 6:00 AM PST)
           - **Report Retention**: 90 days
-          - **Report Format**: Markdown (this document) and HTML (generated artifact). HTML can be printed to PDF from browser.
+          - **Report Format**: Markdown (this document). All security findings are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
           
           ### Vulnerability Scoring
           
@@ -742,209 +740,20 @@ jobs:
           ---
           
           *This report was generated automatically by GitHub Actions.*  
-          *For detailed technical information, see workflow artifacts and:*  
-          *https://github.com/${{ github.repository }}*
-
-          ---
-          *Report generated automatically by GitHub Actions*
-          *For detailed information, see: https://github.com/${{ github.repository }}*
+          *For detailed technical information, see the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).*
           EOF
           echo "report_path=management-report.md" >> $GITHUB_OUTPUT
 
       # ============================================================================
-      # REPORT PUBLISHING
+      # WORKFLOW NOTIFICATION
       # ============================================================================
-      - name: Generate HTML Report
-        continue-on-error: true
-        run: |
-          # Install pandoc (lightweight, ~50MB) - only for HTML generation
-          sudo apt-get update && sudo apt-get install -y pandoc
-          
-          # Generate HTML version (always works, lightweight, no LaTeX required)
-          # HTML can be printed to PDF from browser (File > Print > Save as PDF)
-          pandoc management-report.md -o management-report.html \
-            --standalone \
-            --from markdown \
-            --to html \
-            --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css \
-            --metadata title="Management Report - $(date '+%Y-%m-%d')" \
-            --metadata lang=en
-          
-          echo "HTML report generated successfully"
-          echo "Note: To generate PDF, open HTML in browser and use Print > Save as PDF"
-
-      - name: Prepare Reports for GitHub Pages
-        continue-on-error: true
-        run: |
-          # Create reports directory structure
-          mkdir -p docs/reports/archive
-          
-          # Copy latest report
-          REPORT_DATE=$(date '+%Y-%m-%d')
-          cp management-report.html docs/reports/latest.html
-          cp management-report.md docs/reports/latest.md
-          
-          # Archive this report with date
-          cp management-report.html docs/reports/archive/${REPORT_DATE}.html
-          
-          # Create simple index.html dashboard
-          cat > docs/reports/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Security & Quality Reports - NR Results Exam</title>
-            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
-            <style>
-              body {
-                box-sizing: border-box;
-                min-width: 200px;
-                max-width: 980px;
-                margin: 0 auto;
-                padding: 45px;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-              }
-              .header {
-                border-bottom: 1px solid #eaecef;
-                padding-bottom: 20px;
-                margin-bottom: 30px;
-              }
-              .card {
-                border: 1px solid #e1e4e8;
-                border-radius: 6px;
-                padding: 20px;
-                margin-bottom: 20px;
-                background: #f6f8fa;
-              }
-              .card h3 {
-                margin-top: 0;
-              }
-              .btn {
-                display: inline-block;
-                padding: 8px 16px;
-                background: #0366d6;
-                color: white;
-                text-decoration: none;
-                border-radius: 6px;
-                margin-right: 10px;
-                margin-top: 10px;
-              }
-              .btn:hover {
-                background: #0256cc;
-              }
-              .archive-list {
-                list-style: none;
-                padding: 0;
-              }
-              .archive-list li {
-                padding: 8px 0;
-                border-bottom: 1px solid #e1e4e8;
-              }
-              .archive-list li:last-child {
-                border-bottom: none;
-              }
-              .archive-list a {
-                color: #0366d6;
-                text-decoration: none;
-              }
-              .archive-list a:hover {
-                text-decoration: underline;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>🔒 Security & Quality Reports</h1>
-              <p>APP_NAME_PLACEHOLDER - Automated Security Scanning & Management Reports</p>
-            </div>
-            
-            <div class="card">
-              <h3>📊 Latest Report</h3>
-              <p>View the most recent security and quality assessment report.</p>
-              <a href="latest.html" class="btn">View Latest Report</a>
-              <a href="latest.md" class="btn">Download Markdown</a>
-            </div>
-            
-            <div class="card">
-              <h3>📚 Report Archive</h3>
-              <p>Historical security reports are available in workflow artifacts. Archived reports are stored with date stamps.</p>
-              <p><strong>Note:</strong> Historical archive viewing will be enhanced in a future update.</p>
-            </div>
-            
-            <div class="card">
-              <h3>🔗 Quick Links</h3>
-              <ul>
-                <li><a href="https://github.com/REPO_PLACEHOLDER/security">GitHub Security Tab</a> - View all security alerts</li>
-                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER">SonarCloud - Backend</a> - Code quality metrics</li>
-                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER">SonarCloud - Frontend</a> - Code quality metrics</li>
-                <li><a href="https://github.com/REPO_PLACEHOLDER/actions">GitHub Actions</a> - View workflow runs and artifacts</li>
-              </ul>
-            </div>
-            
-            <div class="card">
-              <h3>ℹ️ About These Reports</h3>
-              <p>Reports are generated automatically every Monday at 6:00 AM PST. Each report includes:</p>
-              <ul>
-                <li>Security vulnerability scans (ZAP, Nuclei, Trivy, CodeQL)</li>
-                <li>Code quality metrics (SonarCloud)</li>
-                <li>Dependency health status</li>
-                <li>Remediation recommendations</li>
-              </ul>
-              <p><em>Last updated: DATE_PLACEHOLDER</em></p>
-            </div>
-          </body>
-          </html>
-          EOF
-          
-          # Replace placeholders in index.html
-          REPO_NAME="${{ github.repository }}"
-          APP_NAME="${{ steps.config.outputs.app_name }}"
-          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
-          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
-          UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
-          sed -i "s|REPO_PLACEHOLDER|$REPO_NAME|g" docs/reports/index.html
-          sed -i "s|APP_NAME_PLACEHOLDER|$APP_NAME|g" docs/reports/index.html
-          sed -i "s|SONAR_BACKEND_PLACEHOLDER|$SONAR_BACKEND_PROJECT|g" docs/reports/index.html
-          sed -i "s|SONAR_FRONTEND_PLACEHOLDER|$SONAR_FRONTEND_PROJECT|g" docs/reports/index.html
-          sed -i "s|DATE_PLACEHOLDER|$UPDATE_DATE|g" docs/reports/index.html
-          
-          echo "Reports prepared for GitHub Pages"
-
-      - name: Publish Reports to GitHub Pages
-        continue-on-error: true
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/reports
-          destination_dir: ./reports
-
-      - name: Upload Reports as Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: management-report-${{ github.run_number }}-${{ github.run_attempt }}
-          path: |
-            management-report.md
-            management-report.html
-            zap-report.html
-            nuclei-results.json
-            nuclei-results.txt
-          retention-days: 90
-          if-no-files-found: warn
-
       - name: Comment on Workflow Run
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const report = fs.readFileSync('management-report.md', 'utf8');
-            // Use HTML pre tag to avoid nested backtick issues with markdown code blocks
-            const escapedReport = report
-              .replace(/```/g, '\\`\\`\\`')
-              .replace(/\$/g, '\\$');
             github.rest.actions.createWorkflowRunComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               run_id: context.runId,
-              body: `## 📊 Management Report Generated\n\n<details>\n<summary>Click to view report summary</summary>\n\n\`\`\`\n${escapedReport.substring(0, 2000)}${escapedReport.length > 2000 ? '...\n\n(Report truncated, see full report in artifacts)' : ''}\n\`\`\`\n\n</details>\n\n📎 **Full report available in workflow artifacts** (Markdown and HTML formats)`
+              body: `## 🔒 Security Scan Complete\n\nSecurity scans have completed. All findings are available in the [GitHub Security Tab](https://github.com/${context.repo.owner}/${context.repo.repo}/security).\n\n**Scans performed:**\n- ZAP Full Penetration Test (SARIF uploaded)\n- Nuclei Vulnerability Scan (SARIF uploaded)\n- CodeQL Static Analysis (via existing workflows)\n- Trivy Dependency & Container Scan (via existing workflows)\n\nView aggregated results: [Security Overview](https://github.com/${context.repo.owner}/${context.repo.repo}/security)`
             });
