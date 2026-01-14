@@ -2,7 +2,8 @@ name: Scanning and Reporting
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Weekly Monday 9AM PST
+    - cron: '0 11 * * 6'  # 3 AM PST = 12 PM UDT, Saturdays (Full penetration test)
+    - cron: '0 9 * * 1'   # Weekly Monday 9AM PST (Management reporting)
   workflow_dispatch:
   pull_request:
 
@@ -16,21 +17,30 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       security-events: write
-      contents: read
+      contents: write
+      issues: write
     timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: ZAP Baseline Scan
+      - name: ZAP Full Scan
         id: zap
-        uses: zaproxy/action-baseline@v0.13.0
+        uses: zaproxy/action-full-scan@v0.13.0
         continue-on-error: true
         with:
           target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
-          cmd_options: '-J -r zap-report.html -f html -I'
-          rules_file_name: 'tests/.zap/rules.tsv'
+          allow_issue_writing: true
           artifact_name: 'zap-report'
+          # -l WARN: Only report WARN and FAIL level alerts (Medium/High risk) for GitHub issues
+          # -a: Include all alerts in reports (for artifact analysis)
+          # -J: Generate JSON report (automatically added by action, but explicit for clarity)
+          # -r zap-report.html: Generate HTML report
+          # -f html: HTML format
+          # -I: Include informational alerts
+          cmd_options: '-l WARN -a -J -r zap-report.html -f html -I'
+          rules_file_name: 'tests/.zap/rules.tsv'
+          issue_title: 'ZAP Penetration Test'
           
       - name: Extract ZAP JSON Report
         continue-on-error: true
@@ -390,7 +400,7 @@ jobs:
           ### ZAP Security Scan Results
           
           **Scan Status**: $(if [ "${{ steps.zap.outcome }}" = "success" ]; then echo "✅ Completed Successfully"; else echo "⚠️ Completed with Issues"; fi)  
-          **Scan Type**: Baseline Security Scan  
+          **Scan Type**: Full Penetration Test  
           **Target**: $SCAN_TARGET  
           **Scan Tool**: OWASP ZAP (Zed Attack Proxy)
           
@@ -528,7 +538,7 @@ jobs:
           - **Report Generated**: $REPORT_DATE
           - **Scan Target**: $SCAN_TARGET
           - **Scan Tools**: 
-            - OWASP ZAP (Baseline Scan) - Web application security testing
+            - OWASP ZAP (Full Penetration Test) - Web application security testing
             - ProjectDiscovery Nuclei - Template-based vulnerability detection
             - GitHub CodeQL - Static code analysis (via analysis.yml)
             - Trivy - Dependency and container scanning (via analysis.yml)
