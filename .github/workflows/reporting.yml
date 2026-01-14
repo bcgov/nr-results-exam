@@ -74,6 +74,7 @@ jobs:
           fi
 
       - name: Convert ZAP Results to SARIF
+        id: zap_sarif
         continue-on-error: true
         # Note: This action only provides @main branch, no version tags available
         # Consider pinning to a specific commit SHA for production stability
@@ -84,6 +85,8 @@ jobs:
 
       - name: Upload ZAP SARIF to Security Tab
         continue-on-error: true
+        # Only upload if SARIF file was successfully created
+        if: steps.zap_sarif.outcome == 'success' && (steps.zap_sarif.conclusion == 'success' || steps.zap_sarif.conclusion == null)
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: zap-report.sarif
