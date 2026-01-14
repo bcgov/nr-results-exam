@@ -28,9 +28,9 @@ jobs:
         continue-on-error: true
         with:
           target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
-          allow_issue_writing: true
+          allow_issue_writing: false
           artifact_name: 'zap-report'
-          # -l WARN: Only report WARN and FAIL level alerts (Medium/High risk) for GitHub issues
+          # -l WARN: Only report WARN and FAIL level alerts (Medium/High risk)
           # -a: Include all alerts in reports (for artifact analysis)
           # -J: Generate JSON report (automatically added by action, but explicit for clarity)
           # -r zap-report.html: Generate HTML report
@@ -38,7 +38,6 @@ jobs:
           # -I: Include informational alerts
           cmd_options: '-l WARN -a -J -r zap-report.html -f html -I'
           rules_file_name: 'tests/.zap/rules.tsv'
-          issue_title: 'ZAP Penetration Test'
           
       - name: Extract ZAP JSON Report
         continue-on-error: true
@@ -53,6 +52,19 @@ jobs:
             echo "{}" > zap-report.json
             echo "Note: ZAP JSON report not found, using empty report"
           fi
+
+      - name: Convert ZAP Results to SARIF
+        continue-on-error: true
+        uses: SvanBoxel/zaproxy-to-ghas@main
+        with:
+          zap_json: zap-report.json
+          output: zap-report.sarif
+
+      - name: Upload ZAP SARIF to Security Tab
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: zap-report.sarif
 
       - name: Parse ZAP Accepted Alerts
         id: zap_accepted
@@ -75,6 +87,14 @@ jobs:
         with:
           target: 'https://results-exam-test.apps.silver.devops.gov.bc.ca'
           flags: '-json -o nuclei-results.json'
+          sarif-export: nuclei-results.sarif
+
+      - name: Upload Nuclei SARIF to Security Tab
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        if: steps.nuclei.outputs.sarif_exists == 'true'
+        with:
+          sarif_file: nuclei-results.sarif
 
       - name: Parse ZAP Results
         id: zap_parse
