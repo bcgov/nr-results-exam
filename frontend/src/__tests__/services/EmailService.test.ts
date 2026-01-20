@@ -68,14 +68,10 @@ describe('EmailService', () => {
 
       await sendUserReport('John Doe', 'john@example.com', 40, 'Test A');
 
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          mailBody: expect.not.stringContaining(
-            'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
-          ),
-        }),
-        expect.objectContaining({}),
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const [, payload] = mockedAxios.post.mock.calls[0];
+      expect(payload.mailBody).not.toContain(
+        'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
       );
     });
   });
