@@ -47,7 +47,7 @@ describe('EmailService', () => {
       expect(result).toBe('error');
     });
 
-    it('should include online access request form link in email body', async () => {
+    it('should include online access request form link for passing users', async () => {
       mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
 
       await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
@@ -56,6 +56,22 @@ describe('EmailService', () => {
         '/api/mail',
         expect.objectContaining({
           mailBody: expect.stringContaining(
+            'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
+          ),
+        }),
+        expect.objectContaining({}),
+      );
+    });
+
+    it('should not include online access request form link for failing users', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+
+      await sendUserReport('John Doe', 'john@example.com', 40, 'Test A');
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        '/api/mail',
+        expect.objectContaining({
+          mailBody: expect.not.stringContaining(
             'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
           ),
         }),
