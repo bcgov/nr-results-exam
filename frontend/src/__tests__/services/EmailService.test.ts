@@ -46,6 +46,22 @@ describe('EmailService', () => {
 
       expect(result).toBe('error');
     });
+
+    it('should include online access request form link in email body', async () => {
+      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+
+      await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        '/api/mail',
+        expect.objectContaining({
+          mailBody: expect.stringContaining(
+            'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
+          ),
+        }),
+        expect.objectContaining({}),
+      );
+    });
   });
 
   describe('sendAdminReport', () => {
