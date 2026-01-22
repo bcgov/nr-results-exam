@@ -38,7 +38,7 @@ export const sendUserReport = async (
             ${passOrFail === 'Passed' ? 'Congratulations! You have passed the test' : 'Sorry! You have failed the test'} with a percentage of ${percentage} %.
           </p>
           ${passOrFail === 'Passed' ? '<p>To continue the access request process, please go to the <a href="https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp">Online access request form</a>.</p>' : ''}
-          ${passOrFail === 'Failed' ? '<p>Without a passing score, unfortunately you cannot proceed any further. Please try the test again when you are ready.  For further information pleas contact RESULTSAccess@gov.bc.ca.</p>' : ''}
+          ${passOrFail === 'Failed' ? '<p>Without a passing score, unfortunately you cannot proceed any further. Please try the test again when you are ready.  For further information please contact RESULTSAccess@gov.bc.ca.</p>' : ''}
           <p>Please do not reply to this email.</p>
           <p>Regards,<br>RESULTS Bot</p>
         </div>
