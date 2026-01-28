@@ -1,6 +1,6 @@
 # Vulnerability Scan & Management Report
 
-**Report Date**: 2026-01-14 21:02:55 UTC  
+**Report Date**: 2026-01-28 22:01:49 UTC  
 **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Report Type**: Executive Summary
 
@@ -132,7 +132,7 @@ Access detailed information in related tools:
 | Component | Coverage | Threshold | Status |
 |-----------|----------|-----------|--------|
 | Backend | 87.5% | 70% | ✅ Pass |
-| Frontend | 82.2% | 70% | ✅ Pass |
+| Frontend | 82.8% | 70% | ✅ Pass |
 
 **Overall Status**: ✅ Both components exceed 70% threshold
 
@@ -152,7 +152,7 @@ Access detailed information in related tools:
 ### Application Status
 
 - **Maintenance Mode**: ✅ ACTIVE
-- **Test Coverage**: Exceeds all thresholds (Backend: 87.5%, Frontend: 82.2%)
+- **Test Coverage**: Exceeds all thresholds (Backend: 87.5%, Frontend: 82.8%)
 - **Dependency Management**: Automated via Renovate
 - **Automerge**: Enabled for dependency updates
 
@@ -195,7 +195,7 @@ Access detailed information in related tools:
 
 ### Scan Metadata
 
-- **Report Generated**: 2026-01-14 21:02:55 UTC
+- **Report Generated**: 2026-01-28 22:01:49 UTC
 - **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca
 - **Scan Tools**: 
   - OWASP ZAP (Full Penetration Test) - Web application security testing
