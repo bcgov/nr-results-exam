@@ -566,6 +566,7 @@ our [CONTRIBUTING](CONTRIBUTING.md) guide.
 - [Cookie Security](docs/COOKIE_SECURITY.md) - Details on cookie configuration, security attributes, and authentication
 - [Security Headers](docs/SECURITY-HEADERS.md) - Information on HTTP security headers including COOP/COEP
 - [ZAP Accepted Alerts](docs/security/zap-accepted-alerts.md) - Documentation of accepted low-risk ZAP security scan alerts
+- [Security & Quality Reports](https://bcgov.github.io/nr-results-exam/reports/) - Weekly automated security scanning and management reports (GitHub Pages)
 
 ## Getting help
 
