@@ -100,7 +100,7 @@ jobs:
           # Extract ignored alert IDs from rules.tsv (format: ALERT_ID\tIGNORE\t# comment)
           ZAP_RULES_FILE="${{ steps.config.outputs.zap_rules_file }}"
           if [ -f "$ZAP_RULES_FILE" ]; then
-            IGNORED_IDS=$(grep -E '^[0-9]+\s+IGNORE' "$ZAP_RULES_FILE" | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
+            IGNORED_IDS=$(grep -E '^[0-9]+[[:space:]]+IGNORE' "$ZAP_RULES_FILE" | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
             echo "ignored_ids=$IGNORED_IDS" >> $GITHUB_OUTPUT
             echo "Found ignored alert IDs: $IGNORED_IDS"
           else
@@ -437,51 +437,8 @@ jobs:
           CODE_SCANNING_RESOLUTION_RATE="${{ steps.security_alerts.outputs.code_scanning_resolution_rate || '0' }}"
           ZAP_IGNORED="${{ steps.zap_parse.outputs.zap_ignored || '0' }}"
           
-          # Extract top vulnerabilities for technical details section
-          TECHNICAL_DETAILS=""
-          
-          # Generate ZAP findings
-          if [ -f zap-top-vulns.txt ] && [ -s zap-top-vulns.txt ]; then
-            TECHNICAL_DETAILS="${TECHNICAL_DETAILS}#### ZAP Findings"$'\n'
-            while IFS='|' read -r name riskcode pluginid desc; do
-              SEVERITY=$(case "$riskcode" in
-                "4") echo "🔴 Critical" ;;
-                "3") echo "🟠 High" ;;
-                *) echo "🟡 Medium" ;;
-              esac)
-              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}- **$SEVERITY**: \`$name\` (Alert ID: $pluginid)"$'\n'
-              DESC_TRUNC="${desc:0:200}"
-              [ ${#desc} -gt 200 ] && DESC_TRUNC="${DESC_TRUNC}..."
-              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}  - Description: $DESC_TRUNC"$'\n'
-            done < zap-top-vulns.txt
-            TECHNICAL_DETAILS="${TECHNICAL_DETAILS}"$'\n'
-          fi
-          
-          # Generate Nuclei findings
-          if [ -f nuclei-results.json ]; then
-            NUCLEI_TOP=$(jq -r '[.[] | select(.info.severity == "critical" or .info.severity == "high")] | .[0:5] | .[] | "\(.info.severity)|\(.info.name // "Unknown")|\(.["matched-at"] // "N/A")|\(.info.reference // "N/A")"' nuclei-results.json 2>/dev/null || echo "")
-            if [ -n "$NUCLEI_TOP" ]; then
-              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}#### Nuclei Findings"$'\n'
-              NUCLEI_TEMP=$(mktemp)
-              echo "$NUCLEI_TOP" | while IFS='|' read -r severity name matched ref; do
-                SEVERITY_ICON=$(case "$severity" in
-                  "critical") echo "🔴 Critical" ;;
-                  "high") echo "🟠 High" ;;
-                  *) echo "🟡 Medium" ;;
-                esac)
-                echo "- **$SEVERITY_ICON**: \`$name\`" >> "$NUCLEI_TEMP"
-                echo "  - Matched At: \`$matched\`" >> "$NUCLEI_TEMP"
-                [ "$ref" != "N/A" ] && [ -n "$ref" ] && echo "  - Reference: $ref" >> "$NUCLEI_TEMP"
-              done
-              TECHNICAL_DETAILS="${TECHNICAL_DETAILS}$(cat "$NUCLEI_TEMP")"$'\n'
-              rm -f "$NUCLEI_TEMP"
-            fi
-          fi
-          
-          # If no technical details, set a message
-          if [ -z "$TECHNICAL_DETAILS" ]; then
-            TECHNICAL_DETAILS="✅ No critical or high vulnerabilities detected in this scan."
-          fi
+          # Omit technical vulnerability details from public report (Pages) to avoid exposure
+          TECHNICAL_DETAILS="Detailed vulnerability information is intentionally omitted from this public report to avoid exposing sensitive security data."
           
           # Calculate totals (ensure numeric values)
           ZAP_TOTAL_NUM=${ZAP_TOTAL:-0}
@@ -515,6 +472,8 @@ jobs:
           
           # Calculate low/info total
           LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW + NUCLEI_INFO))
+          
+          COVERAGE_STATUS=$(if [ "$BACKEND_COVERAGE" = "N/A" ] || [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Coverage data unavailable for one or more components"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ "$FRONTEND_COVERAGE" != "N/A" ] && [ "$(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0")" = "1" ] && [ "$(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0")" = "1" ]; then echo "✅ Both components exceed 70% threshold"; else echo "⚠️ One or more components below 70% threshold"; fi)
           
           cat > management-report.md << EOF
           # $REPORT_TITLE
@@ -653,7 +612,7 @@ jobs:
           | Backend | ${BACKEND_COVERAGE}% | 70% | $(if [ "$BACKEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
           | Frontend | ${FRONTEND_COVERAGE}% | 70% | $(if [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
           
-          **Overall Status**: $(if [ "$BACKEND_COVERAGE" = "N/A" ] || [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Coverage data unavailable for one or more components"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Both components exceed 70% threshold"; else echo "⚠️ One or more components below 70% threshold"; fi)
+          **Overall Status**: $COVERAGE_STATUS
           
           ### Dependency Health Status
           
@@ -671,7 +630,7 @@ jobs:
           ### Application Status
           
           - **Maintenance Mode**: ✅ ACTIVE
-          - **Test Coverage**: Exceeds all thresholds (Backend: ${BACKEND_COVERAGE}%, Frontend: ${FRONTEND_COVERAGE}%)
+          - **Test Coverage**: $COVERAGE_STATUS (Backend: ${BACKEND_COVERAGE}%, Frontend: ${FRONTEND_COVERAGE}%)
           - **Dependency Management**: Automated via Renovate
           - **Automerge**: Enabled for dependency updates
           
@@ -1003,8 +962,8 @@ jobs:
           - [Download Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
           
           **Scans performed:**
-          - ZAP Full Penetration Test (SARIF uploaded to Security Tab)
-          - Nuclei Vulnerability Scan (SARIF uploaded to Security Tab)
+          - ZAP Full Penetration Test (SARIF upload to Security Tab when available)
+          - Nuclei Vulnerability Scan (SARIF upload to Security Tab when available)
           - CodeQL Static Analysis (via existing workflows)
           - Trivy Dependency & Container Scan (via existing workflows)
           
