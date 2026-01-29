@@ -83,7 +83,7 @@ jobs:
       - name: Convert ZAP Results to SARIF
         id: zap_sarif
         continue-on-error: true
-        uses: SvanBoxel/zaproxy-to-ghas@cfc77481d74a17a4c3d6b753aa9d7abef453d501
+        uses: SvanBoxel/zaproxy-to-ghas@75108d871da28d75dc07ef093cc74fc2b3f174e6
 
       - name: Upload ZAP SARIF to Security Tab
         continue-on-error: true
@@ -110,7 +110,7 @@ jobs:
 
       - name: Nuclei Scan
         id: nuclei
-        uses: projectdiscovery/nuclei-action@v2.0.1
+        uses: projectdiscovery/nuclei-action@v2.0.2
         continue-on-error: true
         with:
           target: '${{ steps.config.outputs.scan_target }}'
