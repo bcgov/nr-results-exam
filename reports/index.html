@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security & Quality Reports - NR Results Exam</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+  <style>
+    body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: #fff;
+    }
+    .header {
+      border-bottom: 1px solid #eaecef;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      margin-top: 0;
+      color: #24292e;
+    }
+    .card {
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+      background: #f6f8fa;
+    }
+    .card h3 {
+      margin-top: 0;
+      color: #0366d6;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 16px;
+      background: #0366d6;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      margin-right: 10px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .btn:hover {
+      background: #0256cc;
+    }
+    .btn-secondary {
+      background: #6a737d;
+    }
+    .btn-secondary:hover {
+      background: #586069;
+    }
+    .archive-list {
+      list-style: none;
+      padding: 0;
+    }
+    .archive-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .archive-list li:last-child {
+      border-bottom: none;
+    }
+    .archive-list a {
+      color: #0366d6;
+      text-decoration: none;
+    }
+    .archive-list a:hover {
+      text-decoration: underline;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .status-success {
+      background: #28a745;
+      color: white;
+    }
+    .status-info {
+      background: #17a2b8;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔒 Security & Quality Reports</h1>
+    <p><strong>NR Results Exam</strong> - Automated Security Scanning & Management Reports</p>
+    <p><em>Last updated: 2026-01-29 00:52:46 UTC</em></p>
+  </div>
+  
+  <div class="card">
+    <h3>📊 Latest Report</h3>
+    <p>View the most recent security and quality assessment report generated from automated scans.</p>
+    <a href="latest.html" class="btn">View Latest Report (HTML)</a>
+    <a href="latest.md" class="btn btn-secondary">Download Markdown</a>
+  </div>
+  
+  <div class="card">
+    <h3>📚 Report Archive</h3>
+    <p>Historical security reports are archived by date. Each report includes a complete snapshot of security posture at the time of generation.</p>
+    <p><strong>Note:</strong> Reports are generated weekly on Mondays at 6:00 AM PST.</p>
+    <p><em>Archive listing will be enhanced in a future update to automatically list all archived reports.</em></p>
+  </div>
+  
+  <div class="card">
+    <h3>🔗 Quick Links</h3>
+    <ul>
+      <li><a href="https://github.com/bcgov/nr-results-exam/security">🔒 GitHub Security Tab</a> - View all security alerts and detailed findings</li>
+      <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-backend">📊 SonarCloud - Backend</a> - Code quality metrics</li>
+      <li><a href="https://sonarcloud.io/project/overview?id=nr-results-exam-frontend">📊 SonarCloud - Frontend</a> - Code quality metrics</li>
+      <li><a href="https://github.com/bcgov/nr-results-exam/actions/workflows/reporting.yml">⚙️ Workflow Runs</a> - View workflow execution history</li>
+    </ul>
+  </div>
+  
+  <div class="card">
+    <h3>ℹ️ About These Reports</h3>
+    <p>Reports are generated automatically every Monday at 6:00 AM PST. Each report includes:</p>
+    <ul>
+      <li><strong>Security Vulnerability Scans</strong>: ZAP Full Penetration Test, Nuclei Template-based Detection, CodeQL Static Analysis, Trivy Dependency & Container Scanning</li>
+      <li><strong>Code Quality Metrics</strong>: Test coverage, code quality scores from SonarCloud</li>
+      <li><strong>Dependency Health Status</strong>: Outdated package tracking</li>
+      <li><strong>Remediation Recommendations</strong>: Prioritized action items based on severity</li>
+    </ul>
+    <p><strong>Report Format:</strong> HTML (viewable in browser, printable to PDF) and Markdown (source format)</p>
+  </div>
+  
+  <div class="card">
+    <h3>📋 Report Schedule</h3>
+    <ul>
+      <li><strong>Frequency:</strong> Weekly (Mondays)</li>
+      <li><strong>Time:</strong> 6:00 AM PST (2:00 PM UTC)</li>
+      <li><strong>Archive:</strong> Retained indefinitely; workflow artifacts: 90 days</li>
+      <li><strong>Next Scan:</strong> Next Monday at 6:00 AM PST</li>
+    </ul>
+  </div>
+</body>
+</html>
