@@ -1,6 +1,6 @@
 # Vulnerability Scan & Management Report
 
-**Report Date**: 2026-01-29 00:52:31 UTC  
+**Report Date**: 2026-01-29 04:08:38 UTC  
 **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Report Type**: Executive Summary
 
@@ -53,7 +53,7 @@ Security posture is acceptable
 
 ### Nuclei Vulnerability Scan Results
 
-**Scan Status**: ⚠️ Completed with Issues  
+**Scan Status**: ✅ Completed Successfully  
 **Scan Type**: Template-based Vulnerability Detection  
 **Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Scan Tool**: ProjectDiscovery Nuclei
@@ -119,7 +119,7 @@ Access detailed information in related tools:
 
 ### Top Critical/High Vulnerabilities
 
-✅ No critical or high vulnerabilities detected in this scan.
+Detailed vulnerability information is intentionally omitted from this public report to avoid exposing sensitive security data.
 
 > **Note**: For complete vulnerability details, remediation guidance, and affected components, see the [GitHub Security Tab](https://github.com/bcgov/nr-results-exam/security).
 
@@ -152,7 +152,7 @@ Access detailed information in related tools:
 ### Application Status
 
 - **Maintenance Mode**: ✅ ACTIVE
-- **Test Coverage**: Exceeds all thresholds (Backend: 87.5%, Frontend: 82.8%)
+- **Test Coverage**: ✅ Both components exceed 70% threshold (Backend: 87.5%, Frontend: 82.8%)
 - **Dependency Management**: Automated via Renovate
 - **Automerge**: Enabled for dependency updates
 
@@ -195,14 +195,14 @@ Access detailed information in related tools:
 
 ### Scan Metadata
 
-- **Report Generated**: 2026-01-29 00:52:31 UTC
+- **Report Generated**: 2026-01-29 04:08:38 UTC
 - **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca
 - **Scan Tools**: 
   - OWASP ZAP (Full Penetration Test) - Web application security testing
   - ProjectDiscovery Nuclei - Template-based vulnerability detection
   - GitHub CodeQL - Static code analysis (via analysis.yml)
   - Trivy - Dependency and container scanning (via analysis.yml)
-- **Report Frequency**: Weekly (Mondays at 6:00 AM PST)
+- **Report Frequency**: Weekly (Sundays at 2:00 AM Victoria BC / Pacific; 10:00 UTC PST, 09:00 UTC PDT)
 - **Report Retention**: Artifacts 90 days; GitHub Pages archive retained indefinitely
 - **Report Format**: Markdown (this document). All security findings are available in the [GitHub Security Tab](https://github.com/bcgov/nr-results-exam/security).
 
@@ -226,7 +226,7 @@ Vulnerabilities are scored using the Common Vulnerability Scoring System (CVSS):
 
 ## Next Review Dates
 
-- **Next Automated Scan**: Next Monday at 6:00 AM PST
+- **Next Automated Scan**: Next Sunday at 2:00 AM Victoria BC / Pacific
 - **Monthly Manual Review**: Recommended (see README.md)
 - **Quarterly Comprehensive Audit**: Recommended
 
