@@ -774,6 +774,7 @@ jobs:
 
       # ============================================================================
       # REPORT PUBLISHING
+      # Workflow triggers: schedule + workflow_dispatch only (no push).
       # ============================================================================
       - name: Prepare Reports for GitHub Pages
         continue-on-error: true
@@ -781,7 +782,8 @@ jobs:
           # Create reports directory structure
           mkdir -p docs/reports/archive
           
-          # Fetch existing archive from gh-pages (if any) so we preserve it when pushing
+          # Fetch existing archive from gh-pages so we preserve it before publishing
+          # (actions-gh-pages pushes docs/reports to the gh-pages branch).
           git fetch origin gh-pages 2>/dev/null || true
           if git checkout origin/gh-pages -- reports/archive 2>/dev/null; then
             [ -d reports/archive ] && cp -rn reports/archive/. docs/reports/archive/ 2>/dev/null || true
