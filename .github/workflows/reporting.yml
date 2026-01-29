@@ -2,8 +2,11 @@ name: Scanning and Reporting
 
 on:
   schedule:
-    - cron: '0 14 * * 1'   # 6 AM PST = 2 PM UTC, Mondays
+    # 2 AM Sundays, Victoria BC (Pacific). UTC = Victoria + 8h (PST) or + 7h (PDT).
+    # 2 AM PST = 10:00 UTC; 2 AM PDT = 09:00 UTC. Using 10:00 UTC (2 AM PST).
+    - cron: '0 10 * * 0'
   workflow_dispatch:
+  # No push trigger; run manually or on schedule only.
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -718,7 +721,7 @@ jobs:
             - ProjectDiscovery Nuclei - Template-based vulnerability detection
             - GitHub CodeQL - Static code analysis (via analysis.yml)
             - Trivy - Dependency and container scanning (via analysis.yml)
-          - **Report Frequency**: Weekly (Mondays at 6:00 AM PST)
+          - **Report Frequency**: Weekly (Sundays at 2:00 AM Victoria BC / Pacific; 10:00 UTC PST, 09:00 UTC PDT)
           - **Report Retention**: Artifacts 90 days; GitHub Pages archive retained indefinitely
           - **Report Format**: Markdown (this document). All security findings are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
           
@@ -742,7 +745,7 @@ jobs:
           
           ## Next Review Dates
           
-          - **Next Automated Scan**: Next Monday at 6:00 AM PST
+          - **Next Automated Scan**: Next Sunday at 2:00 AM Victoria BC / Pacific
           - **Monthly Manual Review**: Recommended (see README.md)
           - **Quarterly Comprehensive Audit**: Recommended
           
@@ -911,7 +914,7 @@ jobs:
             <div class="card">
               <h3>📚 Report Archive</h3>
               <p>Historical security reports are archived by date. Each report includes a complete snapshot of security posture at the time of generation.</p>
-              <p><strong>Note:</strong> Reports are generated weekly on Mondays at 6:00 AM PST.</p>
+              <p><strong>Note:</strong> Reports are generated weekly on Sundays at 2:00 AM Victoria BC / Pacific (10:00 UTC PST, 09:00 UTC PDT).</p>
               <p><em>Archive listing will be enhanced in a future update to automatically list all archived reports.</em></p>
             </div>
             
@@ -927,7 +930,7 @@ jobs:
             
             <div class="card">
               <h3>ℹ️ About These Reports</h3>
-              <p>Reports are generated automatically every Monday at 6:00 AM PST. Each report includes:</p>
+              <p>Reports are generated automatically every Sunday at 2:00 AM Victoria BC / Pacific. Each report includes:</p>
               <ul>
                 <li><strong>Security Vulnerability Scans</strong>: ZAP Full Penetration Test, Nuclei Template-based Detection, CodeQL Static Analysis, Trivy Dependency & Container Scanning</li>
                 <li><strong>Code Quality Metrics</strong>: Test coverage, code quality scores from SonarCloud</li>
@@ -940,10 +943,10 @@ jobs:
             <div class="card">
               <h3>📋 Report Schedule</h3>
               <ul>
-                <li><strong>Frequency:</strong> Weekly (Mondays)</li>
-                <li><strong>Time:</strong> 6:00 AM PST (2:00 PM UTC)</li>
+                <li><strong>Frequency:</strong> Weekly (Sundays)</li>
+                <li><strong>Time:</strong> 2:00 AM Victoria BC / Pacific — 10:00 UTC (PST) or 09:00 UTC (PDT)</li>
                 <li><strong>Archive:</strong> Retained indefinitely; workflow artifacts: 90 days</li>
-                <li><strong>Next Scan:</strong> Next Monday at 6:00 AM PST</li>
+                <li><strong>Next Scan:</strong> Next Sunday at 2:00 AM Victoria BC / Pacific</li>
               </ul>
             </div>
           </body>
