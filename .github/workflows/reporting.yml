@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: '0 14 * * 1'   # 6 AM PST = 2 PM UTC, Mondays
   workflow_dispatch:
-  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -62,26 +61,26 @@ jobs:
       - name: Extract ZAP JSON Report
         continue-on-error: true
         run: |
-          # ZAP action generates JSON automatically, but we need to find it
-          # The action typically outputs to zap-report.json or similar
-          if [ -f zap-report.json ]; then
-            echo "ZAP JSON report found"
+          # ZAP action may write report_json.json, zap-report.json, or zap_json_report.json
+          if [ -f report_json.json ]; then
+            cp report_json.json zap-report.json
+            echo "ZAP JSON report found (report_json.json)"
+          elif [ -f zap-report.json ]; then
+            echo "ZAP JSON report found (zap-report.json)"
           elif [ -f zap_json_report.json ]; then
             cp zap_json_report.json zap-report.json
+            echo "ZAP JSON report found (zap_json_report.json)"
           else
             echo "{}" > zap-report.json
             echo "Note: ZAP JSON report not found, using empty report"
           fi
+          # zaproxy-to-ghas reads ./report_json.json only; ensure it exists
+          cp zap-report.json report_json.json
 
       - name: Convert ZAP Results to SARIF
         id: zap_sarif
         continue-on-error: true
-        # Note: This action only provides @main branch, no version tags available
-        # Consider pinning to a specific commit SHA for production stability
         uses: SvanBoxel/zaproxy-to-ghas@cfc77481d74a17a4c3d6b753aa9d7abef453d501
-        with:
-          zap_json: zap-report.json
-          output: zap-report.sarif
 
       - name: Upload ZAP SARIF to Security Tab
         continue-on-error: true
@@ -112,7 +111,7 @@ jobs:
         continue-on-error: true
         with:
           target: '${{ steps.config.outputs.scan_target }}'
-          flags: '-json -o nuclei-results.json'
+          flags: '-jle nuclei-results.jsonl'
           sarif-export: nuclei-results.sarif
 
       - name: Upload Nuclei SARIF to Security Tab
@@ -186,10 +185,12 @@ jobs:
         id: nuclei_parse
         continue-on-error: true
         run: |
-          # Debug: Check for Nuclei output files
+          # Nuclei 3.x uses -jle (JSONL); convert to JSON array for parsing
+          if [ -f nuclei-results.jsonl ]; then
+            jq -s '.' nuclei-results.jsonl > nuclei-results.json
+          fi
           echo "Checking for Nuclei output files..."
           ls -la nuclei* 2>/dev/null || echo "No nuclei files in current directory"
-          find . -maxdepth 3 -name "*nuclei*" -type f 2>/dev/null | head -5 || echo "No nuclei files found in subdirectories"
           
           # Parse Nuclei JSON results to extract vulnerability counts
           # Nuclei outputs JSON with severity field: "info", "low", "medium", "high", "critical"
@@ -775,7 +776,6 @@ jobs:
       # REPORT PUBLISHING
       # ============================================================================
       - name: Prepare Reports for GitHub Pages
-        if: github.event_name != 'pull_request' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)))
         continue-on-error: true
         run: |
           # Create reports directory structure
@@ -963,7 +963,6 @@ jobs:
           echo "Reports prepared for GitHub Pages"
 
       - name: Publish Reports to GitHub Pages
-        if: github.event_name != 'pull_request' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)))
         continue-on-error: true
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -980,6 +979,7 @@ jobs:
             management-report.html
             zap-report.html
             nuclei-results.json
+            nuclei-results.jsonl
             nuclei-results.txt
           retention-days: 90
           if-no-files-found: warn
