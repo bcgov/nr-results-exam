@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
         # Note: This action only provides @main branch, no version tags available
         # Consider pinning to a specific commit SHA for production stability
-        uses: SvanBoxel/zaproxy-to-ghas@main
+        uses: SvanBoxel/zaproxy-to-ghas@cfc77481d74a17a4c3d6b753aa9d7abef453d501
         with:
           zap_json: zap-report.json
           output: zap-report.sarif
@@ -244,12 +244,14 @@ jobs:
         id: security_alerts
         continue-on-error: true
         run: |
-          # Get Dependabot alerts count (open) and code scanning alerts from GitHub API
-          # This requires GITHUB_TOKEN which is available by default
-          CRITICAL_ALERTS=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s 'length' 2>/dev/null || echo "0")
+          # Dependabot: count of open alerts (all severities)
+          DEPENDABOT_OPEN=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s 'length' 2>/dev/null || echo "0")
           
-          # Get detailed code scanning alerts (paginate emits per-page arrays; slurp to single JSON array)
-          ALERTS_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          # Code scanning: fetch open, fixed, dismissed separately (API filters by state); merge for metrics
+          OPEN_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          FIXED_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=fixed" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          DISMISSED_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=dismissed" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          ALERTS_JSON=$(jq -n --argjson o "$OPEN_JSON" --argjson f "$FIXED_JSON" --argjson d "$DISMISSED_JSON" '$o + $f + $d' 2>/dev/null || echo "[]")
           
           # Calculate metrics from code scanning alerts
           if [ "$ALERTS_JSON" != "[]" ] && [ -n "$ALERTS_JSON" ]; then
@@ -315,7 +317,7 @@ jobs:
             RESOLUTION_RATE=0
           fi
           
-          echo "github_critical=$CRITICAL_ALERTS" >> $GITHUB_OUTPUT
+          echo "dependabot_open=$DEPENDABOT_OPEN" >> $GITHUB_OUTPUT
           echo "code_scanning_total=$TOTAL_CODE_ALERTS" >> $GITHUB_OUTPUT
           echo "code_scanning_open=$OPEN_ALERTS" >> $GITHUB_OUTPUT
           echo "code_scanning_fixed=$FIXED_ALERTS" >> $GITHUB_OUTPUT
@@ -417,7 +419,7 @@ jobs:
           FRONTEND_COVERAGE="${{ steps.coverage.outputs.frontend_coverage || 'N/A' }}"
           BACKEND_OUTDATED="${{ steps.deps.outputs.backend_outdated || '0' }}"
           FRONTEND_OUTDATED="${{ steps.deps.outputs.frontend_outdated || '0' }}"
-          GITHUB_ALERTS="${{ steps.security_alerts.outputs.github_critical || '0' }}"
+          DEPENDABOT_OPEN="${{ steps.security_alerts.outputs.dependabot_open || '0' }}"
           CODE_SCANNING_TOTAL="${{ steps.security_alerts.outputs.code_scanning_total || '0' }}"
           CODE_SCANNING_OPEN="${{ steps.security_alerts.outputs.code_scanning_open || '0' }}"
           CODE_SCANNING_FIXED="${{ steps.security_alerts.outputs.code_scanning_fixed || '0' }}"
@@ -585,7 +587,7 @@ jobs:
           
           ### GitHub Security Alerts
           
-          **Dependabot Alerts**: $GITHUB_ALERTS open alerts
+          **Dependabot Alerts**: $DEPENDABOT_OPEN open alerts
           
           #### Code Scanning Alerts (CodeQL, Trivy, ZAP, Nuclei)
           
@@ -773,6 +775,7 @@ jobs:
       # REPORT PUBLISHING
       # ============================================================================
       - name: Prepare Reports for GitHub Pages
+        if: github.event_name != 'pull_request' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)))
         continue-on-error: true
         run: |
           # Create reports directory structure
@@ -960,6 +963,7 @@ jobs:
           echo "Reports prepared for GitHub Pages"
 
       - name: Publish Reports to GitHub Pages
+        if: github.event_name != 'pull_request' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)))
         continue-on-error: true
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -986,7 +990,7 @@ jobs:
           cat >> $GITHUB_STEP_SUMMARY << EOF
           ## 🔒 Security Scan Complete
           
-          Security scans have completed successfully. Reports are now available:
+          Security scans have completed. Review logs and reports for any failures. Reports are now available:
           
           **📊 View Reports:**
           - [Latest Report (GitHub Pages)](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/latest.html)
