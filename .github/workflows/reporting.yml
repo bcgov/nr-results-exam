@@ -208,7 +208,7 @@ jobs:
             echo "=================================" >> nuclei-results.txt
             echo "" >> nuclei-results.txt
             if [ "$TOTAL" -gt 0 ]; then
-              jq -r '.[] | "Severity: \(.info.severity // "unknown")\nName: \(.info.name // "Unknown")\nMatched At: \(.matched-at // "N/A")\nTemplate: \(.template-id // "N/A")\n---"' nuclei-results.json >> nuclei-results.txt 2>/dev/null
+              jq -r '.[] | "Severity: \(.info.severity // "unknown")\nName: \(.info.name // "Unknown")\nMatched At: \(.["matched-at"] // "N/A")\nTemplate: \(.["template-id"] // "N/A")\n---"' nuclei-results.json >> nuclei-results.txt 2>/dev/null
             else
               echo "No vulnerabilities found" >> nuclei-results.txt
             fi
@@ -244,12 +244,12 @@ jobs:
         id: security_alerts
         continue-on-error: true
         run: |
-          # Get Dependabot and CodeQL alerts count from GitHub API
+          # Get Dependabot alerts count (open) and code scanning alerts from GitHub API
           # This requires GITHUB_TOKEN which is available by default
-          CRITICAL_ALERTS=$(gh api repos/${{ github.repository }}/vulnerability-alerts --jq '.total_count // 0' 2>/dev/null || echo "0")
+          CRITICAL_ALERTS=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s 'length' 2>/dev/null || echo "0")
           
-          # Get detailed code scanning alerts information
-          ALERTS_JSON=$(gh api repos/${{ github.repository }}/code-scanning/alerts --paginate --jq '.' 2>/dev/null || echo "[]")
+          # Get detailed code scanning alerts (paginate emits per-page arrays; slurp to single JSON array)
+          ALERTS_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
           
           # Calculate metrics from code scanning alerts
           if [ "$ALERTS_JSON" != "[]" ] && [ -n "$ALERTS_JSON" ]; then
@@ -261,10 +261,10 @@ jobs:
             FIXED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "fixed")] | length' 2>/dev/null || echo "0")
             DISMISSED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "dismissed")] | length' 2>/dev/null || echo "0")
             
-            # Alerts by severity
-            CRITICAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "error")] | length' 2>/dev/null || echo "0")
-            HIGH_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "warning")] | length' 2>/dev/null || echo "0")
-            MEDIUM_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.rule.severity == "note")] | length' 2>/dev/null || echo "0")
+            # Alerts by security severity (rule.security_severity_level; rule.severity is error/warning/note)
+            CRITICAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "critical")] | length' 2>/dev/null || echo "0")
+            HIGH_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "high")] | length' 2>/dev/null || echo "0")
+            MEDIUM_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "medium")] | length' 2>/dev/null || echo "0")
             
             # Unassigned alerts
             UNASSIGNED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open" and (.assignees == null or (.assignees | length) == 0))] | length' 2>/dev/null || echo "0")
@@ -453,7 +453,7 @@ jobs:
           
           # Generate Nuclei findings
           if [ -f nuclei-results.json ]; then
-            NUCLEI_TOP=$(jq -r '[.[] | select(.info.severity == "critical" or .info.severity == "high")] | .[0:5] | .[] | "\(.info.severity)|\(.info.name // "Unknown")|\(.matched-at // "N/A")|\(.info.reference // "N/A")"' nuclei-results.json 2>/dev/null || echo "")
+            NUCLEI_TOP=$(jq -r '[.[] | select(.info.severity == "critical" or .info.severity == "high")] | .[0:5] | .[] | "\(.info.severity)|\(.info.name // "Unknown")|\(.["matched-at"] // "N/A")|\(.info.reference // "N/A")"' nuclei-results.json 2>/dev/null || echo "")
             if [ -n "$NUCLEI_TOP" ]; then
               TECHNICAL_DETAILS="${TECHNICAL_DETAILS}#### Nuclei Findings"$'\n'
               NUCLEI_TEMP=$(mktemp)
@@ -614,7 +614,7 @@ jobs:
           $([ "$CODE_SCANNING_UNASSIGNED" -gt 0 ] && echo "> **⚠️ Action Required**: $CODE_SCANNING_UNASSIGNED unassigned alert(s) need attention. Assign alerts to team members for faster remediation." || echo "")
           $([ "$CODE_SCANNING_OLDEST_AGE" -gt 30 ] && echo "> **⚠️ Attention**: Oldest open alert is $CODE_SCANNING_OLDEST_AGE days old. Consider prioritizing older alerts for remediation." || echo "")
           
-          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan results are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).")
+          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](https://github.com/${{ github.repository }}/blob/main/docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan results are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).")
 
           ---
           
@@ -777,6 +777,22 @@ jobs:
         run: |
           # Create reports directory structure
           mkdir -p docs/reports/archive
+          
+          # Fetch existing archive from gh-pages (if any) so we can apply retention
+          git fetch origin gh-pages 2>/dev/null || true
+          if git checkout origin/gh-pages -- reports/archive 2>/dev/null; then
+            [ -d reports/archive ] && cp -rn reports/archive/. docs/reports/archive/ 2>/dev/null || true
+            rm -rf reports
+          fi
+          
+          # Retention: remove archive reports older than 90 days (matches report/PR wording)
+          CUTOFF=$(date -d '90 days ago' '+%Y-%m-%d')
+          for f in docs/reports/archive/*.html 2>/dev/null; do
+            [ -e "$f" ] || continue
+            base=$(basename "$f" .html)
+            [[ "$base" < "$CUTOFF" ]] || continue
+            rm -f "docs/reports/archive/${base}.html" "docs/reports/archive/${base}.md"
+          done
           
           # Copy latest report
           REPORT_DATE=$(date '+%Y-%m-%d')
