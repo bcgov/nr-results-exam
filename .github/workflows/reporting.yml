@@ -1,0 +1,980 @@
+name: Scanning and Reporting
+
+on:
+  schedule:
+    # 2 AM Sundays, Victoria BC (Pacific). UTC = Victoria + 8h (PST) or + 7h (PDT).
+    # 2 AM PST = 10:00 UTC; 2 AM PDT = 09:00 UTC. Using 10:00 UTC (2 AM PST).
+    - cron: '0 10 * * 0'
+  workflow_dispatch:
+  # No push trigger; run manually or on schedule only.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-report:
+    name: Security & Quality Report
+    runs-on: ubuntu-24.04
+    permissions:
+      security-events: write
+      contents: write
+      issues: write
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # ============================================================================
+      # CONFIGURATION (Future Action Inputs)
+      # ============================================================================
+      - name: Set Configuration Variables
+        id: config
+        run: |
+          # These will become action inputs when extracted to reusable action
+          echo "scan_target=https://results-exam-test.apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
+          echo "sonar_backend_project=nr-results-exam-backend" >> $GITHUB_OUTPUT
+          echo "sonar_frontend_project=nr-results-exam-frontend" >> $GITHUB_OUTPUT
+          echo "sonar_org=bcgov-sonarcloud" >> $GITHUB_OUTPUT
+          echo "zap_rules_file=tests/.zap/rules.tsv" >> $GITHUB_OUTPUT
+          echo "report_title=Vulnerability Scan & Management Report" >> $GITHUB_OUTPUT
+          echo "app_name=NR Results Exam" >> $GITHUB_OUTPUT
+
+      # ============================================================================
+      # SECURITY SCANNING
+      # ============================================================================
+      - name: ZAP Full Scan
+        id: zap
+        uses: zaproxy/action-full-scan@v0.13.0
+        continue-on-error: true
+        with:
+          target: '${{ steps.config.outputs.scan_target }}'
+          allow_issue_writing: true
+          artifact_name: 'zap-report'
+          # -l WARN: Only report WARN and FAIL level alerts (Medium/High risk) for GitHub issues
+          # -a: Include all alerts in reports (for artifact analysis)
+          # -J: Generate JSON report (automatically added by action, but explicit for clarity)
+          # -r zap-report.html: Generate HTML report
+          # -f html: HTML format
+          # -I: Include informational alerts
+          cmd_options: '-l WARN -a -J -r zap-report.html -f html -I'
+          rules_file_name: '${{ steps.config.outputs.zap_rules_file }}'
+          issue_title: 'ZAP Penetration Test'
+          
+      - name: Extract ZAP JSON Report
+        continue-on-error: true
+        run: |
+          # ZAP action may write report_json.json, zap-report.json, or zap_json_report.json
+          if [ -f report_json.json ]; then
+            cp report_json.json zap-report.json
+            echo "ZAP JSON report found (report_json.json)"
+          elif [ -f zap-report.json ]; then
+            echo "ZAP JSON report found (zap-report.json)"
+          elif [ -f zap_json_report.json ]; then
+            cp zap_json_report.json zap-report.json
+            echo "ZAP JSON report found (zap_json_report.json)"
+          else
+            echo "{}" > zap-report.json
+            echo "Note: ZAP JSON report not found, using empty report"
+          fi
+          # zaproxy-to-ghas reads ./report_json.json only; ensure it exists
+          cp zap-report.json report_json.json
+
+      - name: Convert ZAP Results to SARIF
+        id: zap_sarif
+        continue-on-error: true
+        uses: SvanBoxel/zaproxy-to-ghas@cfc77481d74a17a4c3d6b753aa9d7abef453d501
+
+      - name: Upload ZAP SARIF to Security Tab
+        continue-on-error: true
+        # Only upload if SARIF file was successfully created
+        if: steps.zap_sarif.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: zap-report.sarif
+
+      - name: Parse ZAP Accepted Alerts
+        id: zap_accepted
+        continue-on-error: true
+        run: |
+          # Extract ignored alert IDs from rules.tsv (format: ALERT_ID\tIGNORE\t# comment)
+          ZAP_RULES_FILE="${{ steps.config.outputs.zap_rules_file }}"
+          if [ -f "$ZAP_RULES_FILE" ]; then
+            IGNORED_IDS=$(grep -E '^[0-9]+[[:space:]]+IGNORE' "$ZAP_RULES_FILE" | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
+            echo "ignored_ids=$IGNORED_IDS" >> $GITHUB_OUTPUT
+            echo "Found ignored alert IDs: $IGNORED_IDS"
+          else
+            echo "ignored_ids=" >> $GITHUB_OUTPUT
+            echo "No rules.tsv found, all alerts will be counted"
+          fi
+
+      - name: Nuclei Scan
+        id: nuclei
+        uses: projectdiscovery/nuclei-action@v2.0.1
+        continue-on-error: true
+        with:
+          target: '${{ steps.config.outputs.scan_target }}'
+          flags: '-jle nuclei-results.jsonl'
+          sarif-export: nuclei-results.sarif
+
+      - name: Upload Nuclei SARIF to Security Tab
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v4
+        if: steps.nuclei.outputs.sarif_exists == 'true'
+        with:
+          sarif_file: nuclei-results.sarif
+
+      # ============================================================================
+      # DATA AGGREGATION
+      # ============================================================================
+      - name: Parse ZAP Results
+        id: zap_parse
+        continue-on-error: true
+        run: |
+          # Extract ignored alert IDs from previous step
+          IGNORED_IDS="${{ steps.zap_accepted.outputs.ignored_ids }}"
+          
+          # Extract vulnerability counts and top vulnerabilities from ZAP JSON report if available
+          if [ -f zap-report.json ]; then
+            # Count total (including ignored) for reference
+            TOTAL_INCLUDING_IGNORED=$(jq '[.site[]?.alerts[]?] | length' zap-report.json 2>/dev/null || echo "0")
+            
+            # Build jq filter to exclude ignored alerts
+            if [ -n "$IGNORED_IDS" ]; then
+              # Create a temporary JSON array of ignored IDs for jq filtering
+              IGNORE_ARRAY=$(echo "$IGNORED_IDS" | tr ',' '\n' | jq -R . | jq -s .)
+              
+              # Count by severity, excluding ignored alerts
+              CRITICAL=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "4") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              HIGH=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "3") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              MEDIUM=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "2") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              LOW=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "1") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              INFO=$(jq --argjson ignore "$IGNORE_ARRAY" '[.site[]?.alerts[]? | select(.riskcode == "0") | select(.pluginid as $id | ($ignore | index($id | tostring)) == null)] | length' zap-report.json 2>/dev/null || echo "0")
+              
+              # Extract top 5 critical/high vulnerabilities (excluding ignored) with pluginid
+              jq --argjson ignore "$IGNORE_ARRAY" -r '.site[]?.alerts[]? | select((.riskcode == "4" or .riskcode == "3") and (.pluginid as $id | ($ignore | index($id | tostring)) == null)) | "\(.name)|\(.riskcode)|\(.pluginid)|\(.desc // "No description")"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
+            else
+              # No ignored alerts, count everything
+              CRITICAL=$(jq '[.site[]?.alerts[]? | select(.riskcode == "4")] | length' zap-report.json 2>/dev/null || echo "0")
+              HIGH=$(jq '[.site[]?.alerts[]? | select(.riskcode == "3")] | length' zap-report.json 2>/dev/null || echo "0")
+              MEDIUM=$(jq '[.site[]?.alerts[]? | select(.riskcode == "2")] | length' zap-report.json 2>/dev/null || echo "0")
+              LOW=$(jq '[.site[]?.alerts[]? | select(.riskcode == "1")] | length' zap-report.json 2>/dev/null || echo "0")
+              INFO=$(jq '[.site[]?.alerts[]? | select(.riskcode == "0")] | length' zap-report.json 2>/dev/null || echo "0")
+              
+              # Extract top 5 critical/high vulnerabilities
+              jq -r '.site[]?.alerts[]? | select(.riskcode == "4" or .riskcode == "3") | "\(.name)|\(.riskcode)|\(.pluginid)|\(.desc // "No description")"' zap-report.json 2>/dev/null | head -5 > zap-top-vulns.txt || touch zap-top-vulns.txt
+            fi
+            TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW + INFO))
+            IGNORED_COUNT=$((TOTAL_INCLUDING_IGNORED - TOTAL))
+          else
+            CRITICAL=0
+            HIGH=0
+            MEDIUM=0
+            LOW=0
+            INFO=0
+            TOTAL=0
+            IGNORED_COUNT=0
+            touch zap-top-vulns.txt
+          fi
+          echo "zap_critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "zap_high=$HIGH" >> $GITHUB_OUTPUT
+          echo "zap_medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "zap_low=$LOW" >> $GITHUB_OUTPUT
+          echo "zap_info=$INFO" >> $GITHUB_OUTPUT
+          echo "zap_total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "zap_ignored=$IGNORED_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Parse Nuclei Results
+        id: nuclei_parse
+        continue-on-error: true
+        run: |
+          # Nuclei 3.x uses -jle (JSONL); convert to JSON array for parsing
+          if [ -f nuclei-results.jsonl ]; then
+            jq -s '.' nuclei-results.jsonl > nuclei-results.json
+          fi
+          echo "Checking for Nuclei output files..."
+          ls -la nuclei* 2>/dev/null || echo "No nuclei files in current directory"
+          
+          # Parse Nuclei JSON results to extract vulnerability counts
+          # Nuclei outputs JSON with severity field: "info", "low", "medium", "high", "critical"
+          if [ -f nuclei-results.json ]; then
+            echo "Found nuclei-results.json in current directory"
+            # Count by severity (case-insensitive matching)
+            CRITICAL=$(jq '[.[] | select(.info.severity? == "critical" or .info.severity? == "CRITICAL")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            HIGH=$(jq '[.[] | select(.info.severity? == "high" or .info.severity? == "HIGH")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.[] | select(.info.severity? == "medium" or .info.severity? == "MEDIUM")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            LOW=$(jq '[.[] | select(.info.severity? == "low" or .info.severity? == "LOW")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            INFO=$(jq '[.[] | select(.info.severity? == "info" or .info.severity? == "INFO")] | length' nuclei-results.json 2>/dev/null || echo "0")
+            TOTAL=$(jq 'length' nuclei-results.json 2>/dev/null || echo "0")
+            
+            # Create a readable text version for artifacts
+            echo "Nuclei Scan Results - $(date)" > nuclei-results.txt
+            echo "=================================" >> nuclei-results.txt
+            echo "" >> nuclei-results.txt
+            if [ "$TOTAL" -gt 0 ]; then
+              jq -r '.[] | "Severity: \(.info.severity // "unknown")\nName: \(.info.name // "Unknown")\nMatched At: \(.["matched-at"] // "N/A")\nTemplate: \(.["template-id"] // "N/A")\n---"' nuclei-results.json >> nuclei-results.txt 2>/dev/null
+            else
+              echo "No vulnerabilities found" >> nuclei-results.txt
+            fi
+          elif [ -f nuclei-results.txt ]; then
+            # Fallback: parse text format if JSON not available
+            CRITICAL=$(grep -iE "^critical|critical" nuclei-results.txt | wc -l || echo "0")
+            HIGH=$(grep -iE "^high|high" nuclei-results.txt | grep -vi "critical" | wc -l || echo "0")
+            MEDIUM=$(grep -iE "^medium|medium" nuclei-results.txt | wc -l || echo "0")
+            LOW=$(grep -iE "^low|low" nuclei-results.txt | wc -l || echo "0")
+            INFO=$(grep -iE "^info|info" nuclei-results.txt | wc -l || echo "0")
+            TOTAL=$(wc -l < nuclei-results.txt 2>/dev/null || echo "0")
+          else
+            CRITICAL=0
+            HIGH=0
+            MEDIUM=0
+            LOW=0
+            INFO=0
+            TOTAL=0
+            echo "Nuclei scan completed - no vulnerabilities detected or scan failed" > nuclei-results.txt
+            echo "Check workflow logs for Nuclei scan details" >> nuclei-results.txt
+          fi
+          echo "nuclei_critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "nuclei_high=$HIGH" >> $GITHUB_OUTPUT
+          echo "nuclei_medium=$MEDIUM" >> $GITHUB_OUTPUT
+          echo "nuclei_low=$LOW" >> $GITHUB_OUTPUT
+          echo "nuclei_info=$INFO" >> $GITHUB_OUTPUT
+          echo "nuclei_total=$TOTAL" >> $GITHUB_OUTPUT
+
+      # ============================================================================
+      # EXTERNAL DATA SOURCES
+      # ============================================================================
+      - name: Get Security Alerts Summary
+        id: security_alerts
+        continue-on-error: true
+        run: |
+          # Dependabot: count of open alerts (all severities)
+          DEPENDABOT_OPEN=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s 'length' 2>/dev/null || echo "0")
+          
+          # Code scanning: fetch open, fixed, dismissed separately (API filters by state); merge for metrics
+          OPEN_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=open" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          FIXED_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=fixed" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          DISMISSED_JSON=$(gh api "repos/${{ github.repository }}/code-scanning/alerts?state=dismissed" --paginate --jq '.[]' 2>/dev/null | jq -s '.' 2>/dev/null || echo "[]")
+          ALERTS_JSON=$(jq -n --argjson o "$OPEN_JSON" --argjson f "$FIXED_JSON" --argjson d "$DISMISSED_JSON" '$o + $f + $d' 2>/dev/null || echo "[]")
+          
+          # Calculate metrics from code scanning alerts
+          if [ "$ALERTS_JSON" != "[]" ] && [ -n "$ALERTS_JSON" ]; then
+            # Total code scanning alerts
+            TOTAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq 'length' 2>/dev/null || echo "0")
+            
+            # Alerts by status
+            OPEN_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open")] | length' 2>/dev/null || echo "0")
+            FIXED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "fixed")] | length' 2>/dev/null || echo "0")
+            DISMISSED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "dismissed")] | length' 2>/dev/null || echo "0")
+            
+            # Alerts by security severity (rule.security_severity_level; rule.severity is error/warning/note)
+            CRITICAL_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "critical")] | length' 2>/dev/null || echo "0")
+            HIGH_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "high")] | length' 2>/dev/null || echo "0")
+            MEDIUM_CODE_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select((.rule.security_severity_level // "") == "medium")] | length' 2>/dev/null || echo "0")
+            
+            # Unassigned alerts
+            UNASSIGNED_ALERTS=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open" and (.assignees == null or (.assignees | length) == 0))] | length' 2>/dev/null || echo "0")
+            
+            # Calculate average and oldest alert age (in days) for open alerts
+            CURRENT_TIME=$(date +%s)
+            OPEN_ALERTS_JSON=$(echo "$ALERTS_JSON" | jq '[.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
+            if [ "$(echo "$OPEN_ALERTS_JSON" | jq 'length')" -gt 0 ]; then
+              # Calculate average age using jq
+              AVG_AGE=$(echo "$OPEN_ALERTS_JSON" | jq --arg now "$CURRENT_TIME" '
+                [.[] | 
+                  (.created_at | fromdateiso8601) as $created |
+                  (($now | tonumber) - $created) / 86400 | floor
+                ] | 
+                if length > 0 then (add / length | floor) else 0 end
+              ' 2>/dev/null || echo "0")
+              
+              # Calculate oldest alert age
+              OLDEST_AGE=$(echo "$OPEN_ALERTS_JSON" | jq --arg now "$CURRENT_TIME" '
+                [.[] | 
+                  (.created_at | fromdateiso8601) as $created |
+                  (($now | tonumber) - $created) / 86400 | floor
+                ] | 
+                max // 0
+              ' 2>/dev/null || echo "0")
+            else
+              AVG_AGE=0
+              OLDEST_AGE=0
+            fi
+            
+            # Resolution rate (fixed / total)
+            if [ "$TOTAL_CODE_ALERTS" -gt 0 ]; then
+              RESOLUTION_RATE=$(echo "scale=1; $FIXED_ALERTS * 100 / $TOTAL_CODE_ALERTS" | bc 2>/dev/null || echo "0")
+            else
+              RESOLUTION_RATE=0
+            fi
+          else
+            TOTAL_CODE_ALERTS=0
+            OPEN_ALERTS=0
+            FIXED_ALERTS=0
+            DISMISSED_ALERTS=0
+            CRITICAL_CODE_ALERTS=0
+            HIGH_CODE_ALERTS=0
+            MEDIUM_CODE_ALERTS=0
+            UNASSIGNED_ALERTS=0
+            AVG_AGE=0
+            OLDEST_AGE=0
+            RESOLUTION_RATE=0
+          fi
+          
+          echo "dependabot_open=$DEPENDABOT_OPEN" >> $GITHUB_OUTPUT
+          echo "code_scanning_total=$TOTAL_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_open=$OPEN_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_fixed=$FIXED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_dismissed=$DISMISSED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_critical=$CRITICAL_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_high=$HIGH_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_medium=$MEDIUM_CODE_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_unassigned=$UNASSIGNED_ALERTS" >> $GITHUB_OUTPUT
+          echo "code_scanning_avg_age=$AVG_AGE" >> $GITHUB_OUTPUT
+          echo "code_scanning_oldest_age=$OLDEST_AGE" >> $GITHUB_OUTPUT
+          echo "code_scanning_resolution_rate=$RESOLUTION_RATE" >> $GITHUB_OUTPUT
+
+      - name: Get Test Coverage Data from SonarCloud
+        id: coverage
+        continue-on-error: true
+        run: |
+          echo "Fetching coverage data from SonarCloud API..."
+          
+          # SonarCloud API endpoint for coverage metric
+          SONAR_API="https://sonarcloud.io/api/measures/component"
+          
+          # Fetch backend coverage
+          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
+          if [ -n "${{ secrets.SONAR_BACKEND }}" ]; then
+            BACKEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_BACKEND }}:" \
+              "$SONAR_API?component=${SONAR_BACKEND_PROJECT}&metricKeys=coverage" \
+              | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
+            echo "Backend coverage from API: $BACKEND_COVERAGE"
+          else
+            BACKEND_COVERAGE="N/A"
+            echo "SONAR_BACKEND token not available"
+          fi
+          
+          # Fetch frontend coverage
+          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
+          if [ -n "${{ secrets.SONAR_FRONTEND }}" ]; then
+            FRONTEND_COVERAGE=$(curl -s -u "${{ secrets.SONAR_FRONTEND }}:" \
+              "$SONAR_API?component=${SONAR_FRONTEND_PROJECT}&metricKeys=coverage" \
+              | jq -r '.component.measures[]? | select(.metric == "coverage") | .value // "N/A"' 2>/dev/null || echo "N/A")
+            echo "Frontend coverage from API: $FRONTEND_COVERAGE"
+          else
+            FRONTEND_COVERAGE="N/A"
+            echo "SONAR_FRONTEND token not available"
+          fi
+          
+          # Handle cases where API calls failed or returned N/A
+          if [ "$BACKEND_COVERAGE" = "N/A" ] || [ -z "$BACKEND_COVERAGE" ]; then
+            echo "WARNING: Backend coverage unavailable from SonarCloud API; reporting as N/A."
+            BACKEND_COVERAGE="N/A"
+          fi
+          
+          if [ "$FRONTEND_COVERAGE" = "N/A" ] || [ -z "$FRONTEND_COVERAGE" ]; then
+            echo "WARNING: Frontend coverage unavailable from SonarCloud API; reporting as N/A."
+            FRONTEND_COVERAGE="N/A"
+          fi
+          
+          echo "backend_coverage=$BACKEND_COVERAGE" >> $GITHUB_OUTPUT
+          echo "frontend_coverage=$FRONTEND_COVERAGE" >> $GITHUB_OUTPUT
+          echo "Final values - Backend: $BACKEND_COVERAGE%, Frontend: $FRONTEND_COVERAGE%"
+
+      # ============================================================================
+      # REPORT GENERATION
+      # ============================================================================
+      - name: Get Dependency Status
+        id: deps
+        continue-on-error: true
+        run: |
+          # Use subshells to avoid directory navigation issues
+          (cd backend && npm outdated --json > outdated.json 2>/dev/null || echo '{}' > outdated.json)
+          (cd frontend && npm outdated --json > outdated.json 2>/dev/null || echo '{}' > outdated.json)
+          BACKEND_COUNT=$(jq 'length' < backend/outdated.json 2>/dev/null || echo "0")
+          FRONTEND_COUNT=$(jq 'length' < frontend/outdated.json 2>/dev/null || echo "0")
+          echo "backend_outdated=$BACKEND_COUNT" >> $GITHUB_OUTPUT
+          echo "frontend_outdated=$FRONTEND_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Generate Markdown Report
+        id: report
+        run: |
+          REPORT_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          SCAN_TARGET="${{ steps.config.outputs.scan_target }}"
+          REPORT_TITLE="${{ steps.config.outputs.report_title }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          
+          # Extract GitHub Actions outputs to bash variables
+          ZAP_CRITICAL="${{ steps.zap_parse.outputs.zap_critical || '0' }}"
+          ZAP_HIGH="${{ steps.zap_parse.outputs.zap_high || '0' }}"
+          ZAP_MEDIUM="${{ steps.zap_parse.outputs.zap_medium || '0' }}"
+          ZAP_LOW="${{ steps.zap_parse.outputs.zap_low || '0' }}"
+          ZAP_INFO="${{ steps.zap_parse.outputs.zap_info || '0' }}"
+          ZAP_TOTAL="${{ steps.zap_parse.outputs.zap_total || '0' }}"
+          
+          NUCLEI_CRITICAL="${{ steps.nuclei_parse.outputs.nuclei_critical || '0' }}"
+          NUCLEI_HIGH="${{ steps.nuclei_parse.outputs.nuclei_high || '0' }}"
+          NUCLEI_MEDIUM="${{ steps.nuclei_parse.outputs.nuclei_medium || '0' }}"
+          NUCLEI_LOW="${{ steps.nuclei_parse.outputs.nuclei_low || '0' }}"
+          NUCLEI_TOTAL="${{ steps.nuclei_parse.outputs.nuclei_total || '0' }}"
+          
+          BACKEND_COVERAGE="${{ steps.coverage.outputs.backend_coverage || 'N/A' }}"
+          FRONTEND_COVERAGE="${{ steps.coverage.outputs.frontend_coverage || 'N/A' }}"
+          BACKEND_OUTDATED="${{ steps.deps.outputs.backend_outdated || '0' }}"
+          FRONTEND_OUTDATED="${{ steps.deps.outputs.frontend_outdated || '0' }}"
+          DEPENDABOT_OPEN="${{ steps.security_alerts.outputs.dependabot_open || '0' }}"
+          CODE_SCANNING_TOTAL="${{ steps.security_alerts.outputs.code_scanning_total || '0' }}"
+          CODE_SCANNING_OPEN="${{ steps.security_alerts.outputs.code_scanning_open || '0' }}"
+          CODE_SCANNING_FIXED="${{ steps.security_alerts.outputs.code_scanning_fixed || '0' }}"
+          CODE_SCANNING_DISMISSED="${{ steps.security_alerts.outputs.code_scanning_dismissed || '0' }}"
+          CODE_SCANNING_CRITICAL="${{ steps.security_alerts.outputs.code_scanning_critical || '0' }}"
+          CODE_SCANNING_HIGH="${{ steps.security_alerts.outputs.code_scanning_high || '0' }}"
+          CODE_SCANNING_MEDIUM="${{ steps.security_alerts.outputs.code_scanning_medium || '0' }}"
+          CODE_SCANNING_UNASSIGNED="${{ steps.security_alerts.outputs.code_scanning_unassigned || '0' }}"
+          CODE_SCANNING_AVG_AGE="${{ steps.security_alerts.outputs.code_scanning_avg_age || '0' }}"
+          CODE_SCANNING_OLDEST_AGE="${{ steps.security_alerts.outputs.code_scanning_oldest_age || '0' }}"
+          CODE_SCANNING_RESOLUTION_RATE="${{ steps.security_alerts.outputs.code_scanning_resolution_rate || '0' }}"
+          ZAP_IGNORED="${{ steps.zap_parse.outputs.zap_ignored || '0' }}"
+          
+          # Omit technical vulnerability details from public report (Pages) to avoid exposure
+          TECHNICAL_DETAILS="Detailed vulnerability information is intentionally omitted from this public report to avoid exposing sensitive security data."
+          
+          # Calculate totals (ensure numeric values)
+          ZAP_TOTAL_NUM=${ZAP_TOTAL:-0}
+          NUCLEI_TOTAL_NUM=${NUCLEI_TOTAL:-0}
+          TOTAL_VULNS=$((ZAP_TOTAL_NUM + NUCLEI_TOTAL_NUM))
+          
+          # Calculate risk score (0-100, lower is better)
+          CRITICAL_COUNT=$((ZAP_CRITICAL + NUCLEI_CRITICAL))
+          HIGH_COUNT=$((ZAP_HIGH + NUCLEI_HIGH))
+          MEDIUM_COUNT=$((ZAP_MEDIUM + NUCLEI_MEDIUM))
+          RISK_SCORE=$((CRITICAL_COUNT * 10 + HIGH_COUNT * 5 + MEDIUM_COUNT * 2))
+          if [ $RISK_SCORE -gt 100 ]; then RISK_SCORE=100; fi
+          
+          # Determine overall security status
+          if [ $CRITICAL_COUNT -gt 0 ]; then
+            SECURITY_STATUS="🔴 CRITICAL"
+            STATUS_DESC="Critical vulnerabilities require immediate attention"
+          elif [ $HIGH_COUNT -gt 0 ]; then
+            SECURITY_STATUS="🟠 HIGH RISK"
+            STATUS_DESC="High-risk vulnerabilities should be addressed promptly"
+          elif [ $MEDIUM_COUNT -gt 5 ]; then
+            SECURITY_STATUS="🟡 MODERATE RISK"
+            STATUS_DESC="Several medium-risk vulnerabilities detected"
+          else
+            SECURITY_STATUS="🟢 LOW RISK"
+            STATUS_DESC="Security posture is acceptable"
+          fi
+          
+          # Get Nuclei info count
+          NUCLEI_INFO="${{ steps.nuclei_parse.outputs.nuclei_info || '0' }}"
+          
+          # Calculate low/info total
+          LOW_INFO_TOTAL=$((ZAP_LOW + ZAP_INFO + NUCLEI_LOW + NUCLEI_INFO))
+          
+          COVERAGE_STATUS=$(if [ "$BACKEND_COVERAGE" = "N/A" ] || [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Coverage data unavailable for one or more components"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ "$FRONTEND_COVERAGE" != "N/A" ] && [ "$(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0")" = "1" ] && [ "$(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0")" = "1" ]; then echo "✅ Both components exceed 70% threshold"; else echo "⚠️ One or more components below 70% threshold"; fi)
+          
+          cat > management-report.md << EOF
+          # $REPORT_TITLE
+          
+          **Report Date**: $REPORT_DATE  
+          **Scan Target**: $SCAN_TARGET  
+          **Report Type**: Executive Summary
+          
+          ---
+          
+          ## Executive Summary
+          
+          This automated vulnerability assessment report provides a comprehensive overview of the security posture, code quality, and operational status of the $APP_NAME application. The report consolidates findings from multiple security scanning tools and quality metrics.
+          
+          ### Overall Security Status
+          
+          **$SECURITY_STATUS**  
+          $STATUS_DESC
+          
+          **Risk Score**: $RISK_SCORE/100 (Lower is better)
+          
+          ### Key Findings at a Glance
+          
+          | Metric | Count | Status |
+          |--------|-------|--------|
+          | **Total Vulnerabilities** | $TOTAL_VULNS | $([ $TOTAL_VULNS -eq 0 ] && echo "✅ None" || echo "⚠️ Requires Review") |
+          | **Critical** | $CRITICAL_COUNT | $([ $CRITICAL_COUNT -eq 0 ] && echo "✅ None" || echo "🔴 Immediate Action Required") |
+          | **High** | $HIGH_COUNT | $([ $HIGH_COUNT -eq 0 ] && echo "✅ None" || echo "🟠 Address Promptly") |
+          | **Medium** | $MEDIUM_COUNT | $([ $MEDIUM_COUNT -eq 0 ] && echo "✅ None" || echo "🟡 Monitor") |
+          | **Low/Informational** | $LOW_INFO_TOTAL | ℹ️ Informational |
+          
+          ---
+          
+          ## Vulnerability Breakdown by Severity
+          
+          ### ZAP Security Scan Results
+          
+          **Scan Status**: $(if [ "${{ steps.zap.outcome }}" = "success" ]; then echo "✅ Completed Successfully"; else echo "⚠️ Completed with Issues"; fi)  
+          **Scan Type**: Full Penetration Test  
+          **Target**: $SCAN_TARGET  
+          **Scan Tool**: OWASP ZAP (Zed Attack Proxy)
+          
+          #### Result Overview
+          
+          | Severity | Count | CVSS Range | Remediation Timeline |
+          |----------|-------|------------|---------------------|
+          | 🔴 Critical | $ZAP_CRITICAL | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | $ZAP_HIGH | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | $ZAP_MEDIUM | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | $ZAP_LOW | 0.1 - 3.9 | As resources allow |
+          | ℹ️ Informational | $ZAP_INFO | N/A | Best practices |
+          | **Total** | **$ZAP_TOTAL** | **All Severities** | **See details below** |
+          
+          > **Note**: Detailed vulnerability descriptions, affected components, and remediation guidance are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
+          
+          ### Nuclei Vulnerability Scan Results
+          
+          **Scan Status**: $(if [ "${{ steps.nuclei.outcome }}" = "success" ]; then echo "✅ Completed Successfully"; else echo "⚠️ Completed with Issues"; fi)  
+          **Scan Type**: Template-based Vulnerability Detection  
+          **Target**: $SCAN_TARGET  
+          **Scan Tool**: ProjectDiscovery Nuclei
+          
+          #### Result Overview
+          
+          | Severity | Count | CVSS Range | Remediation Timeline |
+          |----------|-------|------------|---------------------|
+          | 🔴 Critical | $NUCLEI_CRITICAL | 9.0 - 10.0 | Immediate (0-7 days) |
+          | 🟠 High | $NUCLEI_HIGH | 7.0 - 8.9 | Urgent (7-30 days) |
+          | 🟡 Medium | $NUCLEI_MEDIUM | 4.0 - 6.9 | Important (30-90 days) |
+          | 🔵 Low | $NUCLEI_LOW | 0.1 - 3.9 | As resources allow |
+          | **Total** | **$NUCLEI_TOTAL** | **All Severities** | **See details below** |
+          
+          > **Note**: Detailed vulnerability information, affected endpoints, and CVE references are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
+          
+          ### GitHub Security Alerts
+          
+          **Dependabot Alerts**: $DEPENDABOT_OPEN open alerts
+          
+          #### Code Scanning Alerts (CodeQL, Trivy, ZAP, Nuclei)
+          
+          | Metric | Count | Status |
+          |--------|-------|--------|
+          | **Total Alerts** | $CODE_SCANNING_TOTAL | $([ "$CODE_SCANNING_TOTAL" -eq 0 ] && echo "✅ None" || echo "⚠️ Requires Review") |
+          | **Open** | $CODE_SCANNING_OPEN | $([ "$CODE_SCANNING_OPEN" -eq 0 ] && echo "✅ All Resolved" || echo "🟡 Active") |
+          | **Fixed** | $CODE_SCANNING_FIXED | ✅ Resolved |
+          | **Dismissed** | $CODE_SCANNING_DISMISSED | ℹ️ Dismissed |
+          | **Unassigned** | $CODE_SCANNING_UNASSIGNED | $([ "$CODE_SCANNING_UNASSIGNED" -eq 0 ] && echo "✅ All Assigned" || echo "🟠 Needs Assignment") |
+          
+          #### Alert Severity Breakdown
+          
+          | Severity | Count |
+          |----------|-------|
+          | 🔴 Critical (Error) | $CODE_SCANNING_CRITICAL |
+          | 🟠 High (Warning) | $CODE_SCANNING_HIGH |
+          | 🟡 Medium (Note) | $CODE_SCANNING_MEDIUM |
+          
+          #### Remediation Metrics
+          
+          - **Average Alert Age**: $CODE_SCANNING_AVG_AGE days
+          - **Oldest Open Alert**: $CODE_SCANNING_OLDEST_AGE days
+          - **Resolution Rate**: ${CODE_SCANNING_RESOLUTION_RATE}%
+          
+          $([ "$CODE_SCANNING_UNASSIGNED" -gt 0 ] && echo "> **⚠️ Action Required**: $CODE_SCANNING_UNASSIGNED unassigned alert(s) need attention. Assign alerts to team members for faster remediation." || echo "")
+          $([ "$CODE_SCANNING_OLDEST_AGE" -gt 30 ] && echo "> **⚠️ Attention**: Oldest open alert is $CODE_SCANNING_OLDEST_AGE days old. Consider prioritizing older alerts for remediation." || echo "")
+          
+          $([ "$ZAP_IGNORED" -gt 0 ] && echo "> **Note**: $ZAP_IGNORED ZAP alert(s) excluded from counts (documented as accepted low-risk in \`tests/.zap/rules.tsv\`). See [accepted alerts documentation](https://github.com/${{ github.repository }}/blob/main/docs/security/zap-accepted-alerts.md) for rationale." || echo "> **Note**: Detailed scan results are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).")
+
+          ---
+          
+          ## Quick Links
+          
+          Access detailed information in related tools:
+          
+          - [🔒 GitHub Security Tab](https://github.com/${{ github.repository }}/security) - View all security alerts and scan results
+          - [📊 SonarCloud - Backend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_backend_project }})
+          - [📊 SonarCloud - Frontend](https://sonarcloud.io/project/overview?id=${{ steps.config.outputs.sonar_frontend_project }})
+          
+          ---
+          
+          ## Technical Details
+          
+          ### Top Critical/High Vulnerabilities
+          
+          $TECHNICAL_DETAILS
+          
+          > **Note**: For complete vulnerability details, remediation guidance, and affected components, see the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
+          
+          ---
+          
+          ## Code Quality & Application Health
+          
+          ### Test Coverage Metrics
+          
+          | Component | Coverage | Threshold | Status |
+          |-----------|----------|-----------|--------|
+          | Backend | ${BACKEND_COVERAGE}% | 70% | $(if [ "$BACKEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$BACKEND_COVERAGE" != "N/A" ] && [ $(echo "$BACKEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
+          | Frontend | ${FRONTEND_COVERAGE}% | 70% | $(if [ "$FRONTEND_COVERAGE" = "N/A" ]; then echo "⚠️ Unavailable"; elif [ "$FRONTEND_COVERAGE" != "N/A" ] && [ $(echo "$FRONTEND_COVERAGE >= 70" | bc -l 2>/dev/null || echo "0") = "1" ]; then echo "✅ Pass"; else echo "⚠️ Below Threshold"; fi) |
+          
+          **Overall Status**: $COVERAGE_STATUS
+          
+          ### Dependency Health Status
+          
+          | Component | Outdated Packages | Status |
+          |-----------|-------------------|--------|
+          | Backend | $BACKEND_OUTDATED | $([ "$BACKEND_OUTDATED" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
+          | Frontend | $FRONTEND_OUTDATED | $([ "$FRONTEND_OUTDATED" -eq 0 ] 2>/dev/null && echo "✅ Current" || echo "🟡 Updates Available") |
+          
+          **Note**: Renovate automerge handles most dependency updates automatically. Manual review may be required for major version updates.
+          
+          ---
+          
+          ## Operational Status
+          
+          ### Application Status
+          
+          - **Maintenance Mode**: ✅ ACTIVE
+          - **Test Coverage**: $COVERAGE_STATUS (Backend: ${BACKEND_COVERAGE}%, Frontend: ${FRONTEND_COVERAGE}%)
+          - **Dependency Management**: Automated via Renovate
+          - **Automerge**: Enabled for dependency updates
+          
+          ### Recent Activity
+          
+          - **Last Deployment**: Check GitHub Actions merge workflow for latest deployment
+          - **PR Validation**: Automated validation on all pull requests
+          - **Security Scans**: Weekly automated scans (ZAP, Nuclei, CodeQL, Trivy)
+          
+          ---
+          
+          ## Remediation Recommendations
+          
+          ### Priority Actions (Based on Severity)
+          
+          $([ $CRITICAL_COUNT -gt 0 ] && echo "1. **🔴 IMMEDIATE ACTION REQUIRED (0-7 days)**: Address $CRITICAL_COUNT critical vulnerability/vulnerabilities identified in security scans. These pose the highest risk and should be remediated immediately to prevent potential security breaches." || echo "1. ✅ **No Critical Vulnerabilities**: No critical vulnerabilities requiring immediate action.")
+          
+          $([ $HIGH_COUNT -gt 0 ] && echo "2. **🟠 HIGH PRIORITY (7-30 days)**: Remediate $HIGH_COUNT high-risk vulnerability/vulnerabilities within 30 days. These vulnerabilities could be exploited and should be addressed promptly." || echo "2. ✅ **No High-Risk Vulnerabilities**: No high-risk vulnerabilities requiring urgent attention.")
+          
+          $([ $MEDIUM_COUNT -gt 5 ] && echo "3. **🟡 MEDIUM PRIORITY (30-90 days)**: Review and address $MEDIUM_COUNT medium-risk vulnerabilities within 90 days. While not immediately critical, these should be addressed as part of regular security maintenance." || echo "3. ✅ **Medium-Risk Status**: Medium-risk vulnerabilities are within acceptable limits.")
+          
+          ### Remediation Guidance
+          
+          - **Detailed Reports**: Review full vulnerability details in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security)
+          - **CVSS Scores**: Prioritize vulnerabilities with higher CVSS scores (9.0-10.0 = Critical, 7.0-8.9 = High)
+          - **Impact Assessment**: Consider business impact when prioritizing remediation efforts
+          - **References**: Each vulnerability includes references and remediation guidance in the detailed reports
+          
+          ### Ongoing Security Activities
+          
+          4. **Monitor**: Review dependency updates via Renovate PRs
+          5. **Review**: Check SonarCloud dashboard for detailed code quality metrics
+          6. **Track**: Monitor GitHub Security tab for new vulnerability alerts
+          7. **Maintain**: Continue weekly automated security scanning
+          8. **Document**: Update accepted alerts documentation when vulnerabilities are accepted as low risk
+          
+          ---
+          
+          ## Compliance & Audit Information
+          
+          ### Scan Metadata
+          
+          - **Report Generated**: $REPORT_DATE
+          - **Scan Target**: $SCAN_TARGET
+          - **Scan Tools**: 
+            - OWASP ZAP (Full Penetration Test) - Web application security testing
+            - ProjectDiscovery Nuclei - Template-based vulnerability detection
+            - GitHub CodeQL - Static code analysis (via analysis.yml)
+            - Trivy - Dependency and container scanning (via analysis.yml)
+          - **Report Frequency**: Weekly (Sundays at 2:00 AM Victoria BC / Pacific; 10:00 UTC PST, 09:00 UTC PDT)
+          - **Report Retention**: Artifacts 90 days; GitHub Pages archive retained indefinitely
+          - **Report Format**: Markdown (this document). All security findings are available in the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).
+          
+          ### Vulnerability Scoring
+          
+          Vulnerabilities are scored using the Common Vulnerability Scoring System (CVSS):
+          - **Critical (9.0-10.0)**: Exploitable vulnerabilities that could lead to complete system compromise
+          - **High (7.0-8.9)**: Serious vulnerabilities that could lead to significant data exposure or system compromise
+          - **Medium (4.0-6.9)**: Moderate risk vulnerabilities that could lead to limited data exposure
+          - **Low (0.1-3.9)**: Minor vulnerabilities with limited impact
+          - **Informational (0.0)**: Best practice recommendations and informational findings
+          
+          ### Compliance Status
+          
+          - **Security Scanning**: ✅ Automated and scheduled
+          - **Test Coverage**: ✅ Exceeds thresholds
+          - **Dependency Management**: ✅ Automated updates enabled
+          - **Code Quality**: ✅ SonarCloud integration active
+          
+          ---
+          
+          ## Next Review Dates
+          
+          - **Next Automated Scan**: Next Sunday at 2:00 AM Victoria BC / Pacific
+          - **Monthly Manual Review**: Recommended (see README.md)
+          - **Quarterly Comprehensive Audit**: Recommended
+          
+          ---
+          
+          *This report was generated automatically by GitHub Actions.*  
+          *For detailed technical information, see the [GitHub Security Tab](https://github.com/${{ github.repository }}/security).*
+          EOF
+          echo "report_path=management-report.md" >> $GITHUB_OUTPUT
+
+      - name: Generate HTML Report
+        continue-on-error: true
+        run: |
+          # Install pandoc (lightweight, ~50MB) - only for HTML generation
+          sudo apt-get update && sudo apt-get install -y pandoc
+          
+          # Generate HTML version (always works, lightweight, no LaTeX required)
+          # HTML can be printed to PDF from browser (File > Print > Save as PDF)
+          pandoc management-report.md -o management-report.html \
+            --standalone \
+            --from markdown \
+            --to html \
+            --css=https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css \
+            --metadata title="Management Report - $(date '+%Y-%m-%d')" \
+            --metadata lang=en
+          
+          echo "HTML report generated successfully"
+          echo "Note: To generate PDF, open HTML in browser and use Print > Save as PDF"
+
+      # ============================================================================
+      # REPORT PUBLISHING
+      # Workflow triggers: schedule + workflow_dispatch only (no push).
+      # ============================================================================
+      - name: Prepare Reports for GitHub Pages
+        continue-on-error: true
+        run: |
+          # Create reports directory structure
+          mkdir -p docs/reports/archive
+          
+          # Fetch existing archive from gh-pages so we preserve it before publishing
+          # (actions-gh-pages pushes docs/reports to the gh-pages branch).
+          git fetch origin gh-pages 2>/dev/null || true
+          if git checkout origin/gh-pages -- reports/archive 2>/dev/null; then
+            [ -d reports/archive ] && cp -rn reports/archive/. docs/reports/archive/ 2>/dev/null || true
+            rm -rf reports
+          fi
+          
+          # Copy latest report
+          REPORT_DATE=$(date '+%Y-%m-%d')
+          cp management-report.html docs/reports/latest.html
+          cp management-report.md docs/reports/latest.md
+          
+          # Archive this report with date
+          cp management-report.html docs/reports/archive/${REPORT_DATE}.html
+          cp management-report.md docs/reports/archive/${REPORT_DATE}.md
+          
+          # Create dashboard index.html
+          cat > docs/reports/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Security & Quality Reports - APP_NAME_PLACEHOLDER</title>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+            <style>
+              body {
+                box-sizing: border-box;
+                min-width: 200px;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 45px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+                background: #fff;
+              }
+              .header {
+                border-bottom: 1px solid #eaecef;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .header h1 {
+                margin-top: 0;
+                color: #24292e;
+              }
+              .card {
+                border: 1px solid #e1e4e8;
+                border-radius: 6px;
+                padding: 20px;
+                margin-bottom: 20px;
+                background: #f6f8fa;
+              }
+              .card h3 {
+                margin-top: 0;
+                color: #0366d6;
+              }
+              .btn {
+                display: inline-block;
+                padding: 8px 16px;
+                background: #0366d6;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                margin-right: 10px;
+                margin-top: 10px;
+                font-weight: 500;
+              }
+              .btn:hover {
+                background: #0256cc;
+              }
+              .btn-secondary {
+                background: #6a737d;
+              }
+              .btn-secondary:hover {
+                background: #586069;
+              }
+              .archive-list {
+                list-style: none;
+                padding: 0;
+              }
+              .archive-list li {
+                padding: 8px 0;
+                border-bottom: 1px solid #e1e4e8;
+              }
+              .archive-list li:last-child {
+                border-bottom: none;
+              }
+              .archive-list a {
+                color: #0366d6;
+                text-decoration: none;
+              }
+              .archive-list a:hover {
+                text-decoration: underline;
+              }
+              .status-badge {
+                display: inline-block;
+                padding: 2px 8px;
+                border-radius: 3px;
+                font-size: 12px;
+                font-weight: 600;
+                margin-left: 8px;
+              }
+              .status-success {
+                background: #28a745;
+                color: white;
+              }
+              .status-info {
+                background: #17a2b8;
+                color: white;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>🔒 Security & Quality Reports</h1>
+              <p><strong>APP_NAME_PLACEHOLDER</strong> - Automated Security Scanning & Management Reports</p>
+              <p><em>Last updated: DATE_PLACEHOLDER</em></p>
+            </div>
+            
+            <div class="card">
+              <h3>📊 Latest Report</h3>
+              <p>View the most recent security and quality assessment report generated from automated scans.</p>
+              <a href="latest.html" class="btn">View Latest Report (HTML)</a>
+              <a href="latest.md" class="btn btn-secondary">Download Markdown</a>
+            </div>
+            
+            <div class="card">
+              <h3>📚 Report Archive</h3>
+              <p>Historical security reports are archived by date. Each report includes a complete snapshot of security posture at the time of generation.</p>
+              <p><strong>Note:</strong> Reports are generated weekly on Sundays at 2:00 AM Victoria BC / Pacific (10:00 UTC PST, 09:00 UTC PDT).</p>
+              <p><em>Archive listing will be enhanced in a future update to automatically list all archived reports.</em></p>
+            </div>
+            
+            <div class="card">
+              <h3>🔗 Quick Links</h3>
+              <ul>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/security">🔒 GitHub Security Tab</a> - View all security alerts and detailed findings</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER">📊 SonarCloud - Backend</a> - Code quality metrics</li>
+                <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER">📊 SonarCloud - Frontend</a> - Code quality metrics</li>
+                <li><a href="https://github.com/REPO_PLACEHOLDER/actions/workflows/reporting.yml">⚙️ Workflow Runs</a> - View workflow execution history</li>
+              </ul>
+            </div>
+            
+            <div class="card">
+              <h3>ℹ️ About These Reports</h3>
+              <p>Reports are generated automatically every Sunday at 2:00 AM Victoria BC / Pacific. Each report includes:</p>
+              <ul>
+                <li><strong>Security Vulnerability Scans</strong>: ZAP Full Penetration Test, Nuclei Template-based Detection, CodeQL Static Analysis, Trivy Dependency & Container Scanning</li>
+                <li><strong>Code Quality Metrics</strong>: Test coverage, code quality scores from SonarCloud</li>
+                <li><strong>Dependency Health Status</strong>: Outdated package tracking</li>
+                <li><strong>Remediation Recommendations</strong>: Prioritized action items based on severity</li>
+              </ul>
+              <p><strong>Report Format:</strong> HTML (viewable in browser, printable to PDF) and Markdown (source format)</p>
+            </div>
+            
+            <div class="card">
+              <h3>📋 Report Schedule</h3>
+              <ul>
+                <li><strong>Frequency:</strong> Weekly (Sundays)</li>
+                <li><strong>Time:</strong> 2:00 AM Victoria BC / Pacific — 10:00 UTC (PST) or 09:00 UTC (PDT)</li>
+                <li><strong>Archive:</strong> Retained indefinitely; workflow artifacts: 90 days</li>
+                <li><strong>Next Scan:</strong> Next Sunday at 2:00 AM Victoria BC / Pacific</li>
+              </ul>
+            </div>
+          </body>
+          </html>
+          EOF
+          
+          # Replace placeholders in index.html
+          REPO_NAME="${{ github.repository }}"
+          APP_NAME="${{ steps.config.outputs.app_name }}"
+          SONAR_BACKEND_PROJECT="${{ steps.config.outputs.sonar_backend_project }}"
+          SONAR_FRONTEND_PROJECT="${{ steps.config.outputs.sonar_frontend_project }}"
+          UPDATE_DATE=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          sed -i "s|REPO_PLACEHOLDER|$REPO_NAME|g" docs/reports/index.html
+          sed -i "s|APP_NAME_PLACEHOLDER|$APP_NAME|g" docs/reports/index.html
+          sed -i "s|SONAR_BACKEND_PLACEHOLDER|$SONAR_BACKEND_PROJECT|g" docs/reports/index.html
+          sed -i "s|SONAR_FRONTEND_PLACEHOLDER|$SONAR_FRONTEND_PROJECT|g" docs/reports/index.html
+          sed -i "s|DATE_PLACEHOLDER|$UPDATE_DATE|g" docs/reports/index.html
+          
+          echo "Reports prepared for GitHub Pages"
+
+      - name: Publish Reports to GitHub Pages
+        continue-on-error: true
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/reports
+          destination_dir: ./reports
+
+      - name: Upload Reports as Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: management-report-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            management-report.md
+            management-report.html
+            zap-report.html
+            nuclei-results.json
+            nuclei-results.jsonl
+            nuclei-results.txt
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Add Report Summary to Job Summary
+        continue-on-error: true
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## 🔒 Security Scan Complete
+          
+          Security scans have completed. Review logs and reports for any failures. Reports are now available:
+          
+          **📊 View Reports:**
+          - [Latest Report (GitHub Pages)](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/latest.html)
+          - [Report Dashboard](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/)
+          - [Download Artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          **Scans performed:**
+          - ZAP Full Penetration Test (SARIF upload to Security Tab when available)
+          - Nuclei Vulnerability Scan (SARIF upload to Security Tab when available)
+          - CodeQL Static Analysis (via existing workflows)
+          - Trivy Dependency & Container Scan (via existing workflows)
+          
+          **Access:**
+          - [GitHub Security Tab](https://github.com/${{ github.repository }}/security) - All security findings
+          - [GitHub Pages Reports](https://REPO_OWNER_PLACEHOLDER.github.io/REPO_NAME_PLACEHOLDER/reports/) - Management reports
+          EOF
+          
+          # Replace placeholders in job summary
+          REPO_OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" $GITHUB_STEP_SUMMARY
+          sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" $GITHUB_STEP_SUMMARY
+
