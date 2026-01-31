@@ -30,6 +30,7 @@
     "express": "^5.0.0",
     "express-async-handler": "^1.2.0",
     "express-rate-limit": "^8.2.1",
+    "fast-xml-parser": "^5.3.4",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.1.0",
     "minio": "^8.0.0"
@@ -45,5 +46,8 @@
     "prettier": "^3.7.4",
     "sinon": "^21.0.0",
     "supertest": "^7.1.4"
+  },
+  "overrides": {
+    "fast-xml-parser@<5.3.4": "5.3.4"
   }
 }
