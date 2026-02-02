@@ -1,6 +1,6 @@
 declare global {
   interface Window {
-    global: typeof window;
+    global: Window & typeof globalThis;
   }
 }
 
