@@ -18,6 +18,14 @@ if (!container) {
 }
 const root = createRoot(container);
 
+declare global {
+  interface Window {
+    global: Window & typeof globalThis;
+  }
+}
+
+export {};
+
 Amplify.configure(amplifyconfig);
 // Configure CookieStorage with security attributes for session management
 // See docs/COOKIE_SECURITY.md for detailed documentation
