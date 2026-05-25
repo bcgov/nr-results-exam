@@ -122,7 +122,7 @@ objects:
                 failureThreshold: 3
               livenessProbe:
                 httpGet:
-                  path: /health
+                  path: /
                   port: 3000
                   scheme: HTTP
                 initialDelaySeconds: 15
@@ -185,7 +185,7 @@ objects:
       name: "${NAME}-${ZONE}-${COMPONENT}"
     spec:
       scaleTargetRef:
-        apiVersion: apps.openshift.io/v1
+        apiVersion: apps/v1
         kind: Deployment
         name: "${NAME}-${ZONE}-${COMPONENT}"
       minReplicas: "${{MIN_REPLICAS}}"
