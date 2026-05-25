@@ -51,7 +51,7 @@
 		Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate"
 		X-Content-Type-Options "nosniff"
 		Strict-Transport-Security "max-age=31536000"
-		# Content Security Policy - strict policy with no unsafe directives
+		# Content Security Policy - strict policy with necessary unsafe-inline and unsafe-eval for AWS Amplify and dynamic SPA scripts/styles
 		Content-Security-Policy "base-uri 'self';
 			connect-src 'self' {$VITE_BACKEND_URL} https://*.gov.bc.ca https://*.amazoncognito.com https://*.cloudfront.net https://cognito-idp.ca-central-1.amazonaws.com;
 			default-src 'self';
@@ -63,8 +63,8 @@
 			manifest-src 'self';
 			media-src 'self';
 			object-src 'none';
-			script-src 'self';
-			style-src 'self';
+			script-src 'self' 'unsafe-inline' 'unsafe-eval';
+			style-src 'self' 'unsafe-inline';
 			worker-src 'none';"
 		Referrer-Policy "same-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), autoplay=(), encrypted-media=(), picture-in-picture=()"
