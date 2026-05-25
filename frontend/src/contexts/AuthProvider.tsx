@@ -7,7 +7,7 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { cognitoAuth } from '../services/CognitoAuthService';
+import { cognitoAuth, base64UrlDecode } from '../services/CognitoAuthService';
 import { parseToken, FamLoginUser, setAuthIdToken } from '../services/AuthService';
 import { env } from '../env';
 import { JWT, ProviderType } from '../types/amplify';
@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUserState = async () => {
+  const refreshUserState = useCallback(async () => {
     setIsLoading(true);
     try {
       const idToken = await loadUserToken();
@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Handle OAuth callback if present
@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       2 * 60 * 1000,
     ); // Check every 2 minutes
     return () => clearInterval(interval);
-  }, []); // refreshUserState is stable, no need to include in deps
+  }, [refreshUserState]);
 
   const login = useCallback((provider: ProviderType) => {
     cognitoAuth.signInWithRedirect(provider);
@@ -140,7 +140,7 @@ const loadUserToken = async (): Promise<JWT | undefined> => {
     // This is for test only
     const token = getUserTokenFromCookie();
     if (token) {
-      const jwtBody = JSON.parse(atob(token.split('.')[1]));
+      const jwtBody = JSON.parse(base64UrlDecode(token.split('.')[1]));
       return { payload: jwtBody, toString: () => token };
     }
     throw new Error('No token found');

@@ -8,6 +8,15 @@ import { JWT } from '../types/amplify';
  * Handles OAuth authorization code flow, token exchange, and cookie management.
  */
 
+export function base64UrlDecode(str: string): string {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = base64.length % 4;
+  if (pad) {
+    base64 += '='.repeat(4 - pad);
+  }
+  return atob(base64);
+}
+
 interface TokenResponse {
   id_token: string;
   access_token: string;
@@ -25,10 +34,8 @@ interface CookieOptions {
 }
 
 class CognitoAuthService {
-  private readonly userPoolId: string;
   private readonly clientId: string;
   private readonly domain: string;
-  private readonly region: string;
   private readonly redirectUri: string;
   private readonly cookieOptions: CookieOptions;
 
@@ -40,11 +47,9 @@ class CognitoAuthService {
   }
 
   constructor() {
-    this.userPoolId = env.VITE_USER_POOLS_ID || '';
     this.clientId = env.VITE_USER_POOLS_WEB_CLIENT_ID || '';
     this.domain =
       env.VITE_AWS_DOMAIN || 'lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com';
-    this.region = env.VITE_COGNITO_REGION || 'ca-central-1';
     this.redirectUri = `${window.location.origin}/dashboard`;
 
     // Cookie security configuration matching Amplify's CookieStorage settings
@@ -59,15 +64,49 @@ class CognitoAuthService {
   }
 
   /**
+   * Helper to base64url encode an array/buffer
+   */
+  private base64UrlEncode(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+
+  /**
+   * Generates a random base64url string for PKCE or CSRF state
+   */
+  private generateRandomString(length: number): string {
+    const array = new Uint8Array(length);
+    window.crypto.getRandomValues(array);
+    return this.base64UrlEncode(array);
+  }
+
+  /**
+   * Generates a SHA-256 code challenge from a verifier string
+   */
+  private async generateCodeChallenge(verifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await window.crypto.subtle.digest('SHA-256', data);
+    return this.base64UrlEncode(digest);
+  }
+
+  /**
    * Constructs OAuth authorization URL for Cognito Hosted UI
    */
-  private buildAuthUrl(provider: string): string {
+  private buildAuthUrl(provider: string, state: string, codeChallenge: string): string {
     const params = new URLSearchParams({
       client_id: this.clientId,
       response_type: 'code',
       redirect_uri: this.redirectUri,
       scope: 'openid',
       identity_provider: provider,
+      state: state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
 
     return `https://${this.domain}/oauth2/authorize?${params.toString()}`;
@@ -76,7 +115,7 @@ class CognitoAuthService {
   /**
    * Exchanges authorization code for tokens
    */
-  private async exchangeCodeForTokens(code: string): Promise<TokenResponse> {
+  private async exchangeCodeForTokens(code: string, codeVerifier: string): Promise<TokenResponse> {
     const tokenEndpoint = `https://${this.domain}/oauth2/token`;
 
     const params = new URLSearchParams({
@@ -84,6 +123,7 @@ class CognitoAuthService {
       client_id: this.clientId,
       code: code,
       redirect_uri: this.redirectUri,
+      code_verifier: codeVerifier,
     });
 
     const response = await fetch(tokenEndpoint, {
@@ -170,7 +210,7 @@ class CognitoAuthService {
    */
   private isTokenExpiringSoon(tokenString: string): boolean {
     try {
-      const payload = JSON.parse(atob(tokenString.split('.')[1]));
+      const payload = JSON.parse(base64UrlDecode(tokenString.split('.')[1]));
       const exp = payload.exp as number;
       if (!exp) {
         return true; // No expiration claim, treat as expired
@@ -246,7 +286,7 @@ class CognitoAuthService {
     let userId: string;
     try {
       const payloadPart = tokens.id_token.split('.')[1];
-      const decodedPayload = atob(payloadPart);
+      const decodedPayload = base64UrlDecode(payloadPart);
       const idTokenPayload = JSON.parse(decodedPayload);
       userId = encodeURIComponent(idTokenPayload.sub);
     } catch (error) {
@@ -312,7 +352,7 @@ class CognitoAuthService {
 
     // Parse JWT and return in format compatible with existing code
     try {
-      const payload = JSON.parse(atob(idTokenString.split('.')[1]));
+      const payload = JSON.parse(base64UrlDecode(idTokenString.split('.')[1]));
       const idToken: JWT = {
         payload,
         toString: () => idTokenString,
@@ -327,11 +367,20 @@ class CognitoAuthService {
   /**
    * Initiates OAuth login flow with redirect
    */
-  signInWithRedirect(provider: 'idir' | 'bceid'): void {
+  async signInWithRedirect(provider: 'idir' | 'bceid'): Promise<void> {
     const zone = (env.VITE_ZONE ?? 'DEV').toUpperCase();
     const envProvider = provider === 'idir' ? `${zone}-IDIR` : `${zone}-BCEIDBUSINESS`;
 
-    const authUrl = this.buildAuthUrl(envProvider);
+    // Generate CSRF state and PKCE verifier/challenge
+    const state = this.generateRandomString(32);
+    const codeVerifier = this.generateRandomString(64);
+    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+
+    // Save state and verifier in sessionStorage
+    sessionStorage.setItem('oauth_state', state);
+    sessionStorage.setItem('oauth_code_verifier', codeVerifier);
+
+    const authUrl = this.buildAuthUrl(envProvider, state, codeChallenge);
     window.location.href = authUrl;
   }
 
@@ -342,8 +391,9 @@ class CognitoAuthService {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const error = urlParams.get('error');
+    const state = urlParams.get('state');
 
-    // Clean up URL immediately after extracting code to minimize exposure window
+    // Clean up URL immediately after extracting params to minimize exposure window
     window.history.replaceState({}, document.title, window.location.pathname);
 
     if (error) {
@@ -355,8 +405,27 @@ class CognitoAuthService {
       return false;
     }
 
+    // Validate CSRF state
+    const savedState = sessionStorage.getItem('oauth_state');
+    sessionStorage.removeItem('oauth_state'); // consume immediately
+
+    if (!state || state !== savedState) {
+      console.error('State validation failed. CSRF protection triggered.');
+      sessionStorage.removeItem('oauth_code_verifier');
+      return false;
+    }
+
+    // Retrieve code verifier
+    const codeVerifier = sessionStorage.getItem('oauth_code_verifier');
+    sessionStorage.removeItem('oauth_code_verifier'); // consume immediately
+
+    if (!codeVerifier) {
+      console.error('Missing PKCE code verifier.');
+      return false;
+    }
+
     try {
-      const tokens = await this.exchangeCodeForTokens(code);
+      const tokens = await this.exchangeCodeForTokens(code, codeVerifier);
       this.storeTokens(tokens);
       return true;
     } catch (err) {

@@ -1,4 +1,8 @@
 import { describe, beforeEach, expect, test, vi } from 'vitest';
+import { webcrypto } from 'crypto';
+if (!global.crypto) {
+  global.crypto = webcrypto as unknown as Crypto;
+}
 import { cognitoAuth } from '../../services/CognitoAuthService';
 
 // Mock environment variables
@@ -177,30 +181,36 @@ describe('CognitoAuthService', () => {
   });
 
   describe('signInWithRedirect', () => {
-    test('redirects to Cognito OAuth URL for idir', () => {
+    test('redirects to Cognito OAuth URL for idir', async () => {
       const originalLocation = window.location;
       delete (window as { location?: Location }).location;
       window.location = { ...originalLocation, href: '' };
 
-      cognitoAuth.signInWithRedirect('idir');
+      await cognitoAuth.signInWithRedirect('idir');
 
       expect(window.location.href).toContain('test-domain.auth.ca-central-1.amazoncognito.com');
       expect(window.location.href).toContain('oauth2/authorize');
       expect(window.location.href).toContain('client_id=test-client-id');
       expect(window.location.href).toContain('response_type=code');
       expect(window.location.href).toContain('identity_provider=TEST-IDIR');
+      expect(window.location.href).toContain('state=');
+      expect(window.location.href).toContain('code_challenge=');
+      expect(window.location.href).toContain('code_challenge_method=S256');
 
       window.location = originalLocation;
     });
 
-    test('redirects to Cognito OAuth URL for bceid', () => {
+    test('redirects to Cognito OAuth URL for bceid', async () => {
       const originalLocation = window.location;
       delete (window as { location?: Location }).location;
       window.location = { ...originalLocation, href: '' };
 
-      cognitoAuth.signInWithRedirect('bceid');
+      await cognitoAuth.signInWithRedirect('bceid');
 
       expect(window.location.href).toContain('identity_provider=TEST-BCEIDBUSINESS');
+      expect(window.location.href).toContain('state=');
+      expect(window.location.href).toContain('code_challenge=');
+      expect(window.location.href).toContain('code_challenge_method=S256');
 
       window.location = originalLocation;
     });
@@ -271,8 +281,12 @@ describe('CognitoAuthService', () => {
       const originalReplaceState = window.history.replaceState;
       window.history.replaceState = vi.fn();
 
+      // Seed CSRF state and PKCE verifier
+      sessionStorage.setItem('oauth_state', 'test-state');
+      sessionStorage.setItem('oauth_code_verifier', 'test-verifier');
+
       Object.defineProperty(window, 'location', {
-        value: { search: '?code=test-auth-code', pathname: '/dashboard' },
+        value: { search: '?code=test-auth-code&state=test-state', pathname: '/dashboard' },
         writable: true,
       });
 
@@ -285,12 +299,35 @@ describe('CognitoAuthService', () => {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          body: expect.stringContaining('code_verifier=test-verifier'),
         }),
       );
 
       // Verify tokens were stored in cookies
       const tokens = await cognitoAuth.getTokens();
       expect(tokens).toBeDefined();
+
+      window.history.replaceState = originalReplaceState;
+      Object.defineProperty(window, 'location', {
+        value: { search: originalSearch },
+        writable: true,
+      });
+    });
+
+    test('returns false when state validation fails', async () => {
+      const originalSearch = window.location.search;
+      const originalReplaceState = window.history.replaceState;
+      window.history.replaceState = vi.fn();
+
+      sessionStorage.setItem('oauth_state', 'valid-state');
+
+      Object.defineProperty(window, 'location', {
+        value: { search: '?code=test-code&state=invalid-state', pathname: '/dashboard' },
+        writable: true,
+      });
+
+      const result = await cognitoAuth.handleCallback();
+      expect(result).toBe(false);
 
       window.history.replaceState = originalReplaceState;
       Object.defineProperty(window, 'location', {
@@ -311,8 +348,12 @@ describe('CognitoAuthService', () => {
         text: async () => 'Invalid authorization code',
       });
 
+      // Seed CSRF state and PKCE verifier
+      sessionStorage.setItem('oauth_state', 'test-state');
+      sessionStorage.setItem('oauth_code_verifier', 'test-verifier');
+
       Object.defineProperty(window, 'location', {
-        value: { search: '?code=invalid-code', pathname: '/dashboard' },
+        value: { search: '?code=invalid-code&state=test-state', pathname: '/dashboard' },
         writable: true,
       });
 
@@ -336,8 +377,12 @@ describe('CognitoAuthService', () => {
       // Mock fetch to throw network error
       global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
 
+      // Seed CSRF state and PKCE verifier
+      sessionStorage.setItem('oauth_state', 'test-state');
+      sessionStorage.setItem('oauth_code_verifier', 'test-verifier');
+
       Object.defineProperty(window, 'location', {
-        value: { search: '?code=test-code', pathname: '/dashboard' },
+        value: { search: '?code=test-code&state=test-state', pathname: '/dashboard' },
         writable: true,
       });
 
