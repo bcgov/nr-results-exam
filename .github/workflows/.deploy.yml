@@ -48,7 +48,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
+      - uses: bcgov/action-deployer-openshift@v4.1.0
         id: deploy-backend
         with:
           file: backend/openshift.deploy.yml
@@ -69,7 +69,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: bcgov/action-deployer-openshift@v4.0.1
+      - uses: bcgov/action-deployer-openshift@v4.1.0
         id: deploy-frontend
         with:
           file: frontend/openshift.deploy.yml
