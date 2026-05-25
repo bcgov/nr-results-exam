@@ -1,5 +1,5 @@
 # Build static files
-FROM node:24.14.0-bookworm-slim AS build
+FROM node:24.14.1-bookworm-slim AS build
 
 WORKDIR /app
 COPY . .
@@ -9,13 +9,13 @@ RUN npm ci --ignore-scripts && \
     rm -rf node_modules
 
 # Build custom Caddy with Coraza WAF plugin
-FROM caddy:2.11.2-builder AS xcaddy
+FROM caddy:2.11.3-builder AS xcaddy
 RUN apk add --no-cache ca-certificates
 RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2
 
 # Deploy using custom Caddy to host static files
-FROM caddy:2.11.2-alpine
+FROM caddy:2.11.3-alpine
 ENV LOG_LEVEL=info
 
 COPY --from=xcaddy /usr/bin/caddy /usr/bin/caddy
