@@ -38,7 +38,7 @@ export const getAuthIdToken = () => {
  */
 export const parseToken = (idToken: JWT | undefined): FamLoginUser | undefined => {
   if (!idToken) return undefined;
-  setAuthIdToken(idToken?.toString() || null);
+  setAuthIdToken(idToken?.toString?.() || null);
   const decodedIdToken = idToken?.payload;
 
   const displayName = (decodedIdToken?.['custom:idp_display_name'] as string) || '';
