@@ -22,11 +22,11 @@ COPY --from=xcaddy /usr/bin/caddy /usr/bin/caddy
 COPY --from=build /app/build/ /srv
 COPY Caddyfile coraza.conf /etc/caddy/
 
-# Verify Caddy formatting, install CA certs, create Coraza dir with proper permissions for OpenShift non-root dynamic UIDs
+# Verify Caddy formatting, install CA certs, create Coraza dir with proper permissions for both local USER 1001 and OpenShift dynamic UIDs
 RUN caddy fmt --diff /etc/caddy/Caddyfile && \
     apk add --no-cache ca-certificates && \
     mkdir -p /tmp/coraza && \
-    chgrp -R 0 /tmp/coraza && \
+    chown -R 1001:0 /tmp/coraza && \
     chmod -R g+w /tmp/coraza
 
 # User, port, healthcheck
