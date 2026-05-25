@@ -1,6 +1,11 @@
 // src/types/amplify.ts
-import type { JWT as AmplifyJWT } from '@aws-amplify/core/dist/esm/singleton/Auth/types';
 
-export type JWT = AmplifyJWT;
+/**
+ * JWT token interface compatible with existing code
+ */
+export interface JWT {
+  payload: Record<string, unknown>;
+  toString(): string;
+}
 
 export type ProviderType = 'idir' | 'bceid';

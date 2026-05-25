@@ -26,7 +26,8 @@ COPY Caddyfile coraza.conf /etc/caddy/
 RUN caddy fmt --diff /etc/caddy/Caddyfile && \
     apk add --no-cache ca-certificates && \
     mkdir -p /tmp/coraza && \
-    chown 1001:1001 /tmp/coraza
+    chown -R 1001:0 /tmp/coraza && \
+    chmod -R g+rwX /tmp/coraza
 
 # User, port, healthcheck
 USER 1001
