@@ -7,7 +7,7 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { cognitoAuth, base64UrlDecode } from '../services/CognitoAuthService';
 import { parseToken, FamLoginUser, setAuthIdToken } from '../services/AuthService';
 import { env } from '../env';
 import { JWT, ProviderType } from '../types/amplify';
@@ -36,9 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
-  const appEnv = env.VITE_ZONE ?? 'DEV';
-
-  const refreshUserState = async () => {
+  const refreshUserState = useCallback(async () => {
     setIsLoading(true);
     try {
       const idToken = await loadUserToken();
@@ -47,39 +45,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setUser(undefined);
         setUserRoles(undefined);
+        setAuthIdToken(null);
       }
     } catch {
       setUser(undefined);
       setUserRoles(undefined);
+      setAuthIdToken(null);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    refreshUserState();
-    const interval = setInterval(loadUserToken, 3 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
-  const login = useCallback(
-    async (provider: ProviderType) => {
-      const envProvider =
-        provider.localeCompare('idir') === 0
-          ? `${appEnv.toLocaleUpperCase()}-IDIR`
-          : `${appEnv.toLocaleUpperCase()}-BCEIDBUSINESS`;
+  useEffect(() => {
+    // Handle OAuth callback if present
+    const handleCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('code') || urlParams.get('error')) {
+        await cognitoAuth.handleCallback();
+        // Refresh user state after handling callback
+        await refreshUserState();
+      } else {
+        // Normal initialization
+        await refreshUserState();
+      }
+    };
 
-      signInWithRedirect({
-        provider: { custom: envProvider.toUpperCase() },
-      });
-    },
-    [appEnv],
-  );
+    handleCallback();
+    // Refresh tokens every 2-3 minutes (similar to Amplify's session manager)
+    // This will automatically refresh tokens if they're expiring soon
+    // Note: refreshUserState() internally calls loadUserToken(), so we don't need to call it separately
+    const interval = setInterval(
+      async () => {
+        try {
+          // refreshUserState() will:
+          // 1. Call loadUserToken() which calls getTokens()
+          // 2. getTokens() automatically refreshes if expiring soon
+          // 3. Parse token and update user state
+          await refreshUserState();
+        } catch {
+          // Token refresh failed, user will need to re-login
+          setUser(undefined);
+          setUserRoles(undefined);
+        }
+      },
+      2 * 60 * 1000,
+    ); // Check every 2 minutes
+    return () => clearInterval(interval);
+  }, [refreshUserState]);
 
-  const logout = useCallback(async () => {
-    await signOut();
+  const login = useCallback((provider: ProviderType) => {
+    cognitoAuth.signInWithRedirect(provider);
+  }, []);
+
+  const logout = useCallback(() => {
     setUser(undefined);
     setUserRoles(undefined);
+    cognitoAuth.signOut();
   }, []);
 
   const contextValue: AuthContextType = useMemo(
@@ -109,15 +130,18 @@ export const useAuth = (): AuthContextType => {
 
 const loadUserToken = async (): Promise<JWT | undefined> => {
   if (env.NODE_ENV !== 'test') {
-    const { idToken } = (await fetchAuthSession()).tokens ?? {};
-    setAuthIdToken(idToken?.toString() || null);
-    return idToken;
+    const tokens = await cognitoAuth.getTokens();
+    if (tokens?.idToken) {
+      setAuthIdToken(tokens.idToken.toString() || null);
+      return tokens.idToken;
+    }
+    return undefined;
   } else {
     // This is for test only
     const token = getUserTokenFromCookie();
     if (token) {
-      const jwtBody = JSON.parse(atob(token.split('.')[1]));
-      return { payload: jwtBody };
+      const jwtBody = JSON.parse(base64UrlDecode(token.split('.')[1]));
+      return { payload: jwtBody, toString: () => token };
     }
     throw new Error('No token found');
   }

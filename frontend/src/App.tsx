@@ -1,5 +1,6 @@
 import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
+import { Loading } from '@carbon/react';
 import './custom.scss';
 
 import Landing from './screens/Landing';
@@ -43,6 +44,11 @@ const privateRoutes: RouteObject[] = [
 
 const App: React.FC = () => {
   const auth = useAuth();
+
+  if (auth.isLoading) {
+    return <Loading description="Loading..." withOverlay={true} />;
+  }
+
   const browserRouter = createBrowserRouter(auth.isLoggedIn ? privateRoutes : publicRoutes);
   return <RouterProvider router={browserRouter} />;
 };

@@ -58,7 +58,6 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: './coverage',
         include: ['src/**/*'],
         exclude: [
-          'src/amplifyconfiguration.ts',
           'src/reportWebVitals.ts'
         ],
         thresholds: {

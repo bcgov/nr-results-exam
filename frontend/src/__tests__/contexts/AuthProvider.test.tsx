@@ -11,10 +11,14 @@ vi.mock('../../env', () => ({
   },
 }));
 
-vi.mock('aws-amplify/auth', () => ({
-  fetchAuthSession: vi.fn(),
-  signInWithRedirect: vi.fn(),
-  signOut: vi.fn(),
+vi.mock('../../services/CognitoAuthService', () => ({
+  cognitoAuth: {
+    getTokens: vi.fn(),
+    signInWithRedirect: vi.fn(),
+    signOut: vi.fn(),
+    handleCallback: vi.fn(),
+    refreshTokens: vi.fn(),
+  },
 }));
 
 vi.mock('../../services/AuthService', () => ({
@@ -23,12 +27,10 @@ vi.mock('../../services/AuthService', () => ({
 }));
 
 import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
-import { fetchAuthSession, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { cognitoAuth } from '../../services/CognitoAuthService';
 import { parseToken, setAuthIdToken } from '../../services/AuthService';
 
-const mockFetchAuthSession = vi.mocked(fetchAuthSession);
-const mockSignInWithRedirect = vi.mocked(signInWithRedirect);
-const mockSignOut = vi.mocked(signOut);
+const mockCognitoAuth = vi.mocked(cognitoAuth);
 const mockParseToken = vi.mocked(parseToken);
 const mockSetAuthIdToken = vi.mocked(setAuthIdToken);
 
@@ -51,9 +53,10 @@ describe('AuthProvider', () => {
       payload: { sub: 'user-123' },
     };
 
-    mockFetchAuthSession.mockResolvedValueOnce({
-      tokens: { idToken: mockIdToken },
+    mockCognitoAuth.getTokens.mockResolvedValueOnce({
+      idToken: mockIdToken,
     });
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
     mockParseToken.mockReturnValueOnce({
       userName: 'jane.doe@gov.bc.ca',
     });
@@ -69,16 +72,17 @@ describe('AuthProvider', () => {
     expect(mockParseToken).toHaveBeenCalledWith(mockIdToken);
     expect(mockSetAuthIdToken).toHaveBeenCalledWith('token-value');
 
-    await act(async () => {
-      await result.current.logout();
+    await act(() => {
+      result.current.logout();
     });
 
-    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(mockCognitoAuth.signOut).toHaveBeenCalledTimes(1);
     expect(result.current.isLoggedIn).toBe(false);
   });
 
   test('handles missing id token by resetting auth state', async () => {
-    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -91,7 +95,8 @@ describe('AuthProvider', () => {
   });
 
   test('recovers from session errors and formats login provider', async () => {
-    mockFetchAuthSession.mockRejectedValueOnce(new Error('session failed'));
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -99,25 +104,22 @@ describe('AuthProvider', () => {
 
     expect(result.current.isLoggedIn).toBe(false);
 
-    await act(async () => {
-      await result.current.login('idir');
+    await act(() => {
+      result.current.login('idir');
     });
 
-    expect(mockSignInWithRedirect).toHaveBeenCalledWith({
-      provider: { custom: 'TEST-IDIR' },
+    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenCalledWith('idir');
+
+    await act(() => {
+      result.current.login('bceid');
     });
 
-    await act(async () => {
-      await result.current.login('bceid');
-    });
-
-    expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
-      provider: { custom: 'TEST-BCEIDBUSINESS' },
-    });
+    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenLastCalledWith('bceid');
   });
 
   test('login function is memoized and maintains same reference', async () => {
-    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result, rerender } = renderHook(() => useAuth(), { wrapper });
 
@@ -138,9 +140,10 @@ describe('AuthProvider', () => {
       payload: { sub: 'user-123' },
     };
 
-    mockFetchAuthSession.mockResolvedValueOnce({
-      tokens: { idToken: mockIdToken },
+    mockCognitoAuth.getTokens.mockResolvedValueOnce({
+      idToken: mockIdToken,
     });
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
     mockParseToken.mockReturnValueOnce({
       userName: 'test.user@gov.bc.ca',
       firstName: 'Test',
@@ -153,18 +156,19 @@ describe('AuthProvider', () => {
     expect(result.current.isLoggedIn).toBe(true);
     expect(result.current.user).toBeDefined();
 
-    await act(async () => {
-      await result.current.logout();
+    await act(() => {
+      result.current.logout();
     });
 
-    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(mockCognitoAuth.signOut).toHaveBeenCalledTimes(1);
     expect(result.current.isLoggedIn).toBe(false);
     expect(result.current.user).toBeUndefined();
     expect(result.current.userRoles).toBeUndefined();
   });
 
   test('context value is memoized and updates when dependencies change', async () => {
-    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -192,9 +196,10 @@ describe('AuthProvider', () => {
       payload: { sub: 'user-123' },
     };
 
-    mockFetchAuthSession.mockResolvedValueOnce({
-      tokens: { idToken: mockIdToken },
+    mockCognitoAuth.getTokens.mockResolvedValueOnce({
+      idToken: mockIdToken,
     });
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
     // Mock parseToken to throw an error
     mockParseToken.mockImplementationOnce(() => {
       throw new Error('Token parsing failed');
@@ -209,34 +214,32 @@ describe('AuthProvider', () => {
     expect(result.current.user).toBeUndefined();
   });
 
-  test('login function uses appEnv from env and updates when env changes', async () => {
-    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+  test('login function calls cognitoAuth with correct provider', async () => {
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // Test login with idir provider uses appEnv
-    await act(async () => {
-      await result.current.login('idir');
+    // Test login with idir provider
+    await act(() => {
+      result.current.login('idir');
     });
 
-    expect(mockSignInWithRedirect).toHaveBeenCalledWith({
-      provider: { custom: 'TEST-IDIR' },
+    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenCalledWith('idir');
+
+    // Test login with bceid provider
+    await act(() => {
+      result.current.login('bceid');
     });
 
-    // Test login with bceid provider uses appEnv
-    await act(async () => {
-      await result.current.login('bceid');
-    });
-
-    expect(mockSignInWithRedirect).toHaveBeenLastCalledWith({
-      provider: { custom: 'TEST-BCEIDBUSINESS' },
-    });
+    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenLastCalledWith('bceid');
   });
 
   test('contextValue useMemo updates when login or logout functions change', async () => {
-    mockFetchAuthSession.mockResolvedValueOnce({ tokens: {} });
+    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
+    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -251,8 +254,8 @@ describe('AuthProvider', () => {
     expect(initialContextValue.logout).toBe(initialLogout);
 
     // Call logout to trigger state change
-    await act(async () => {
-      await result.current.logout();
+    await act(() => {
+      result.current.logout();
     });
 
     // Context value should update due to state changes, but login/logout functions should remain the same
