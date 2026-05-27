@@ -400,7 +400,7 @@
     <!-- Premium Header -->
     <header>
       <div class="header-left">
-        <h1><i class="fa-solid var(--status-icon-class-placeholder) || fa-shield-halved"></i> APP_NAME_PLACEHOLDER Security Report</h1>
+        <h1><i class="fa-solid STATUS_ICON_CLASS_PLACEHOLDER"></i> APP_NAME_PLACEHOLDER Security Report</h1>
         <p>Continuous Security Scanning, Vulnerability Management & Quality Dashboard</p>
       </div>
       <div class="header-right">
@@ -522,10 +522,10 @@
         <div>
           <h2 class="panel-title"><i class="fa-solid fa-link" style="color: var(--accent-primary);"></i> Quick Integration Links</h2>
           <ul class="quick-links">
-            <li><a href="https://github.com/REPO_PLACEHOLDER/security" target="_blank"><i class="fa-solid fa-shield-halved"></i> GitHub Security Alerts</a></li>
-            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER" target="_blank"><i class="fa-solid fa-bug"></i> SonarCloud Backend</a></li>
-            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER" target="_blank"><i class="fa-solid fa-laptop-code"></i> SonarCloud Frontend</a></li>
-            <li><a href="https://github.com/REPO_PLACEHOLDER/actions/workflows/reporting.yml" target="_blank"><i class="fa-solid fa-gears"></i> Scans Action History</a></li>
+            <li><a href="https://github.com/REPO_PLACEHOLDER/security" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-shield-halved"></i> GitHub Security Alerts</a></li>
+            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-bug"></i> SonarCloud Backend</a></li>
+            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-laptop-code"></i> SonarCloud Frontend</a></li>
+            <li><a href="https://github.com/REPO_PLACEHOLDER/actions/workflows/reporting.yml" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-gears"></i> Scans Action History</a></li>
           </ul>
         </div>
 
@@ -615,8 +615,8 @@
             <span style="color:#60a5fa;">${run.lowCount || 0}</span>
           </td>
           <td>
-            <a href="archive/${run.date}.html" target="_blank" style="margin-right: 10px;"><i class="fa-solid fa-eye"></i> HTML</a>
-            <a href="archive/${run.date}.md" target="_blank" style="color: var(--text-muted);"><i class="fa-solid fa-file-lines"></i> MD</a>
+            <a href="archive/${run.date}.html" target="_blank" rel="noopener noreferrer" style="margin-right: 10px;"><i class="fa-solid fa-eye"></i> HTML</a>
+            <a href="archive/${run.date}.md" target="_blank" rel="noopener noreferrer" style="color: var(--text-muted);"><i class="fa-solid fa-file-lines"></i> MD</a>
           </td>
         `;
         tbody.appendChild(tr);

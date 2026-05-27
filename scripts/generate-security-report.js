@@ -149,17 +149,35 @@ try {
   dependabotCount = openDependabot ? openDependabot.split('\n').filter(Boolean).length : 0;
   
   // Fetch Code Scanning Alerts
-  const openCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=open" --paginate --jq '.'`);
-  const fixedCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=fixed" --paginate --jq '.'`);
-  const dismissedCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=dismissed" --paginate --jq '.'`);
+  const openCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=open" --paginate --jq '.[]'`);
+  const fixedCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=fixed" --paginate --jq '.[]'`);
+  const dismissedCode = runCmd(`gh api "repos/${repo}/code-scanning/alerts?state=dismissed" --paginate --jq '.[]'`);
   
   const parseJsonList = (str) => {
     if (!str) return [];
-    try {
-      if (str.startsWith('[')) return JSON.parse(str);
-      // If we got multiple objects separate by newline
-      return str.split('\n').filter(Boolean).map(line => JSON.parse(line));
-    } catch (e) { return []; }
+    const lines = str.split('\n').map(line => line.trim()).filter(Boolean);
+    const list = [];
+    lines.forEach(line => {
+      try {
+        const parsed = JSON.parse(line);
+        if (Array.isArray(parsed)) {
+          list.push(...parsed);
+        } else {
+          list.push(parsed);
+        }
+      } catch (e) {
+        if (line === '[' || line === ']' || line === '],') return;
+        try {
+          const parsed = JSON.parse(str);
+          if (Array.isArray(parsed)) {
+            list.push(...parsed);
+          } else {
+            list.push(parsed);
+          }
+        } catch (err) {}
+      }
+    });
+    return list.filter(Boolean);
   };
   
   const openAlerts = parseJsonList(openCode);
@@ -418,12 +436,13 @@ console.log('Compiling main HTML Dashboard...');
 const dashboardTemplateFile = path.join(__dirname, 'dashboard-template.html');
 if (fs.existsSync(dashboardTemplateFile)) {
   let htmlContent = fs.readFileSync(dashboardTemplateFile, 'utf8');
+  const dashboardTotalVulnerabilities = criticalTotal + highTotal + mediumTotal + lowTotal + infoTotal;
   
   htmlContent = htmlContent
     .replace(/APP_NAME_PLACEHOLDER/g, appName)
     .replace(/DATE_PLACEHOLDER/g, reportDateTime)
     .replace(/RISK_SCORE_PLACEHOLDER/g, String(riskScore))
-    .replace(/TOTAL_VULNS_PLACEHOLDER/g, String(criticalTotal + highTotal + mediumTotal))
+    .replace(/TOTAL_VULNS_PLACEHOLDER/g, String(dashboardTotalVulnerabilities))
     .replace(/BACKEND_COVERAGE_PLACEHOLDER/g, backendCoverage)
     .replace(/FRONTEND_COVERAGE_PLACEHOLDER/g, frontendCoverage)
     .replace(/SECURITY_STATUS_PLACEHOLDER/g, securityStatus)
@@ -433,7 +452,7 @@ if (fs.existsSync(dashboardTemplateFile)) {
     .replace(/REPO_PLACEHOLDER/g, repo)
     .replace(/SONAR_BACKEND_PLACEHOLDER/g, sonarBackendProject)
     .replace(/SONAR_FRONTEND_PLACEHOLDER/g, sonarFrontendProject)
-    .replace(/var\(--status-icon-class-placeholder\)/g, statusIcon);
+    .replace(/STATUS_ICON_CLASS_PLACEHOLDER/g, statusIcon || 'fa-shield-halved');
     
   fs.writeFileSync(path.join(reportsDir, 'index.html'), htmlContent, 'utf8');
   console.log('Dashboard index.html generated successfully.');
@@ -593,7 +612,7 @@ try {
   let bodyHtml = '';
   try {
     runCmd(`pandoc --version`);
-    bodyHtml = runCmd(`pandoc -f markdown -t html`, mdReport);
+    bodyHtml = execSync(`pandoc -f markdown -t html`, { input: mdReport, encoding: 'utf8' });
   } catch (err) {
     // Basic native markdown parsing fallback for tags, tables, headers, and bullet points
     let parsed = mdReport;
