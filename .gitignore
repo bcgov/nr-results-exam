@@ -136,3 +136,6 @@ test-report.xml
 .env.production.local
 .env
 **/.env
+
+# Local security reports compilation output
+docs/reports/

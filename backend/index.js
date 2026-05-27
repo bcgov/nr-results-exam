@@ -14,6 +14,7 @@ dotenv.config({
   path: './.env',
 });
 const app = express();
+app.disable('x-powered-by');
 app.use(express.json());
 
 const trustProxy = resolveTrustProxy(process.env.TRUST_PROXY);
