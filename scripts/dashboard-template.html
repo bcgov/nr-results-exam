@@ -558,17 +558,13 @@
 
   </div>
 
-  <!-- Client-side history.json parser & renderer -->
+  <!-- Client-side history parser & renderer -->
   <script>
-    // Fetch and parse the history.json
-    async function loadHistory() {
+    const history = HISTORY_DATA_PLACEHOLDER;
+
+    // Load and parse the historical runs
+    function loadHistory() {
       try {
-        const response = await fetch('./history.json');
-        if (!response.ok) {
-          throw new Error('history.json not found');
-        }
-        const history = await response.json();
-        
         if (!Array.isArray(history) || history.length === 0) {
           renderEmptyArchive();
           return;
@@ -581,7 +577,7 @@
         renderTrendChart(sortedHistory.slice(0, 10).reverse()); // 10 most recent chronologically
         calculateTrendIndicators(sortedHistory);
       } catch (err) {
-        console.error('Failed to parse history.json:', err);
+        console.error('Failed to parse history data:', err);
         renderErrorArchive();
       }
     }

@@ -452,7 +452,8 @@ if (fs.existsSync(dashboardTemplateFile)) {
     .replace(/REPO_PLACEHOLDER/g, repo)
     .replace(/SONAR_BACKEND_PLACEHOLDER/g, sonarBackendProject)
     .replace(/SONAR_FRONTEND_PLACEHOLDER/g, sonarFrontendProject)
-    .replace(/STATUS_ICON_CLASS_PLACEHOLDER/g, statusIcon || 'fa-shield-halved');
+    .replace(/STATUS_ICON_CLASS_PLACEHOLDER/g, statusIcon || 'fa-shield-halved')
+    .replace(/HISTORY_DATA_PLACEHOLDER/g, JSON.stringify(historyData));
     
   fs.writeFileSync(path.join(reportsDir, 'index.html'), htmlContent, 'utf8');
   console.log('Dashboard index.html generated successfully.');
