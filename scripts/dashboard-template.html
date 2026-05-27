@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security & Quality Dashboard | APP_NAME_PLACEHOLDER</title>
+  
+  <!-- Modern Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js via secure CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.4);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      
+      --accent-primary: #6366f1;
+      --accent-secondary: #4f46e5;
+      
+      --color-critical: #ef4444;
+      --color-high: #f97316;
+      --color-medium: #eab308;
+      --color-low: #3b82f6;
+      --color-success: #10b981;
+      
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+      --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.3);
+      --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      padding: 2.5rem 1.5rem;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Glassmorphism Header */
+    header {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .header-left h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(to right, #a5b4fc, #818cf8, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-left p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+
+    .update-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #c7d2fe;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Premium Grid Layout */
+    .grid-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card-metric {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--transition-fast), border-color var(--transition-fast);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-metric:hover {
+      transform: translateY(-4px);
+      border-color: var(--card-hover-border);
+      box-shadow: var(--shadow-md);
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .metric-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-footer {
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .trend-up { color: #f87171; }
+    .trend-down { color: #34d399; }
+    .trend-stable { color: var(--text-muted); }
+
+    /* Custom Badges */
+    .card-metric::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 4px;
+      height: 100%;
+    }
+    .metric-risk::after { background: var(--accent-primary); }
+    .metric-vulns::after { background: var(--color-high); }
+    .metric-quality::after { background: var(--color-success); }
+    .metric-health::after { background: var(--color-low); }
+
+    /* Core Section Grid */
+    .section-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .section-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.75rem;
+    }
+
+    /* Actions and Buttons */
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+      transition: transform var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      box-shadow: none;
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: var(--text-muted);
+    }
+
+    /* Quick Links list */
+    .quick-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .quick-links li a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.75rem;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--card-border);
+      transition: all var(--transition-fast);
+    }
+
+    .quick-links li a:hover {
+      color: var(--text-main);
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateX(4px);
+    }
+
+    .quick-links li a i {
+      color: var(--accent-primary);
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Archive Table */
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+    }
+
+    table.archive-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    table.archive-table th, 
+    table.archive-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.9rem;
+    }
+
+    table.archive-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    table.archive-table tbody tr {
+      transition: background-color var(--transition-fast);
+    }
+
+    table.archive-table tbody tr:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    table.archive-table a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    table.archive-table a:hover {
+      text-decoration: underline;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .status-critical { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .status-high { background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .status-medium { background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3); }
+    .status-low { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    /* Metadata details */
+    .metadata-panel {
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .metadata-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      padding-bottom: 0.5rem;
+    }
+
+    .metadata-row:last-child {
+      border-bottom: none;
+    }
+
+    .metadata-label {
+      color: var(--text-muted);
+    }
+
+    .metadata-value {
+      font-weight: 600;
+    }
+
+    /* Chart Containers */
+    .chart-container {
+      position: relative;
+      height: 250px;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- Premium Header -->
+    <header>
+      <div class="header-left">
+        <h1><i class="fa-solid var(--status-icon-class-placeholder) || fa-shield-halved"></i> APP_NAME_PLACEHOLDER Security Report</h1>
+        <p>Continuous Security Scanning, Vulnerability Management & Quality Dashboard</p>
+      </div>
+      <div class="header-right">
+        <div class="update-badge">
+          <i class="fa-regular fa-clock"></i> Generated: DATE_PLACEHOLDER
+        </div>
+      </div>
+    </header>
+
+    <!-- Key Metrics Ribbon -->
+    <section class="grid-metrics">
+      
+      <!-- Card: Risk Score -->
+      <div class="card-metric metric-risk">
+        <div class="metric-header">
+          <span>RISK SCORE (0-100)</span>
+          <i class="fa-solid fa-gauge-high"></i>
+        </div>
+        <div class="metric-value">RISK_SCORE_PLACEHOLDER</div>
+        <div class="metric-footer" id="risk-trend-footer">
+          <span class="trend-stable"><i class="fa-solid fa-arrow-right"></i> Stable</span>
+        </div>
+      </div>
+
+      <!-- Card: Total Vulnerabilities -->
+      <div class="card-metric metric-vulns">
+        <div class="metric-header">
+          <span>ACTIVE FINDINGS</span>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="metric-value">TOTAL_VULNS_PLACEHOLDER</div>
+        <div class="metric-footer" id="vuln-trend-footer">
+          <span class="trend-stable"><i class="fa-solid fa-arrow-right"></i> Stable</span>
+        </div>
+      </div>
+
+      <!-- Card: Code Quality (Coverage) -->
+      <div class="card-metric metric-quality">
+        <div class="metric-header">
+          <span>TEST COVERAGE</span>
+          <i class="fa-solid fa-code-circle-check"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.8rem;">
+          B: BACKEND_COVERAGE_PLACEHOLDER | F: FRONTEND_COVERAGE_PLACEHOLDER
+        </div>
+        <div class="metric-footer">
+          <span class="trend-stable"><i class="fa-solid fa-layer-group"></i> SonarCloud Measures</span>
+        </div>
+      </div>
+
+      <!-- Card: Application Health -->
+      <div class="card-metric metric-health">
+        <div class="metric-header">
+          <span>SECURITY STATUS</span>
+          <i class="fa-solid fa-shield-virus"></i>
+        </div>
+        <div class="metric-value" style="font-size: 1.6rem; font-weight: 800;">
+          SECURITY_STATUS_PLACEHOLDER
+        </div>
+        <div class="metric-footer">
+          <span>TECHNICAL_STATUS_DESC_PLACEHOLDER</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Main Grid Section -->
+    <div class="section-grid">
+      
+      <!-- Left Panel: Historical Trend Analysis -->
+      <div class="panel">
+        <h2 class="panel-title"><i class="fa-solid fa-chart-line" style="color: var(--accent-primary);"></i> Security & Vulnerability Trends</h2>
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+        
+        <h2 class="panel-title" style="margin-top: 2rem;"><i class="fa-solid fa-folder-open" style="color: var(--color-low);"></i> Archived Scanning Reports</h2>
+        <div class="table-wrapper">
+          <table class="archive-table">
+            <thead>
+              <tr>
+                <th>Report Date</th>
+                <th>Overall Status</th>
+                <th>Risk Score</th>
+                <th>Vulns (C/H/M/L)</th>
+                <th>Downloads</th>
+              </tr>
+            </thead>
+            <tbody id="archive-table-body">
+              <!-- Dynamically populated by history.json -->
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  <i class="fa-solid fa-spinner fa-spin" style="margin-right: 0.5rem;"></i> Loading historical scan index...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Panel: Actions & Quick Info -->
+      <div class="panel" style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Action Hub -->
+        <div>
+          <h2 class="panel-title"><i class="fa-solid fa-circle-play" style="color: var(--color-success);"></i> Report Center</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+            Access the latest fully compiled, deep-dive vulnerability and audit report:
+          </p>
+          <div class="btn-group">
+            <a href="latest.html" class="btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Latest HTML</a>
+          </div>
+          <div class="btn-group">
+            <a href="latest.md" class="btn btn-secondary"><i class="fa-solid fa-file-arrow-down"></i> Download Markdown</a>
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div>
+          <h2 class="panel-title"><i class="fa-solid fa-link" style="color: var(--accent-primary);"></i> Quick Integration Links</h2>
+          <ul class="quick-links">
+            <li><a href="https://github.com/REPO_PLACEHOLDER/security" target="_blank"><i class="fa-solid fa-shield-halved"></i> GitHub Security Alerts</a></li>
+            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_BACKEND_PLACEHOLDER" target="_blank"><i class="fa-solid fa-bug"></i> SonarCloud Backend</a></li>
+            <li><a href="https://sonarcloud.io/project/overview?id=SONAR_FRONTEND_PLACEHOLDER" target="_blank"><i class="fa-solid fa-laptop-code"></i> SonarCloud Frontend</a></li>
+            <li><a href="https://github.com/REPO_PLACEHOLDER/actions/workflows/reporting.yml" target="_blank"><i class="fa-solid fa-gears"></i> Scans Action History</a></li>
+          </ul>
+        </div>
+
+        <!-- About Scan Metadata -->
+        <div>
+          <h2 class="panel-title"><i class="fa-solid fa-circle-info" style="color: var(--text-muted);"></i> Scan Metadata</h2>
+          <div class="metadata-panel">
+            <div class="metadata-row">
+              <span class="metadata-label">Remediation Debt</span>
+              <span class="metadata-value" style="color: #fb7185;">REMEDIATION_DEBT_PLACEHOLDER hours</span>
+            </div>
+            <div class="metadata-row">
+              <span class="metadata-label">Business Criticality</span>
+              <span class="metadata-value">BUSINESS_CRITICALITY_PLACEHOLDER</span>
+            </div>
+            <div class="metadata-row">
+              <span class="metadata-label">Scan Frequency</span>
+              <span class="metadata-value">Weekly (cron schedule)</span>
+            </div>
+            <div class="metadata-row">
+              <span class="metadata-label">Primary Scanners</span>
+              <span class="metadata-value">OWASP ZAP, Nuclei, CodeQL</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Client-side history.json parser & renderer -->
+  <script>
+    // Fetch and parse the history.json
+    async function loadHistory() {
+      try {
+        const response = await fetch('./history.json');
+        if (!response.ok) {
+          throw new Error('history.json not found');
+        }
+        const history = await response.json();
+        
+        if (!Array.isArray(history) || history.length === 0) {
+          renderEmptyArchive();
+          return;
+        }
+
+        // Sort descending by date
+        const sortedHistory = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        renderArchiveTable(sortedHistory);
+        renderTrendChart(sortedHistory.slice(0, 10).reverse()); // 10 most recent chronologically
+        calculateTrendIndicators(sortedHistory);
+      } catch (err) {
+        console.error('Failed to parse history.json:', err);
+        renderErrorArchive();
+      }
+    }
+
+    function getBadgeClass(status) {
+      if (!status) return 'status-low';
+      const clean = status.toUpperCase();
+      if (clean.includes('CRITICAL')) return 'status-critical';
+      if (clean.includes('HIGH') || clean.includes('RED')) return 'status-critical';
+      if (clean.includes('ORANGE') || clean.includes('WARN')) return 'status-high';
+      if (clean.includes('MODERATE') || clean.includes('YELLOW')) return 'status-medium';
+      return 'status-low';
+    }
+
+    function renderArchiveTable(historyList) {
+      const tbody = document.getElementById('archive-table-body');
+      tbody.innerHTML = '';
+      
+      historyList.forEach(run => {
+        const tr = document.createElement('tr');
+        const badgeClass = getBadgeClass(run.securityStatus);
+        
+        tr.innerHTML = `
+          <td><strong>${run.date}</strong></td>
+          <td><span class="badge-status ${badgeClass}">${run.securityStatus || '🟢 LOW RISK'}</span></td>
+          <td><code>${run.riskScore !== undefined ? run.riskScore : 'N/A'}/100</code></td>
+          <td>
+            <span style="color:#ef4444; font-weight:700;">${run.criticalCount || 0}</span>/
+            <span style="color:#fb923c; font-weight:600;">${run.highCount || 0}</span>/
+            <span style="color:#facc15; font-weight:600;">${run.mediumCount || 0}</span>/
+            <span style="color:#60a5fa;">${run.lowCount || 0}</span>
+          </td>
+          <td>
+            <a href="archive/${run.date}.html" target="_blank" style="margin-right: 10px;"><i class="fa-solid fa-eye"></i> HTML</a>
+            <a href="archive/${run.date}.md" target="_blank" style="color: var(--text-muted);"><i class="fa-solid fa-file-lines"></i> MD</a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderEmptyArchive() {
+      const tbody = document.getElementById('archive-table-body');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            <i class="fa-solid fa-folder-closed" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+            No historical reports found in database. History will populate on subsequent scans.
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderErrorArchive() {
+      const tbody = document.getElementById('archive-table-body');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--color-critical); padding: 2rem;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+            Failed to load historical index. <code>history.json</code> might not exist yet. It will be generated on the next scan run.
+          </td>
+        </tr>
+      `;
+    }
+
+    function calculateTrendIndicators(sortedHistory) {
+      if (sortedHistory.length < 2) return;
+      
+      const current = sortedHistory[0];
+      const previous = sortedHistory[1];
+      
+      // Risk Score indicator
+      const riskFooter = document.getElementById('risk-trend-footer');
+      const riskDiff = (current.riskScore || 0) - (previous.riskScore || 0);
+      if (riskDiff < 0) {
+        riskFooter.innerHTML = `<span class="trend-down" style="color:#34d399;"><i class="fa-solid fa-arrow-trend-down"></i> Decreased by ${Math.abs(riskDiff)} (Improving)</span>`;
+      } else if (riskDiff > 0) {
+        riskFooter.innerHTML = `<span class="trend-up" style="color:#f87171;"><i class="fa-solid fa-arrow-trend-up"></i> Increased by ${riskDiff} (Degrading)</span>`;
+      } else {
+        riskFooter.innerHTML = `<span class="trend-stable"><i class="fa-solid fa-arrow-right"></i> Stable at ${current.riskScore}</span>`;
+      }
+
+      // Findings indicator
+      const vulnFooter = document.getElementById('vuln-trend-footer');
+      const vulnDiff = (current.totalVulnerabilities || 0) - (previous.totalVulnerabilities || 0);
+      if (vulnDiff < 0) {
+        vulnFooter.innerHTML = `<span class="trend-down" style="color:#34d399;"><i class="fa-solid fa-arrow-trend-down"></i> Decreased by ${Math.abs(vulnDiff)} findings</span>`;
+      } else if (vulnDiff > 0) {
+        vulnFooter.innerHTML = `<span class="trend-up" style="color:#f87171;"><i class="fa-solid fa-arrow-trend-up"></i> Increased by ${vulnDiff} findings</span>`;
+      } else {
+        vulnFooter.innerHTML = `<span class="trend-stable"><i class="fa-solid fa-arrow-right"></i> Stable at ${current.totalVulnerabilities} findings</span>`;
+      }
+    }
+
+    function renderTrendChart(historySlice) {
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      
+      const labels = historySlice.map(run => run.date);
+      const riskScores = historySlice.map(run => run.riskScore || 0);
+      const criticalCounts = historySlice.map(run => run.criticalCount || 0);
+      const highCounts = historySlice.map(run => run.highCount || 0);
+      const mediumCounts = historySlice.map(run => run.mediumCount || 0);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Risk Score (0-100)',
+              data: riskScores,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              borderWidth: 3,
+              tension: 0.3,
+              fill: true,
+              yAxisID: 'yRisk'
+            },
+            {
+              label: 'Critical',
+              data: criticalCounts,
+              borderColor: '#ef4444',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.3,
+              yAxisID: 'yCounts'
+            },
+            {
+              label: 'High',
+              data: highCounts,
+              borderColor: '#f97316',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.3,
+              yAxisID: 'yCounts'
+            },
+            {
+              label: 'Medium',
+              data: mediumCounts,
+              borderColor: '#eab308',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              tension: 0.3,
+              yAxisID: 'yCounts'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#94a3b8',
+                font: {
+                  family: 'Plus Jakarta Sans'
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.05)'
+              },
+              ticks: {
+                color: '#94a3b8',
+                font: {
+                  family: 'Plus Jakarta Sans'
+                }
+              }
+            },
+            yRisk: {
+              type: 'linear',
+              position: 'left',
+              min: 0,
+              max: 100,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.05)'
+              },
+              ticks: {
+                color: '#94a3b8'
+              },
+              title: {
+                display: true,
+                text: 'Risk Score',
+                color: '#6366f1'
+              }
+            },
+            yCounts: {
+              type: 'linear',
+              position: 'right',
+              min: 0,
+              grid: {
+                drawOnChartArea: false
+              },
+              ticks: {
+                color: '#94a3b8',
+                precision: 0
+              },
+              title: {
+                display: true,
+                text: 'Findings Count',
+                color: '#f97316'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Trigger load on startup
+    window.addEventListener('DOMContentLoaded', loadHistory);
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "appName": "NR Results Exam",
+  "businessCriticality": "Medium",
+  "complianceFrameworks": [
+    "OWASP Top 10",
+    "CWE Top 25"
+  ],
+  "effortHours": {
+    "critical": 16,
+    "high": 8,
+    "medium": 4,
+    "low": 2,
+    "info": 0
+  }
+}
