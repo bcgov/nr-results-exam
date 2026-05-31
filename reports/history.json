@@ -1,0 +1,16 @@
+[
+  {
+    "date": "2026-05-31",
+    "runNumber": 43,
+    "riskScore": 0,
+    "totalVulnerabilities": 0,
+    "criticalCount": 0,
+    "highCount": 0,
+    "mediumCount": 0,
+    "lowCount": 0,
+    "securityStatus": "🟢 LOW RISK",
+    "backendCoverage": "87.4",
+    "frontendCoverage": "82.9",
+    "remediationDebt": 0
+  }
+]
