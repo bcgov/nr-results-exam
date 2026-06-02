@@ -99,6 +99,9 @@ jobs:
         env:
           FRONTEND_URL: https://${{ inputs.hostname }}
           REDIRECT_URL: https://${{ inputs.redirect_url }}
+          SMOKE_MAX_RETRIES: "5"
+          SMOKE_RETRY_DELAY: "5000"
+          SMOKE_MAX_RETRY_DELAY: "40000"
         run: |
           npm ci
           npm run smoke
