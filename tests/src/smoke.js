@@ -23,7 +23,13 @@ const MAX_RETRIES = (() => {
 })();
 
 const MIN_RETRY_DELAY_MS = 100;
-const MAX_RETRY_DELAY_MS = 30_000;
+const MAX_RETRY_DELAY_MS = (() => {
+  const parsed = Number.parseInt(process.env.SMOKE_MAX_RETRY_DELAY ?? "30000", 10);
+  if (Number.isFinite(parsed) && parsed >= MIN_RETRY_DELAY_MS) {
+    return parsed;
+  }
+  return 30_000;
+})();
 const RETRY_DELAY_MS = (() => {
   const parsed = Number.parseInt(process.env.SMOKE_RETRY_DELAY ?? "1000", 10);
   if (!Number.isFinite(parsed) || parsed < MIN_RETRY_DELAY_MS) {
