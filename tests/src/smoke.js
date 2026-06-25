@@ -3,7 +3,7 @@ import axios from "axios";
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
 const redirectFromUrl = process.env.REDIRECT_URL?.replace(/\/$/, "");
 const origin = process.env.SMOKE_ORIGIN ?? frontendUrl;
-const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_MS = 15000;
 const MIN_TIMEOUT_MS = 1000;
 
 const timeoutMs = (() => {
