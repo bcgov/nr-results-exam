@@ -4,7 +4,7 @@ import { Button } from '@carbon/react';
 import { Login } from '@carbon/icons-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import './Landing.scss';
-import { Lottie } from 'lottie-react';
+import { LottieLight } from 'lottie-react';
 import landingPageAnimation from '../../assets/lotties/silva-logo-lottie-1.json';
 
 const Landing: React.FC = () => {
@@ -52,7 +52,7 @@ const Landing: React.FC = () => {
           </div>
           <div className="col-lg-5">
             <div className="lottie-container">
-              <Lottie src={landingPageAnimation} loop />
+              <LottieLight src={landingPageAnimation} loop />
             </div>
           </div>
         </div>

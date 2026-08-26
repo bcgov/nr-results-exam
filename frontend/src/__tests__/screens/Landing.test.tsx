@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useAuth } from '../../contexts/AuthProvider';
 
-// Mock Lottie component
+// Mock LottieLight component
 vi.mock('lottie-react', () => ({
-  Lottie: () => <div data-testid="lottie-view" />,
+  LottieLight: () => <div data-testid="lottie-view" />,
 }));
 
 // Mock AuthProvider to control the user state

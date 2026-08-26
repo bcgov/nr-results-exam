@@ -10,7 +10,7 @@ vi.mock('../contexts/AuthProvider', () => ({
 }));
 
 vi.mock('lottie-react', () => ({
-  Lottie: () => <div data-testid="lottie-mock" />,
+  LottieLight: () => <div data-testid="lottie-mock" />,
 }));
 
 import App from '../App';
