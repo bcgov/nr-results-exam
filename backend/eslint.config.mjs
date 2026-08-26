@@ -1,3 +1,4 @@
+import { defineConfig } from 'eslint/config';
 import eslint from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
@@ -25,7 +26,7 @@ const baseRules = {
   'no-empty': ['error', { allowEmptyCatch: true }],
 };
 
-export default [
+export default defineConfig([
   eslint.configs.recommended,
   prettierConfig,
   {
@@ -44,7 +45,6 @@ export default [
     },
     rules: {
       ...baseRules,
-      // Additional backend-specific rules can be added here
     },
   },
-];
+]);
