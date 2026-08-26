@@ -39,12 +39,12 @@ export default defineConfig(({ mode }) => {
       }
     },
     resolve: {
-      alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      alias: [
+        { find: /^@\//, replacement: fileURLToPath(new URL('./src/', import.meta.url)) },
         // Use lottie-web light version to avoid eval() security issues
         // Light version excludes expression support which requires eval
-        'lottie-web': 'lottie-web/build/player/lottie_light'
-      }
+        { find: /^lottie-web$/, replacement: 'lottie-web/build/player/lottie_light' }
+      ]
     },
     test: {
       globals: true,
