@@ -1,4 +1,5 @@
 import { defineConfig } from 'eslint/config';
+import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintReact from '@eslint-react/eslint-plugin';
 import prettierPlugin from 'eslint-plugin-prettier';
@@ -23,6 +24,7 @@ export default defineConfig([
   {
     ignores: [...baseIgnores],
   },
+  eslint.configs.recommended,
   ...tseslint.configs.recommended,
   eslintReact.configs['recommended-typescript'],
   {
