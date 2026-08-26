@@ -40,12 +40,13 @@ async function requestToken() {
     if (error.response) {
       throw new Error(
         `Failed to fetch token: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+        { cause: error },
       );
     }
     if (error.message === 'CHES credentials are not configured') {
       throw error;
     }
-    throw new Error('Failed to fetch token');
+    throw new Error('Failed to fetch token', { cause: error });
   }
 }
 
@@ -88,9 +89,10 @@ async function sendEmail(token, emailDetails) {
     if (error.response) {
       throw new Error(
         `Failed to send email: ${error.response.status} - ${JSON.stringify(error.response.data)}`,
+        { cause: error },
       );
     }
-    throw new Error('Failed to send email');
+    throw new Error('Failed to send email', { cause: error });
   }
 }
 
