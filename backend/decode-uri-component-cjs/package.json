@@ -1,0 +1,7 @@
+{
+  "name": "decode-uri-component",
+  "version": "0.5.0",
+  "description": "CJS bridge for decode-uri-component@0.5.0 (query-string@7 compatibility)",
+  "license": "MIT",
+  "main": "index.js"
+}
