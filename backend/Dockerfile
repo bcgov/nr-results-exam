@@ -6,7 +6,7 @@ ENV NODE_ENV=production
 # Copy and build
 WORKDIR /app
 COPY . .
-RUN npm i --ignore-scripts --no-update-notifier --omit=dev
+RUN npm ci --ignore-scripts --no-update-notifier --omit=dev
 
 
 # Deploy container
