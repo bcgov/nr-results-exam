@@ -1,5 +1,14 @@
 import React, { PropsWithChildren } from 'react';
 
+// Vitest 5: vi.unmock is hoistable and must be declared at module top level.
+vi.unmock('react-dom/client');
+vi.unmock('../App');
+vi.unmock('../utils/ThemePreference');
+vi.unmock('../contexts/AuthProvider');
+vi.unmock('@carbon/react');
+vi.unmock('bootstrap/dist/css/bootstrap.min.css');
+vi.unmock('bootstrap/dist/js/bootstrap.bundle.min');
+
 const renderMock = vi.fn();
 
 const createRootMock = vi.fn(() => ({
@@ -51,13 +60,6 @@ describe('application bootstrap', () => {
   });
 
   afterEach(() => {
-    vi.unmock('react-dom/client');
-    vi.unmock('../App');
-    vi.unmock('../utils/ThemePreference');
-    vi.unmock('../contexts/AuthProvider');
-    vi.unmock('@carbon/react');
-    vi.unmock('bootstrap/dist/css/bootstrap.min.css');
-    vi.unmock('bootstrap/dist/js/bootstrap.bundle.min');
     document.body.innerHTML = '';
   });
 
