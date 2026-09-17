@@ -25,6 +25,7 @@ jobs:
       - uses: bcgov/actions/builder@ac9d89eede94f5f58d3446784c94cff634d98eac # v0.6.0
         with:
           package: ${{ matrix.package }}
+          tags: ${{ github.event.number }}
           tag_fallback: latest
 
   vars:
