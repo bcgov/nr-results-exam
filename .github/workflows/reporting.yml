@@ -15,6 +15,7 @@ concurrency:
 jobs:
   security-report:
     name: Security & Quality Report
+    if: false
     runs-on: ubuntu-24.04
     permissions:
       security-events: write
@@ -210,9 +211,15 @@ jobs:
           sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" $GITHUB_STEP_SUMMARY
           sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" $GITHUB_STEP_SUMMARY
 
+  fail:
+    name: Temporary failure
+    runs-on: ubuntu-24.04
+    steps:
+      - run: exit 1
+
   notify:
     name: Notify on failure
-    needs: [security-report]
+    needs: [security-report, fail]
     if: failure()
     runs-on: ubuntu-24.04
     permissions:
