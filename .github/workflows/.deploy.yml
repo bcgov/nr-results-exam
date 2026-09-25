@@ -48,7 +48,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: bcgov/actions-openshift/deployer@75454b2b33edf37135f6f167775c77a3414207f6 # v0.3.0
+      - uses: bcgov/actions-openshift/deployer@75454b2b33edf37135f6f167775c77a3414207f6 # v0.3.1
         id: deploy-backend
         with:
           file: backend/openshift.deploy.yml
@@ -69,7 +69,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: bcgov/actions-openshift/deployer@75454b2b33edf37135f6f167775c77a3414207f6 # v0.3.0
+      - uses: bcgov/actions-openshift/deployer@75454b2b33edf37135f6f167775c77a3414207f6 # v0.3.1
         id: deploy-frontend
         with:
           file: frontend/openshift.deploy.yml
