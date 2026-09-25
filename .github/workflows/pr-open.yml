@@ -9,7 +9,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # https://github.com/bcgov/action-builder-ghcr
+  # https://github.com/bcgov/actions/tree/main/builder
   builds:
     name: Builds
     runs-on: ubuntu-24.04
