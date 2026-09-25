@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - "*.md"
       - ".github/**"
-  workflow_dispatch:
 
 concurrency:
   # Do not interrupt previous workflows
@@ -86,7 +85,7 @@ jobs:
         component: [backend, frontend]
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@v5
+      - uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5
         with:
           registry: ghcr.io
           repository: ${{ github.repository }}/${{ matrix.component }}

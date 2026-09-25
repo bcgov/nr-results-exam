@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Run Trivy vulnerability scanner in repo mode
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           format: "sarif"
           output: "trivy-results.sarif"
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-24.04
     services:
       postgres:
-        image: postgres
+        image: postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 # 18.6
         env:
           POSTGRES_DB: postgres
           POSTGRES_USER: postgres
