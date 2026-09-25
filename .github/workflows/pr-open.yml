@@ -53,8 +53,8 @@ jobs:
       oc_token: ${{ secrets.OC_TOKEN }}
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
-      backend_ref: ":${{ github.event.number }}"
-      frontend_ref: ":${{ github.event.number }}"
+      backend_tag: ":${{ github.event.number }}"
+      frontend_tag: ":${{ github.event.number }}"
       zone: ${{ github.event.number }}
       redirect_url: ${{ needs.vars.outputs.redirect_url }}
       hostname: ${{ needs.vars.outputs.hostname }}

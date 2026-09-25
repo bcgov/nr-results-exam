@@ -44,8 +44,8 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
-      backend_ref: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
-      frontend_ref: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
+      backend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
+      frontend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
       zone: test
       hostname: results-exam-test.apps.silver.devops.gov.bc.ca
       redirect_url: nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
@@ -60,8 +60,8 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
-      backend_ref: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
-      frontend_ref: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
+      backend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
+      frontend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
       zone: prod
       hostname: results-exam.apps.silver.devops.gov.bc.ca
       redirect_url: nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
