@@ -8,8 +8,12 @@ on:
         description: Frontend redirect from URL
         required: true
         type: string
-      tag:
-        description: Container tag; usually PR number
+      backend_tag:
+        description: Backend image tag suffix. A tag is :123. A digest is @sha256:...
+        required: true
+        type: string
+      frontend_tag:
+        description: Frontend image tag suffix. A tag is :123. A digest is @sha256:...
         required: true
         type: string
       zone:
@@ -56,7 +60,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
-            -p TAG=${{ inputs.tag }}
+            -p TAG=${{ inputs.backend_tag }}
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
@@ -77,7 +81,7 @@ jobs:
           oc_server: ${{ vars.OC_SERVER }}
           oc_token: ${{ secrets.oc_token }}
           parameters: -p ZONE=${{ inputs.zone }}
-            -p TAG=${{ inputs.tag }}
+            -p TAG=${{ inputs.frontend_tag }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p REDIRECT_URL=${{ inputs.redirect_url }}
             -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
