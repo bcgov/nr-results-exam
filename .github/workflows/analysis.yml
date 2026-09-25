@@ -133,3 +133,20 @@ jobs:
 
       - name: Success Message
         run: echo "✅ All critical checks passed or were intentionally skipped!"
+
+  notify:
+    name: Notify on failure
+    needs: [codeql, trivy, tests, results]
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Notify on failure
+        uses: bcgov/actions/workflow-notifier@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "fix: failure in ${{ github.workflow }}"

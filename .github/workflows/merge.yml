@@ -90,3 +90,20 @@ jobs:
           repository: ${{ github.repository }}/frontend
           target: ${{ fromJSON(needs.resolve.outputs.digests).frontend }}
           tags: prod
+
+  notify:
+    name: Notify on failure
+    needs: [resolve, deploys-test, deploys-prod, image-promotions]
+    if: failure()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Notify on failure
+        uses: bcgov/actions/workflow-notifier@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "fix: failure in ${{ github.workflow }}"
