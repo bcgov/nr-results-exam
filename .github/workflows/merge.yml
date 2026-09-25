@@ -107,3 +107,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "fix: failure in ${{ github.workflow }}"
+          labels: bug
