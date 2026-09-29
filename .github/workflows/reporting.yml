@@ -45,7 +45,7 @@ jobs:
       # ============================================================================
       - name: ZAP Full Scan
         id: zap
-        uses: zaproxy/action-full-scan@v0.13.0
+        uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c # v0.13.0
         continue-on-error: true
         with:
           target: '${{ steps.config.outputs.scan_target }}'
@@ -110,7 +110,7 @@ jobs:
 
       - name: Nuclei Scan
         id: nuclei
-        uses: projectdiscovery/nuclei-action@v3.1.1
+        uses: projectdiscovery/nuclei-action@cc153d0541e1adf8a42bbe31c0a4fb2376147538 # v3.1.1
         continue-on-error: true
         with:
           target: '${{ steps.config.outputs.scan_target }}'
@@ -160,7 +160,7 @@ jobs:
       # ============================================================================
       - name: Publish Reports to GitHub Pages
         continue-on-error: true
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/reports
@@ -209,5 +209,23 @@ jobs:
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
           sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" $GITHUB_STEP_SUMMARY
           sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" $GITHUB_STEP_SUMMARY
+
+  notify:
+    name: Notify on failure
+    needs: [security-report]
+    if: failure()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Notify on failure
+        uses: bcgov/actions/workflow-notifier@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "fix: failure in ${{ github.workflow }}"
+          labels: bug
 
 

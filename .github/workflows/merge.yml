@@ -6,7 +6,6 @@ on:
     paths-ignore:
       - "*.md"
       - ".github/**"
-  workflow_dispatch:
 
 concurrency:
   # Do not interrupt previous workflows
@@ -14,21 +13,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  vars:
-    name: Variables
-    outputs:
-      pr: ${{ steps.pr.outputs.pr }}
+  resolve:
+    name: Resolve Images
     runs-on: ubuntu-24.04
-    timeout-minutes: 1
+    permissions:
+      contents: read
+      packages: read
+      pull-requests: read
+    timeout-minutes: 5
+    outputs:
+      digests: ${{ steps.tracker.outputs.digests }}
     steps:
-      # Get PR number for squash merges to main
-      - name: PR Number
-        id: pr
-        uses: bcgov/action-get-pr@v0.3.1
+      - uses: actions/checkout@v7
+
+      # Walk per package. An image that was not built for this commit keeps its last digest.
+      - name: Resolve images
+        id: tracker
+        uses: bcgov/actions/image-tracker@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        with:
+          package: backend, frontend
+          max_depth: 100
 
   deploys-test:
     name: Deploys (TEST)
-    needs: [vars]
+    needs: [resolve]
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
@@ -36,14 +44,15 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: test
-      tag: ${{ needs.vars.outputs.pr }}
+      backend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
+      frontend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
       zone: test
       hostname: results-exam-test.apps.silver.devops.gov.bc.ca
       redirect_url: nr-results-exam-test-frontend.apps.silver.devops.gov.bc.ca
 
   deploys-prod:
     name: Deploys (PROD)
-    needs: [vars, deploys-test]
+    needs: [resolve, deploys-test]
     uses: ./.github/workflows/.deploy.yml
     secrets:
       ches_client_secret: ${{ secrets.CHES_CLIENT_SECRET }}
@@ -51,25 +60,51 @@ jobs:
       s3_secretkey: ${{ secrets.S3_SECRETKEY }}
     with:
       environment: prod
-      tag: ${{ needs.vars.outputs.pr }}
+      backend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).backend }}"
+      frontend_tag: "@${{ fromJSON(needs.resolve.outputs.digests).frontend }}"
       zone: prod
       hostname: results-exam.apps.silver.devops.gov.bc.ca
       redirect_url: nr-results-exam-prod-frontend.apps.silver.devops.gov.bc.ca
 
   image-promotions:
     name: Promote images
-    needs: [vars, deploys-prod]
+    needs: [resolve, deploys-prod]
     permissions:
       packages: write
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        component: [backend, frontend]
     timeout-minutes: 1
     steps:
-      - uses: shrink/actions-docker-registry-tag@v5
+      # Point :prod at the digest that was deployed. An unbuilt package keeps its previous digest.
+      - name: Promote backend
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5
         with:
           registry: ghcr.io
-          repository: ${{ github.repository }}/${{ matrix.component }}
-          target: ${{ needs.vars.outputs.pr }}
+          repository: ${{ github.repository }}/backend
+          target: ${{ fromJSON(needs.resolve.outputs.digests).backend }}
           tags: prod
+
+      - name: Promote frontend
+        uses: shrink/actions-docker-registry-tag@e6aaef25c595b6e0edd18bf4c7dbfea3abd43299 # v5
+        with:
+          registry: ghcr.io
+          repository: ${{ github.repository }}/frontend
+          target: ${{ fromJSON(needs.resolve.outputs.digests).frontend }}
+          tags: prod
+
+  notify:
+    name: Notify on failure
+    needs: [resolve, deploys-test, deploys-prod, image-promotions]
+    if: failure()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Notify on failure
+        uses: bcgov/actions/workflow-notifier@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "fix: failure in ${{ github.workflow }}"
+          labels: bug
