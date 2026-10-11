@@ -1,6 +1,6 @@
 # Vulnerability Scan & Management Report
 
-**Report Date**: Sun, 04 Oct 2026 11:28:59 GMT  
+**Report Date**: Sun, 11 Oct 2026 10:15:07 GMT  
 **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Report Type**: Executive Summary & Action Hub  
 
@@ -27,7 +27,7 @@ This security and operational report provides an aggregated overview of **NR Res
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **ZAP Penetration Test** | 0 | 0 | 0 | 0 | **0** |
 | **Nuclei Scanning** | 0 | 0 | 0 | 0 | **0** |
-| **GitHub Code Scanning** | 0 | 0 | 0 | - | **0** |
+| **GitHub Code Scanning** | 0 | 0 | 2 | - | **2** |
 | **Dependabot Alerts** | - | - | - | - | **0** |
 
 > **ZAP Accepted Alerts**: `0 alerts` have been analyzed and accepted as low-risk in `tests/.zap/rules.tsv`. 
@@ -43,7 +43,7 @@ Measure of deployments, automation stability, and release velocity:
 - **Deployment Frequency (Last 30 Days)**: `0 deployments`
 - **Pipeline Deployment Success Rate**: `100%`
 - **Mean Time to Recovery (MTTR)**: `N/A`
-- **Vulnerability Remediation Velocity (Resolution Rate)**: `95%`
+- **Vulnerability Remediation Velocity (Resolution Rate)**: `93%`
 - **Last Successful Production Deployment**: `N/A`
 
 ---
@@ -53,10 +53,10 @@ Measure of deployments, automation stability, and release velocity:
 Continuous synthetic monitoring of backend dependencies and response latency:
 
 - **Overall Deep Health Check**: `OK`
-- **Health Check Round-trip Latency**: `564ms`
-- **CHES (Email Client Services)**: `10ms`
-- **Object Storage (S3 / MinIO)**: `28ms`
-- **Cognito Federated Authentication**: `213ms`
+- **Health Check Round-trip Latency**: `447ms`
+- **CHES (Email Client Services)**: `84ms`
+- **Object Storage (S3 / MinIO)**: `83ms`
+- **Cognito Federated Authentication**: `229ms`
 
 ---
 
@@ -65,7 +65,7 @@ Continuous synthetic monitoring of backend dependencies and response latency:
 Quality metrics extracted from static analysis and dependency trees:
 
 - **Backend Test Coverage**: `87.5%` (Threshold: `70%`)
-- **Frontend Test Coverage**: `82.8%` (Threshold: `70%`)
+- **Frontend Test Coverage**: `82.5%` (Threshold: `70%`)
 - **Backend Outdated Packages**: `0 packages`
 - **Frontend Outdated Packages**: `0 packages`
 

@@ -47,7 +47,7 @@
   <article class="markdown-body">
     <h1>Vulnerability Scan &amp; Management Report</h1>
 
-<strong>Report Date</strong>: Sun, 04 Oct 2026 11:28:59 GMT  
+<strong>Report Date</strong>: Sun, 11 Oct 2026 10:15:07 GMT  
 <strong>Scan Target</strong>: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 <strong>Report Type</strong>: Executive Summary &amp; Action Hub  
 
@@ -72,9 +72,9 @@ This security and operational report provides an aggregated overview of <strong>
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | <strong>ZAP Penetration Test</strong> | 0 | 0 | 0 | 0 | <strong>0</strong> |
 | <strong>Nuclei Scanning</strong> | 0 | 0 | 0 | 0 | <strong>0</strong> |
-| <strong>GitHub Code Scanning</strong> | 0 | 0 | 0 | - | <strong>0</strong> |
+| <strong>GitHub Code Scanning</strong> | 0 | 0 | 2 | - | <strong>2</strong> |
 | <strong>Dependabot Alerts</strong> | - | - | - | - | <strong>0</strong> |
-<table><tr><th>Scan Origin</th><th>Critical</th><th>High</th><th>Medium</th><th>Low/Info</th><th>Active Findings</th></tr><tr><td><strong>ZAP Penetration Test</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>Nuclei Scanning</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>GitHub Code Scanning</strong></td><td>0</td><td>0</td><td>0</td><td>-</td><td><strong>0</strong></td></tr><tr><td><strong>Dependabot Alerts</strong></td><td>-</td><td>-</td><td>-</td><td>-</td><td><strong>0</strong></td></tr></table>
+<table><tr><th>Scan Origin</th><th>Critical</th><th>High</th><th>Medium</th><th>Low/Info</th><th>Active Findings</th></tr><tr><td><strong>ZAP Penetration Test</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>Nuclei Scanning</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>GitHub Code Scanning</strong></td><td>0</td><td>0</td><td>2</td><td>-</td><td><strong>2</strong></td></tr><tr><td><strong>Dependabot Alerts</strong></td><td>-</td><td>-</td><td>-</td><td>-</td><td><strong>0</strong></td></tr></table>
 
 &gt; <strong>ZAP Accepted Alerts</strong>: <code>0 alerts</code> have been analyzed and accepted as low-risk in <code>tests/.zap/rules.tsv</code>. 
 &gt; 
@@ -88,7 +88,7 @@ Measure of deployments, automation stability, and release velocity:
 - <strong>Deployment Frequency (Last 30 Days)</strong>: <code>0 deployments</code>
 - <strong>Pipeline Deployment Success Rate</strong>: <code>100%</code>
 - <strong>Mean Time to Recovery (MTTR)</strong>: <code>N/A</code>
-- <strong>Vulnerability Remediation Velocity (Resolution Rate)</strong>: <code>95%</code>
+- <strong>Vulnerability Remediation Velocity (Resolution Rate)</strong>: <code>93%</code>
 - <strong>Last Successful Production Deployment</strong>: <code>N/A</code>
 
 <hr>
@@ -97,10 +97,10 @@ Measure of deployments, automation stability, and release velocity:
 Continuous synthetic monitoring of backend dependencies and response latency:
 
 - <strong>Overall Deep Health Check</strong>: <code>OK</code>
-- <strong>Health Check Round-trip Latency</strong>: <code>564ms</code>
-- <strong>CHES (Email Client Services)</strong>: <code>10ms</code>
-- <strong>Object Storage (S3 / MinIO)</strong>: <code>28ms</code>
-- <strong>Cognito Federated Authentication</strong>: <code>213ms</code>
+- <strong>Health Check Round-trip Latency</strong>: <code>447ms</code>
+- <strong>CHES (Email Client Services)</strong>: <code>84ms</code>
+- <strong>Object Storage (S3 / MinIO)</strong>: <code>83ms</code>
+- <strong>Cognito Federated Authentication</strong>: <code>229ms</code>
 
 <hr>
 <h2>📝 Code Quality &amp; Maintainability</h2>
@@ -108,7 +108,7 @@ Continuous synthetic monitoring of backend dependencies and response latency:
 Quality metrics extracted from static analysis and dependency trees:
 
 - <strong>Backend Test Coverage</strong>: <code>87.5%</code> (Threshold: <code>70%</code>)
-- <strong>Frontend Test Coverage</strong>: <code>82.8%</code> (Threshold: <code>70%</code>)
+- <strong>Frontend Test Coverage</strong>: <code>82.5%</code> (Threshold: <code>70%</code>)
 - <strong>Backend Outdated Packages</strong>: <code>0 packages</code>
 - <strong>Frontend Outdated Packages</strong>: <code>0 packages</code>
 
