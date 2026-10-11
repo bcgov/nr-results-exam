@@ -22,7 +22,7 @@ jobs:
         package: [backend, frontend]
     timeout-minutes: 10
     steps:
-      - uses: bcgov/actions/builder@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+      - uses: bcgov/actions/builder@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
         with:
           package: ${{ matrix.package }}
           tags: ${{ github.event.number }}
@@ -41,8 +41,8 @@ jobs:
         run: |
           DOMAIN="apps.silver.devops.gov.bc.ca"
           SUBDOMAIN="${{ github.event.repository.name }}-$(( ${{ github.event.number }} % 50 ))"
-          echo "redirect_url=${SUBDOMAIN}-frontend.${DOMAIN}" >> $GITHUB_OUTPUT
-          echo "hostname=${SUBDOMAIN}.${DOMAIN}" >> $GITHUB_OUTPUT
+          echo "redirect_url=${SUBDOMAIN}-frontend.${DOMAIN}" >> "$GITHUB_OUTPUT"
+          echo "hostname=${SUBDOMAIN}.${DOMAIN}" >> "$GITHUB_OUTPUT"
 
   deploys:
     name: Deploys (${{ github.event.number }})
@@ -72,7 +72,7 @@ jobs:
     timeout-minutes: 1
     steps:
       - name: PR Results
-        uses: bcgov/actions/workflow-results@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        uses: bcgov/actions/workflow-results@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
         with:
           needs: ${{ toJson(needs) }}
           title: 'PR Results'

@@ -32,13 +32,15 @@ jobs:
         id: config
         run: |
           # These will become action inputs when extracted to reusable action
-          echo "scan_target=https://results-exam-test.apps.silver.devops.gov.bc.ca" >> $GITHUB_OUTPUT
-          echo "sonar_backend_project=nr-results-exam-backend" >> $GITHUB_OUTPUT
-          echo "sonar_frontend_project=nr-results-exam-frontend" >> $GITHUB_OUTPUT
-          echo "sonar_org=bcgov-sonarcloud" >> $GITHUB_OUTPUT
-          echo "zap_rules_file=tests/.zap/rules.tsv" >> $GITHUB_OUTPUT
-          echo "report_title=Vulnerability Scan & Management Report" >> $GITHUB_OUTPUT
-          echo "app_name=NR Results Exam" >> $GITHUB_OUTPUT
+          {
+            echo "scan_target=https://results-exam-test.apps.silver.devops.gov.bc.ca"
+            echo "sonar_backend_project=nr-results-exam-backend"
+            echo "sonar_frontend_project=nr-results-exam-frontend"
+            echo "sonar_org=bcgov-sonarcloud"
+            echo "zap_rules_file=tests/.zap/rules.tsv"
+            echo "report_title=Vulnerability Scan & Management Report"
+            echo "app_name=NR Results Exam"
+          } >> "$GITHUB_OUTPUT"
 
       # ============================================================================
       # SECURITY SCANNING
@@ -101,10 +103,10 @@ jobs:
           ZAP_RULES_FILE="${{ steps.config.outputs.zap_rules_file }}"
           if [ -f "$ZAP_RULES_FILE" ]; then
             IGNORED_IDS=$(grep -E '^[0-9]+[[:space:]]+IGNORE' "$ZAP_RULES_FILE" | cut -f1 | tr '\n' ',' | sed 's/,$//' || echo "")
-            echo "ignored_ids=$IGNORED_IDS" >> $GITHUB_OUTPUT
+            echo "ignored_ids=$IGNORED_IDS" >> "$GITHUB_OUTPUT"
             echo "Found ignored alert IDs: $IGNORED_IDS"
           else
-            echo "ignored_ids=" >> $GITHUB_OUTPUT
+            echo "ignored_ids=" >> "$GITHUB_OUTPUT"
             echo "No rules.tsv found, all alerts will be counted"
           fi
 
@@ -183,7 +185,7 @@ jobs:
       - name: Add Report Summary to Job Summary
         continue-on-error: true
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << EOF
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
           ## 🔒 Security Scan Complete
           
           Security scans have completed. Review logs and reports for any failures. Reports are now available:
@@ -207,8 +209,8 @@ jobs:
           # Replace placeholders in job summary
           REPO_OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-          sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" $GITHUB_STEP_SUMMARY
-          sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" $GITHUB_STEP_SUMMARY
+          sed -i "s|REPO_OWNER_PLACEHOLDER|$REPO_OWNER|g" "$GITHUB_STEP_SUMMARY"
+          sed -i "s|REPO_NAME_PLACEHOLDER|$REPO_NAME|g" "$GITHUB_STEP_SUMMARY"
 
   notify:
     name: Notify on failure
@@ -222,7 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Notify on failure
-        uses: bcgov/actions/workflow-notifier@4026bfd276b8a5839029106099b13edfb594b2c3 # v0.8.0
+        uses: bcgov/actions/workflow-notifier@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "fix: failure in ${{ github.workflow }}"
