@@ -15,7 +15,7 @@ RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2
 
 # Deploy using custom Caddy to host static files
-FROM caddy:2.11.6-alpine
+FROM caddy:2.11.7-alpine
 ENV LOG_LEVEL=info
 
 COPY --from=xcaddy /usr/bin/caddy /usr/bin/caddy
