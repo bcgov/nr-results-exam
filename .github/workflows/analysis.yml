@@ -91,16 +91,16 @@ jobs:
               -Dsonar.sources=.
               -Dsonar.tests=__tests__/
               -Dsonar.coverage.exclusions=scripts/run-tests.mjs
-            triggers: ('backend/')
+            triggers: backend/
           - dir: frontend
             sonar_projectKey: nr-results-exam-frontend
             token: SONAR_FRONTEND
             sonar_args: >
               -Dsonar.sources=src
               -Dsonar.tests=src/__tests__/
-            triggers: ('frontend/')
+            triggers: frontend/
     steps:
-      - uses: bcgov/actions/test-and-analyse@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
+      - uses: bcgov/actions/test-and-analyse@122a9b1c6c082b1b1f18c300020fbdc417b6b0b2 # v0.10.0
         with:
           commands: |
             npm ci
@@ -132,6 +132,6 @@ jobs:
     timeout-minutes: 1
     steps:
       - name: Analysis Results
-        uses: bcgov/actions/workflow-results@79aefe3a7abb2d0d00b1b3ea4cfbf12727a10638 # v0.9.0
+        uses: bcgov/actions/workflow-results@122a9b1c6c082b1b1f18c300020fbdc417b6b0b2 # v0.10.0
         with:
           needs: ${{ toJson(needs) }}
