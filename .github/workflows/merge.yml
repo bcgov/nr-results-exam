@@ -15,7 +15,7 @@ concurrency:
 jobs:
   resolve:
     name: Resolve Images
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       packages: read
@@ -71,7 +71,7 @@ jobs:
     needs: [resolve, deploys-prod]
     permissions:
       packages: write
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       # Point :prod at the digest that was deployed. An unbuilt package keeps its previous digest.
@@ -95,7 +95,7 @@ jobs:
     name: Notify on failure
     needs: [resolve, deploys-test, deploys-prod, image-promotions]
     if: failure()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       issues: write
