@@ -47,7 +47,7 @@ jobs:
   deploy-backend:
     name: Deploy Backend
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -68,7 +68,7 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -90,7 +90,7 @@ jobs:
     name: Smoke Tests
     needs: [deploy-backend, deploy-frontend]
     environment: ${{ inputs.environment }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
