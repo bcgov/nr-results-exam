@@ -19,7 +19,7 @@ jobs:
   codeql:
     name: CodeQL
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -39,7 +39,7 @@ jobs:
   trivy:
     name: Trivy Security Scan
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
       security-events: write # SARIF upload
@@ -74,7 +74,7 @@ jobs:
   tests:
     name: Tests
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     services:
@@ -139,7 +139,7 @@ jobs:
     name: Analysis Results
     needs: [codeql, trivy, tests]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       - name: Analysis Results
