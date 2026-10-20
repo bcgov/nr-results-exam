@@ -13,11 +13,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   codeql:
     name: CodeQL
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write # CodeQL results upload
     steps:
       - uses: actions/checkout@v7
       - uses: github/codeql-action/init@v4
@@ -34,6 +40,9 @@ jobs:
     name: Trivy Security Scan
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write # SARIF upload
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,6 +75,8 @@ jobs:
     name: Tests
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     services:
       postgres:
         image: postgres@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722 # 18.6
