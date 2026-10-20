@@ -9,9 +9,14 @@ concurrency:
   group: ${{ github.event.number }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   cleanup:
     name: Cleanup and Images
+    permissions:
+      contents: read
+      packages: write # retag PR images
     uses: bcgov/actions-openshift/.github/workflows/.pr-close.yml@97cb3f8a5a6d134594c85224d3f593e3c0e90647 # v0.4.0
     secrets:
       oc_namespace: ${{ vars.OC_NAMESPACE }}

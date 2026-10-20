@@ -12,7 +12,7 @@ jobs:
   # https://github.com/bcgov/actions/tree/main/builder
   builds:
     name: Builds
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       attestations: write
       id-token: write
@@ -30,7 +30,7 @@ jobs:
 
   vars:
     name: Variables
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     outputs:
       hostname: ${{ steps.url.outputs.hostname }}
@@ -68,7 +68,7 @@ jobs:
     name: PR Results
     needs: [builds, deploys]
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       - name: PR Results
