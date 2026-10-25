@@ -1,6 +1,6 @@
 # Vulnerability Scan & Management Report
 
-**Report Date**: Sun, 18 Oct 2026 10:14:18 GMT  
+**Report Date**: Sun, 25 Oct 2026 10:14:05 GMT  
 **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Report Type**: Executive Summary & Action Hub  
 
@@ -53,10 +53,10 @@ Measure of deployments, automation stability, and release velocity:
 Continuous synthetic monitoring of backend dependencies and response latency:
 
 - **Overall Deep Health Check**: `OK`
-- **Health Check Round-trip Latency**: `457ms`
-- **CHES (Email Client Services)**: `12ms`
-- **Object Storage (S3 / MinIO)**: `34ms`
-- **Cognito Federated Authentication**: `213ms`
+- **Health Check Round-trip Latency**: `497ms`
+- **CHES (Email Client Services)**: `14ms`
+- **Object Storage (S3 / MinIO)**: `35ms`
+- **Cognito Federated Authentication**: `207ms`
 
 ---
 

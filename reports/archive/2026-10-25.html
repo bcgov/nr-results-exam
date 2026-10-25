@@ -1,0 +1,128 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vulnerability Scan & Management Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.min.css">
+  <style>
+    body {
+      box-sizing: border-box;
+      min-width: 200px;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 45px;
+      background-color: #0f172a;
+      color: #cbd5e1;
+    }
+    .markdown-body {
+      background-color: transparent !important;
+      color: #cbd5e1 !important;
+    }
+    .markdown-body table tr {
+      background-color: rgba(30, 41, 59, 0.5) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .markdown-body table td, .markdown-body table th {
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .markdown-body blockquote {
+      color: #94a3b8 !important;
+      border-left: .25em solid #6366f1 !important;
+    }
+    .markdown-body h1, .markdown-body h2 {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .back-btn {
+      display: inline-block;
+      margin-bottom: 2rem;
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">← Back to Security Dashboard</a>
+  <article class="markdown-body">
+    <h1>Vulnerability Scan &amp; Management Report</h1>
+
+<strong>Report Date</strong>: Sun, 25 Oct 2026 10:14:05 GMT  
+<strong>Scan Target</strong>: https://results-exam-test.apps.silver.devops.gov.bc.ca  
+<strong>Report Type</strong>: Executive Summary &amp; Action Hub  
+
+<hr>
+<h2>📊 Executive Summary</h2>
+
+This security and operational report provides an aggregated overview of <strong>NR Results Exam</strong>. It consolidates vulnerability scanning, compliance metrics, deep health checks, and test coverage into a unified management review.
+
+<h3>Status Assessment</h3>
+
+<strong>🟢 LOW RISK</strong>  
+<em>Security posture is acceptable.</em>  
+
+- <strong>Current Risk Score</strong>: <code>0/100</code> <em>(Lower is better)</em>
+- <strong>Remediation Debt Estimate</strong>: <code>0 hours</code> of targeted security effort.
+- <strong>Business Criticality</strong>: <code>Medium</code>
+
+<hr>
+<h2>📈 Security Posture &amp; Vulnerabilities</h2>
+
+| Scan Origin | Critical | High | Medium | Low/Info | Active Findings |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| <strong>ZAP Penetration Test</strong> | 0 | 0 | 0 | 0 | <strong>0</strong> |
+| <strong>Nuclei Scanning</strong> | 0 | 0 | 0 | 0 | <strong>0</strong> |
+| <strong>GitHub Code Scanning</strong> | 0 | 0 | 2 | - | <strong>2</strong> |
+| <strong>Dependabot Alerts</strong> | - | - | - | - | <strong>0</strong> |
+<table><tr><th>Scan Origin</th><th>Critical</th><th>High</th><th>Medium</th><th>Low/Info</th><th>Active Findings</th></tr><tr><td><strong>ZAP Penetration Test</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>Nuclei Scanning</strong></td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr><tr><td><strong>GitHub Code Scanning</strong></td><td>0</td><td>0</td><td>2</td><td>-</td><td><strong>2</strong></td></tr><tr><td><strong>Dependabot Alerts</strong></td><td>-</td><td>-</td><td>-</td><td>-</td><td><strong>0</strong></td></tr></table>
+
+&gt; <strong>ZAP Accepted Alerts</strong>: <code>0 alerts</code> have been analyzed and accepted as low-risk in <code>tests/.zap/rules.tsv</code>. 
+&gt; 
+&gt; <em>Full scanning trace and historical remediations are tracked directly under the [GitHub Repository Security Dashboard](https://github.com/bcgov/nr-results-exam/security).</em>
+
+<hr>
+<h2>🚀 DevOps Maturity &amp; Stability Metrics</h2>
+
+Measure of deployments, automation stability, and release velocity:
+
+- <strong>Deployment Frequency (Last 30 Days)</strong>: <code>0 deployments</code>
+- <strong>Pipeline Deployment Success Rate</strong>: <code>100%</code>
+- <strong>Mean Time to Recovery (MTTR)</strong>: <code>N/A</code>
+- <strong>Vulnerability Remediation Velocity (Resolution Rate)</strong>: <code>93%</code>
+- <strong>Last Successful Production Deployment</strong>: <code>N/A</code>
+
+<hr>
+<h2>⚡ Application Performance &amp; Infrastructure Latency</h2>
+
+Continuous synthetic monitoring of backend dependencies and response latency:
+
+- <strong>Overall Deep Health Check</strong>: <code>OK</code>
+- <strong>Health Check Round-trip Latency</strong>: <code>497ms</code>
+- <strong>CHES (Email Client Services)</strong>: <code>14ms</code>
+- <strong>Object Storage (S3 / MinIO)</strong>: <code>35ms</code>
+- <strong>Cognito Federated Authentication</strong>: <code>207ms</code>
+
+<hr>
+<h2>📝 Code Quality &amp; Maintainability</h2>
+
+Quality metrics extracted from static analysis and dependency trees:
+
+- <strong>Backend Test Coverage</strong>: <code>87.5%</code> (Threshold: <code>70%</code>)
+- <strong>Frontend Test Coverage</strong>: <code>82.5%</code> (Threshold: <code>70%</code>)
+- <strong>Backend Outdated Packages</strong>: <code>0 packages</code>
+- <strong>Frontend Outdated Packages</strong>: <code>0 packages</code>
+
+<hr>
+<h2>🛠️ Prioritized Remediation Action Items</h2>
+
+1. ✅ <strong>No Critical Vulnerabilities</strong>: No critical vulnerabilities require immediate action.
+2. ✅ <strong>No High Vulnerabilities</strong>: No high-risk items requiring active maintenance.
+3. ✅ <strong>No Medium Vulnerabilities</strong>: Medium items are in order.
+
+<hr>
+<em>Report automatically compiled by the security reporting engine.</em>  
+<em>Full audit archive and history lines: [GitHub Pages Security Dashboard](https://github.com/bcgov/nr-results-exam/reports/)</em>
+
+  </article>
+</body>
+</html>
