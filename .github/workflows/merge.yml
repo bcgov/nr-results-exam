@@ -29,9 +29,11 @@ jobs:
       # Walk per package. An image that was not built for this commit keeps its last digest.
       - name: Resolve images
         id: tracker
-        uses: bcgov/actions/image-tracker@122a9b1c6c082b1b1f18c300020fbdc417b6b0b2 # v0.10.0
+        uses: bcgov/actions/image-tracker@8843560d44aa717798dacb6831bf87161d0658ca # v0.11.0
         with:
-          package: backend, frontend
+          packages: |
+            backend
+            frontend
           max_depth: 100
 
   deploys-test:
@@ -103,8 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Notify on failure
-        uses: bcgov/actions/workflow-notifier@122a9b1c6c082b1b1f18c300020fbdc417b6b0b2 # v0.10.0
+        uses: bcgov/actions/workflow-notifier@8843560d44aa717798dacb6831bf87161d0658ca # v0.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "fix: failure in ${{ github.workflow }}"
-          labels: bug
