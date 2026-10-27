@@ -13,6 +13,8 @@ const originalEnv = {
   userPoolId: process.env.VITE_USER_POOLS_ID,
   cognitoRegion: process.env.VITE_COGNITO_REGION,
   hasUserPoolId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_ID'),
+  clientId: process.env.VITE_USER_POOLS_WEB_CLIENT_ID,
+  hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_WEB_CLIENT_ID'),
   hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION'),
 };
 
@@ -59,6 +61,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     sinon.restore();
     process.env.VITE_USER_POOLS_ID = 'ca-central-1_TestPool123';
     process.env.VITE_COGNITO_REGION = 'ca-central-1';
+    process.env.VITE_USER_POOLS_WEB_CLIENT_ID = 'test-client-id';
     sinon.stub(console, 'error');
   });
 
@@ -71,6 +74,12 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
       process.env.VITE_USER_POOLS_ID = originalEnv.userPoolId;
     } else {
       delete process.env.VITE_USER_POOLS_ID;
+    }
+
+    if (originalEnv.hasClientId) {
+      process.env.VITE_USER_POOLS_WEB_CLIENT_ID = originalEnv.clientId;
+    } else {
+      delete process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
     }
 
     if (originalEnv.hasCognitoRegion) {
@@ -191,6 +200,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   test('should allow access with valid token', async () => {
     const mockPayload = {
       sub: '12345678-1234-1234-1234-123456789012',
+      token_use: 'id',
       email: 'testuser@example.com',
       'custom:idp_username': 'testuser',
       'custom:idp_display_name': 'Test User',
@@ -222,6 +232,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   test('should extract username from cognito:username when custom:idp_username is not available', async () => {
     const mockPayload = {
       sub: '12345678-1234-1234-1234-123456789012',
+      token_use: 'id',
       email: 'testuser@example.com',
       'cognito:username': 'cognitouser',
       'custom:idp_display_name': 'Test User',
@@ -247,6 +258,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   test('should accept token without Bearer prefix', async () => {
     const mockPayload = {
       sub: '12345678-1234-1234-1234-123456789012',
+      token_use: 'id',
       email: 'testuser@example.com',
       'custom:idp_username': 'testuser',
       'cognito:username': 'testuser',
@@ -289,6 +301,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   test('should include token payload in req.user', async () => {
     const mockPayload = {
       sub: '12345678-1234-1234-1234-123456789012',
+      token_use: 'id',
       email: 'testuser@example.com',
       'custom:idp_username': 'testuser',
       'custom:idp_display_name': 'Test User',
@@ -320,6 +333,7 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     const mockPayload = {
       sub: '12345678-1234-1234-1234-123456789012',
+      token_use: 'id',
       email: 'jwksuser@example.com',
       'custom:idp_username': 'jwksuser',
       'custom:idp_display_name': 'JWKS User',
@@ -401,5 +415,69 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Authentication configuration error');
     assert.strictEqual(response.body.error, 'Unable to verify token');
+  });
+
+  test('should pass issuer and audience to jwt.verify', async () => {
+    let captured = null;
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        captured = options;
+        callback(null, { sub: 'abc', token_use: 'id' });
+      },
+    };
+
+    await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token')
+      .expect(200);
+
+    assert.deepStrictEqual(captured.algorithms, ['RS256']);
+    assert.strictEqual(
+      captured.issuer,
+      'https://cognito-idp.ca-central-1.amazonaws.com/ca-central-1_TestPool123',
+    );
+    assert.strictEqual(captured.audience, 'test-client-id');
+  });
+
+  test('should reject access tokens (token_use !== id)', async () => {
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        callback(null, { sub: 'abc', token_use: 'access', client_id: 'test-client-id' });
+      },
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer access-token')
+      .expect(401);
+
+    assert.strictEqual(response.body.message, 'Invalid token');
+  });
+
+  test('should reject tokens missing token_use', async () => {
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        callback(null, { sub: 'abc' });
+      },
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer token')
+      .expect(401);
+
+    assert.strictEqual(response.body.message, 'Invalid token');
+  });
+
+  test('should return 500 when client ID is not configured', async () => {
+    delete process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
+
+    const response = await request(buildApp())
+      .get('/protected')
+      .set('Authorization', 'Bearer mock-token')
+      .expect(500);
+
+    assert.strictEqual(response.body.message, 'Authentication configuration error');
+    assert.strictEqual(response.body.error, 'User pool client not configured');
   });
 });
