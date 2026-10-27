@@ -32,6 +32,7 @@ The following environment variables must be set for authentication to work:
 
 - `VITE_USER_POOLS_ID`: AWS Cognito User Pool ID
 - `VITE_COGNITO_REGION`: AWS region (default: ca-central-1)
+- `VITE_USER_POOLS_WEB_CLIENT_ID`: Cognito app client ID; required ID token audience (`aud`)
 
 ## Endpoints
 

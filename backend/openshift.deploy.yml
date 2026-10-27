@@ -56,6 +56,9 @@ parameters:
   - name: VITE_USER_POOLS_ID
     description: AWS Cognito User Pool ID
     value: "ca-central-1_UpeAqsYt4"
+  - name: VITE_USER_POOLS_WEB_CLIENT_ID
+    description: AWS Cognito User Pool Web Client ID (expected ID token audience)
+    value: "7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z"
   - name: VITE_COGNITO_REGION
     description: AWS Cognito region for user pool
     value: ca-central-1
@@ -110,6 +113,8 @@ objects:
                   value: ${VITE_USER_POOLS_ID}
                 - name: VITE_COGNITO_REGION
                   value: ${VITE_COGNITO_REGION}
+                - name: VITE_USER_POOLS_WEB_CLIENT_ID
+                  value: ${VITE_USER_POOLS_WEB_CLIENT_ID}
               ports:
                 - containerPort: 5000
                   protocol: TCP

@@ -64,6 +64,7 @@ jobs:
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
+            -p VITE_USER_POOLS_WEB_CLIENT_ID=${{ vars.VITE_USER_POOLS_WEB_CLIENT_ID }}
 
   deploy-frontend:
     name: Deploy Frontend

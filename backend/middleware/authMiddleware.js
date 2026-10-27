@@ -83,6 +83,18 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
+  const CLIENT_ID = process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
+  if (!CLIENT_ID) {
+    console.error('VITE_USER_POOLS_WEB_CLIENT_ID is not configured');
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication configuration error',
+      error: 'User pool client not configured',
+    });
+  }
+  const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
+  const ISSUER = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}`;
+
   // Verify the token
   const handleVerification = (err, decoded) => {
     if (err) {
@@ -111,6 +123,16 @@ const authenticateToken = (req, res, next) => {
       });
     }
 
+    // Frontend sends Cognito ID tokens; reject access/refresh tokens
+    if (!decoded || decoded.token_use !== 'id') {
+      console.error('Token verification error: unexpected token_use');
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token',
+        error: 'Invalid or expired token',
+      });
+    }
+
     // Attach decoded token to request object for use in route handlers
     req.user = {
       email: decoded.email,
@@ -130,6 +152,8 @@ const authenticateToken = (req, res, next) => {
       getKey,
       {
         algorithms: ['RS256'],
+        issuer: ISSUER,
+        audience: CLIENT_ID,
       },
       handleVerification,
     );
