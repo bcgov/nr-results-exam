@@ -111,7 +111,7 @@ jobs:
               -Dsonar.tests=src/__tests__/
             triggers: frontend/
     steps:
-      - uses: bcgov/actions/test-and-analyse@8843560d44aa717798dacb6831bf87161d0658ca # v0.11.0
+      - uses: bcgov/actions/test-and-analyse@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
         with:
           commands: |
             npm ci
@@ -139,10 +139,14 @@ jobs:
     name: Analysis Results
     needs: [codeql, trivy, tests]
     if: always()
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     runs-on: ubuntu-26.04
     timeout-minutes: 1
     steps:
       - name: Analysis Results
-        uses: bcgov/actions/workflow-results@8843560d44aa717798dacb6831bf87161d0658ca # v0.11.0
+        uses: bcgov/actions/workflow-results@091f1da89c669d36bf4899830381e5b12d2c889a # v0.11.0
         with:
           needs: ${{ toJson(needs) }}
