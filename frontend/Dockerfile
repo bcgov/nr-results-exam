@@ -1,5 +1,5 @@
 # Build static files
-FROM node:26.11.1-bookworm-slim AS build
+FROM node:26.12.0-bookworm-slim AS build
 
 WORKDIR /app
 COPY . .
