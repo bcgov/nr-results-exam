@@ -33,7 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^4.0.0",
     "minio": "^8.0.0",
-    "decode-uri-component-fixed": "npm:decode-uri-component@0.5.0"
+    "decode-uri-component-fixed": "npm:decode-uri-component@0.5.1"
   },
   "overrides": {
     "decode-uri-component": "file:./decode-uri-component-cjs"
