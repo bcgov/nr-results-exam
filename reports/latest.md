@@ -1,6 +1,6 @@
 # Vulnerability Scan & Management Report
 
-**Report Date**: Sun, 25 Oct 2026 10:14:05 GMT  
+**Report Date**: Sun, 01 Nov 2026 10:11:24 GMT  
 **Scan Target**: https://results-exam-test.apps.silver.devops.gov.bc.ca  
 **Report Type**: Executive Summary & Action Hub  
 
@@ -27,7 +27,7 @@ This security and operational report provides an aggregated overview of **NR Res
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **ZAP Penetration Test** | 0 | 0 | 0 | 0 | **0** |
 | **Nuclei Scanning** | 0 | 0 | 0 | 0 | **0** |
-| **GitHub Code Scanning** | 0 | 0 | 2 | - | **2** |
+| **GitHub Code Scanning** | 0 | 1 | 2 | - | **3** |
 | **Dependabot Alerts** | - | - | - | - | **0** |
 
 > **ZAP Accepted Alerts**: `0 alerts` have been analyzed and accepted as low-risk in `tests/.zap/rules.tsv`. 
@@ -53,10 +53,10 @@ Measure of deployments, automation stability, and release velocity:
 Continuous synthetic monitoring of backend dependencies and response latency:
 
 - **Overall Deep Health Check**: `OK`
-- **Health Check Round-trip Latency**: `497ms`
-- **CHES (Email Client Services)**: `14ms`
-- **Object Storage (S3 / MinIO)**: `35ms`
-- **Cognito Federated Authentication**: `207ms`
+- **Health Check Round-trip Latency**: `472ms`
+- **CHES (Email Client Services)**: `15ms`
+- **Object Storage (S3 / MinIO)**: `40ms`
+- **Cognito Federated Authentication**: `217ms`
 
 ---
 
@@ -64,7 +64,7 @@ Continuous synthetic monitoring of backend dependencies and response latency:
 
 Quality metrics extracted from static analysis and dependency trees:
 
-- **Backend Test Coverage**: `87.5%` (Threshold: `70%`)
+- **Backend Test Coverage**: `87.8%` (Threshold: `70%`)
 - **Frontend Test Coverage**: `82.5%` (Threshold: `70%`)
 - **Backend Outdated Packages**: `0 packages`
 - **Frontend Outdated Packages**: `0 packages`
