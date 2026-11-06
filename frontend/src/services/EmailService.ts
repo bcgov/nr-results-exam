@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { env } from '../env';
 import { getAuthIdToken } from './AuthService';
 
@@ -10,6 +9,21 @@ interface EmailParams {
   subject: string;
   mailBody: string;
 }
+
+const postMail = async (emailParams: EmailParams, token: string | null | undefined) => {
+  const response = await fetch(`${backendUrl}/api/mail`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(emailParams),
+  });
+  // fetch only rejects on network failure; a 4xx/5xx must still report as an error
+  if (!response.ok) {
+    throw new Error(`Mail request failed with status ${response.status}`);
+  }
+};
 
 export const sendUserReport = async (
   userName: string,
@@ -60,8 +74,7 @@ export const sendUserReport = async (
     if (!token) {
       console.warn('No authentication token available for user mail request');
     }
-    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config);
+    await postMail(emailParams, token);
     return 'success';
   } catch (error) {
     console.error('Error sending user report email:', error);
@@ -151,8 +164,7 @@ export const sendAdminReport = async (
     if (!token) {
       console.warn('No authentication token available for admin mail request');
     }
-    const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-    await axios.post(`${backendUrl}/api/mail`, emailParams, config);
+    await postMail(emailParams, token);
     return 'success';
   } catch (error) {
     console.error('Error sending admin report email:', error);
