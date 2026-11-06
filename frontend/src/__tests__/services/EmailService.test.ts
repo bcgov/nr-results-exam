@@ -1,15 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios from 'axios';
 import { sendAdminReport, sendUserReport } from '../../services/EmailService';
 import { env } from '../../env';
 
-// Mock axios
-vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
+const fetchMock = vi.fn();
+const okResponse = { ok: true, status: 200 };
+const serverError = { ok: false, status: 500 };
+
+const sentMail = () => {
+  const [url, init] = fetchMock.mock.calls[0];
+  expect(url).toBe('/api/mail');
+  expect(init.method).toBe('POST');
+  expect(init.headers['Content-Type']).toBe('application/json');
+  return JSON.parse(init.body);
+};
 
 describe('EmailService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('fetch', fetchMock);
     // Setup default environment
     env.VITE_CHES_FROM_EMAIL = 'test@gov.bc.ca';
     env.VITE_CHES_ADMIN_EMAIL = 'admin@gov.bc.ca';
@@ -17,30 +25,35 @@ describe('EmailService', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('sendUserReport', () => {
     it('should send user report email', async () => {
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       const result = await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          fromEmail: 'test@gov.bc.ca',
-          toEmails: ['john@example.com'],
-          subject: 'Test A user attempt report : John Doe',
-          mailBody: expect.stringContaining('John Doe'),
-        }),
-        expect.objectContaining({}),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentMail()).toMatchObject({
+        fromEmail: 'test@gov.bc.ca',
+        toEmails: ['john@example.com'],
+        subject: 'Test A user attempt report : John Doe',
+        mailBody: expect.stringContaining('John Doe'),
+      });
     });
 
     it('should return error when email sending fails', async () => {
-      mockedAxios.post.mockRejectedValueOnce(new Error('Network error'));
+      fetchMock.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
+
+      expect(result).toBe('error');
+    });
+
+    it('should return error when the server responds with a failure status', async () => {
+      fetchMock.mockResolvedValueOnce(serverError);
 
       const result = await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
 
@@ -48,28 +61,24 @@ describe('EmailService', () => {
     });
 
     it('should include online access request form link for passing users', async () => {
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
 
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          mailBody: expect.stringContaining(
-            'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
-          ),
-        }),
-        expect.objectContaining({}),
-      );
+      expect(sentMail()).toMatchObject({
+        mailBody: expect.stringContaining(
+          'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
+        ),
+      });
     });
 
     it('should not include online access request form link for failing users', async () => {
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       await sendUserReport('John Doe', 'john@example.com', 40, 'Test A');
 
-      expect(mockedAxios.post).toHaveBeenCalled();
-      const [, payload] = mockedAxios.post.mock.calls[0];
+      expect(fetchMock).toHaveBeenCalled();
+      const payload = sentMail();
       expect(payload.mailBody).not.toContain(
         'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
       );
@@ -88,7 +97,7 @@ describe('EmailService', () => {
 
     it('should send admin report email in PROD environment', async () => {
       env.VITE_ZONE = 'prod';
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       const result = await sendAdminReport(
         'John Doe',
@@ -99,21 +108,17 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          fromEmail: 'test@gov.bc.ca',
-          toEmails: ['admin@gov.bc.ca'],
-          subject: 'Test A admin report : John Doe',
-        }),
-        expect.objectContaining({}),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentMail()).toMatchObject({
+        fromEmail: 'test@gov.bc.ca',
+        toEmails: ['admin@gov.bc.ca'],
+        subject: 'Test A admin report : John Doe',
+      });
     });
 
     it('should send admin report email in TEST environment to test taker', async () => {
       env.VITE_ZONE = 'test';
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       const result = await sendAdminReport(
         'John Doe',
@@ -124,16 +129,12 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          fromEmail: 'test@gov.bc.ca',
-          toEmails: ['john@example.com'],
-          subject: 'Test A admin report : John Doe',
-        }),
-        expect.objectContaining({}),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentMail()).toMatchObject({
+        fromEmail: 'test@gov.bc.ca',
+        toEmails: ['john@example.com'],
+        subject: 'Test A admin report : John Doe',
+      });
     });
 
     it('should NOT send admin report email in PR environment (numeric zone)', async () => {
@@ -148,7 +149,7 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('should NOT send admin report email in PR environment (pr-prefix zone)', async () => {
@@ -163,7 +164,7 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('should NOT send admin report email in DEV environment', async () => {
@@ -178,12 +179,12 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('should handle case-insensitive environment names for PROD', async () => {
       env.VITE_ZONE = 'PROD';
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       const result = await sendAdminReport(
         'John Doe',
@@ -194,21 +195,17 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          fromEmail: 'test@gov.bc.ca',
-          toEmails: ['admin@gov.bc.ca'],
-          subject: 'Test A admin report : John Doe',
-        }),
-        expect.objectContaining({}),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentMail()).toMatchObject({
+        fromEmail: 'test@gov.bc.ca',
+        toEmails: ['admin@gov.bc.ca'],
+        subject: 'Test A admin report : John Doe',
+      });
     });
 
     it('should handle case-insensitive environment names for TEST', async () => {
       env.VITE_ZONE = 'TEST';
-      mockedAxios.post.mockResolvedValueOnce({ data: 'success' });
+      fetchMock.mockResolvedValueOnce(okResponse);
 
       const result = await sendAdminReport(
         'John Doe',
@@ -219,21 +216,32 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('success');
-      expect(mockedAxios.post).toHaveBeenCalledTimes(1);
-      expect(mockedAxios.post).toHaveBeenCalledWith(
-        '/api/mail',
-        expect.objectContaining({
-          fromEmail: 'test@gov.bc.ca',
-          toEmails: ['john@example.com'],
-          subject: 'Test A admin report : John Doe',
-        }),
-        expect.objectContaining({}),
-      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentMail()).toMatchObject({
+        fromEmail: 'test@gov.bc.ca',
+        toEmails: ['john@example.com'],
+        subject: 'Test A admin report : John Doe',
+      });
     });
 
     it('should return error when email sending fails in PROD', async () => {
       env.VITE_ZONE = 'prod';
-      mockedAxios.post.mockRejectedValueOnce(new Error('Network error'));
+      fetchMock.mockRejectedValueOnce(new Error('Network error'));
+
+      const result = await sendAdminReport(
+        'John Doe',
+        'john@example.com',
+        75,
+        'Test A',
+        testResults,
+      );
+
+      expect(result).toBe('error');
+    });
+
+    it('should return error when the server responds with a failure status in PROD', async () => {
+      env.VITE_ZONE = 'prod';
+      fetchMock.mockResolvedValueOnce(serverError);
 
       const result = await sendAdminReport(
         'John Doe',
