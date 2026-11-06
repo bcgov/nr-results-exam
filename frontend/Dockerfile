@@ -9,7 +9,7 @@ RUN npm ci --ignore-scripts && \
     rm -rf node_modules
 
 # Build custom Caddy with Coraza WAF plugin
-FROM caddy:2.11.6-builder AS xcaddy
+FROM caddy:2.11.7-builder AS xcaddy
 RUN apk add --no-cache ca-certificates
 RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy/v2
