@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { sendAdminReport, sendUserReport } from '../../services/EmailService';
+import { setAuthIdToken } from '../../services/AuthService';
 import { env } from '../../env';
 
 const fetchMock = vi.fn();
@@ -14,16 +15,23 @@ const sentMail = () => {
   return JSON.parse(init.body);
 };
 
+const sentMailHeaders = () => {
+  const [, init] = fetchMock.mock.calls[0];
+  return init.headers as Record<string, string>;
+};
+
 describe('EmailService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('fetch', fetchMock);
+    setAuthIdToken(null);
     // Setup default environment
     env.VITE_CHES_FROM_EMAIL = 'test@gov.bc.ca';
     env.VITE_CHES_ADMIN_EMAIL = 'admin@gov.bc.ca';
   });
 
   afterEach(() => {
+    setAuthIdToken(null);
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -82,6 +90,25 @@ describe('EmailService', () => {
       expect(payload.mailBody).not.toContain(
         'https://extranet.for.gov.bc.ca/escripts/efm/access/results/access.asp',
       );
+    });
+
+    it('should send Authorization Bearer header when an auth token is set', async () => {
+      setAuthIdToken('user-id-token');
+      fetchMock.mockResolvedValueOnce(okResponse);
+
+      const result = await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
+
+      expect(result).toBe('success');
+      expect(sentMailHeaders().Authorization).toBe('Bearer user-id-token');
+    });
+
+    it('should omit Authorization header when no auth token is set', async () => {
+      fetchMock.mockResolvedValueOnce(okResponse);
+
+      const result = await sendUserReport('John Doe', 'john@example.com', 75, 'Test A');
+
+      expect(result).toBe('success');
+      expect(sentMailHeaders()).not.toHaveProperty('Authorization');
     });
   });
 
@@ -252,6 +279,39 @@ describe('EmailService', () => {
       );
 
       expect(result).toBe('error');
+    });
+
+    it('should send Authorization Bearer header when an auth token is set in PROD', async () => {
+      env.VITE_ZONE = 'prod';
+      setAuthIdToken('admin-id-token');
+      fetchMock.mockResolvedValueOnce(okResponse);
+
+      const result = await sendAdminReport(
+        'John Doe',
+        'john@example.com',
+        75,
+        'Test A',
+        testResults,
+      );
+
+      expect(result).toBe('success');
+      expect(sentMailHeaders().Authorization).toBe('Bearer admin-id-token');
+    });
+
+    it('should omit Authorization header when no auth token is set in PROD', async () => {
+      env.VITE_ZONE = 'prod';
+      fetchMock.mockResolvedValueOnce(okResponse);
+
+      const result = await sendAdminReport(
+        'John Doe',
+        'john@example.com',
+        75,
+        'Test A',
+        testResults,
+      );
+
+      expect(result).toBe('success');
+      expect(sentMailHeaders()).not.toHaveProperty('Authorization');
     });
   });
 });
