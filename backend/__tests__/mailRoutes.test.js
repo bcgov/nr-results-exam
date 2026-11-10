@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const express = require('express');
 const sinon = require('sinon');
-const axios = require('axios');
 
 // Import routes
 const mailRoutes = require('../routes/mailRoutes');
@@ -14,6 +13,18 @@ const originalEnv = {
   hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'CHES_CLIENT_ID'),
   hasClientSecret: Object.prototype.hasOwnProperty.call(process.env, 'CHES_CLIENT_SECRET'),
 };
+
+function jsonResponse(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+function fetchArgs(stub, index) {
+  const [url, init] = stub.getCall(index).args;
+  return { url, init, headers: init.headers };
+}
 
 function buildApp() {
   const app = express();
@@ -50,9 +61,9 @@ describe('Mail Routes', { concurrency: 1 }, () => {
   });
 
   test('POST /api/mail should send email successfully', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
-    axiosPostStub.onCall(1).resolves({ data: { messageId: 'mock-message-id' } });
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(200, { access_token: 'mock-token' }));
+    fetchStub.onCall(1).resolves(jsonResponse(200, { messageId: 'mock-message-id' }));
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -71,9 +82,9 @@ describe('Mail Routes', { concurrency: 1 }, () => {
   });
 
   test('POST /api/mail should call token endpoint with correct parameters', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
-    axiosPostStub.onCall(1).resolves({ data: { messageId: 'mock-message-id' } });
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(200, { access_token: 'mock-token' }));
+    fetchStub.onCall(1).resolves(jsonResponse(200, { messageId: 'mock-message-id' }));
 
     await request(buildApp())
       .post('/api/mail')
@@ -85,14 +96,10 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       })
       .expect(200);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should have 2 axios.post calls (token + email)',
-    );
+    assert.strictEqual(fetchStub.callCount, 2, 'Should have 2 fetch calls (token + email)');
 
-    const tokenCall = axiosPostStub.getCall(0);
-    const [tokenUrl, tokenPayload, tokenConfig] = tokenCall.args;
+    const { url: tokenUrl, init: tokenInit, headers: tokenHeaders } = fetchArgs(fetchStub, 0);
+    const tokenPayload = tokenInit.body;
 
     assert.strictEqual(
       tokenUrl,
@@ -106,29 +113,24 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       'Token payload should be grant_type=client_credentials',
     );
 
+    assert.strictEqual(tokenInit.method, 'POST', 'Token request should be a POST');
     assert.strictEqual(
-      tokenConfig.headers['Content-Type'],
+      tokenHeaders.get('Content-Type'),
       'application/x-www-form-urlencoded',
       'Token request Content-Type should be application/x-www-form-urlencoded',
     );
 
-    assert(tokenConfig.auth, 'Token request should include auth credentials');
     assert.strictEqual(
-      tokenConfig.auth.username,
-      'test-client-id',
-      'Token request username should match CHES_CLIENT_ID',
-    );
-    assert.strictEqual(
-      tokenConfig.auth.password,
-      'test-client-secret',
-      'Token request password should match CHES_CLIENT_SECRET',
+      tokenHeaders.get('Authorization'),
+      `Basic ${Buffer.from('test-client-id:test-client-secret').toString('base64')}`,
+      'Token request should use basic auth with CHES_CLIENT_ID and CHES_CLIENT_SECRET',
     );
   });
 
   test('POST /api/mail should call email endpoint with correct parameters', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
-    axiosPostStub.onCall(1).resolves({ data: { messageId: 'mock-message-id' } });
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(200, { access_token: 'mock-token' }));
+    fetchStub.onCall(1).resolves(jsonResponse(200, { messageId: 'mock-message-id' }));
 
     await request(buildApp())
       .post('/api/mail')
@@ -140,14 +142,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       })
       .expect(200);
 
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      2,
-      'Should have 2 axios.post calls (token + email)',
-    );
+    assert.strictEqual(fetchStub.callCount, 2, 'Should have 2 fetch calls (token + email)');
 
-    const emailCall = axiosPostStub.getCall(1);
-    const [emailUrl, emailPayload, emailConfig] = emailCall.args;
+    const { url: emailUrl, init: emailInit, headers: emailHeaders } = fetchArgs(fetchStub, 1);
+    assert.strictEqual(emailInit.method, 'POST', 'Email request should be a POST');
+    const emailPayload = JSON.parse(emailInit.body);
 
     assert.strictEqual(
       emailUrl,
@@ -172,19 +171,19 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert(emailPayload.tag.startsWith('email_'), 'Email tag should start with email_');
 
     assert.strictEqual(
-      emailConfig.headers['Content-Type'],
+      emailHeaders.get('Content-Type'),
       'application/json',
       'Email request Content-Type should be application/json',
     );
     assert.strictEqual(
-      emailConfig.headers['Authorization'],
+      emailHeaders.get('Authorization'),
       'Bearer mock-token',
       'Email request Authorization header should include Bearer token from first call',
     );
   });
 
   test('POST /api/mail should return 400 if fromEmail is missing', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -198,15 +197,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: fromEmail');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is missing', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -220,15 +215,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is not an array', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -243,15 +234,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if subject is missing', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -265,15 +252,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: subject');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if mailBody is missing', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -287,15 +270,11 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Missing required field: mailBody');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 400 if toEmails is empty array', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -310,11 +289,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.status, 400);
     assert.strictEqual(response.body.success, false);
     assert(response.body.message.includes('toEmails'), 'Error message should mention toEmails');
-    assert.strictEqual(
-      axiosPostStub.callCount,
-      0,
-      'Should not make axios calls when validation fails',
-    );
+    assert.strictEqual(fetchStub.callCount, 0, 'Should not make HTTP calls when validation fails');
   });
 
   test('POST /api/mail should return 500 if CHES credentials are missing', async () => {
@@ -324,7 +299,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
     assert.strictEqual(process.env.CHES_CLIENT_ID, undefined);
     assert.strictEqual(process.env.CHES_CLIENT_SECRET, undefined);
 
-    const axiosPostStub = sinon.stub(axios, 'post');
+    const fetchStub = sinon.stub(globalThis, 'fetch');
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -337,9 +312,9 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .expect(500);
 
     assert.strictEqual(
-      axiosPostStub.callCount,
+      fetchStub.callCount,
       0,
-      'Should not call axios when credentials are missing',
+      'Should not make HTTP calls when credentials are missing',
     );
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
@@ -348,11 +323,8 @@ describe('Mail Routes', { concurrency: 1 }, () => {
   });
 
   test('POST /api/mail should return 500 if token request fails', async () => {
-    const error = new Error('Unauthorized');
-    error.response = { status: 401, data: { error: 'invalid_client' } };
-
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).rejects(error);
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(401, { error: 'invalid_client' }));
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -364,16 +336,19 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       })
       .expect(500);
 
-    assert.strictEqual(axiosPostStub.callCount, 1, 'Should stop after token failure');
+    assert.strictEqual(fetchStub.callCount, 1, 'Should stop after token failure');
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
-    assert.match(response.body.error, /Failed to fetch token/);
+    assert.strictEqual(
+      response.body.error,
+      'Failed to fetch token: 401 - {"error":"invalid_client"}',
+    );
   });
 
   test('POST /api/mail should return 500 if token request fails without response', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).rejects(new Error('Network error'));
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).rejects(new Error('Network error'));
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -385,7 +360,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       })
       .expect(500);
 
-    assert.strictEqual(axiosPostStub.callCount, 1, 'Should stop after token failure');
+    assert.strictEqual(fetchStub.callCount, 1, 'Should stop after token failure');
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
@@ -393,12 +368,10 @@ describe('Mail Routes', { concurrency: 1 }, () => {
   });
 
   test('POST /api/mail should return 500 if email send fails', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(200, { access_token: 'mock-token' }));
 
-    const emailError = new Error('Service unavailable');
-    emailError.response = { status: 503, data: { error: 'ches_down' } };
-    axiosPostStub.onCall(1).rejects(emailError);
+    fetchStub.onCall(1).resolves(jsonResponse(503, { error: 'ches_down' }));
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -411,20 +384,20 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .expect(500);
 
     assert.strictEqual(
-      axiosPostStub.callCount,
+      fetchStub.callCount,
       2,
       'Should attempt to send email after obtaining token',
     );
     assert.strictEqual(response.body.status, 500);
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Failed to send email');
-    assert.match(response.body.error, /Failed to send email:/);
+    assert.strictEqual(response.body.error, 'Failed to send email: 503 - {"error":"ches_down"}');
   });
 
   test('POST /api/mail should return 500 if email send fails without response', async () => {
-    const axiosPostStub = sinon.stub(axios, 'post');
-    axiosPostStub.onCall(0).resolves({ data: { access_token: 'mock-token' } });
-    axiosPostStub.onCall(1).rejects(new Error('Socket hang up'));
+    const fetchStub = sinon.stub(globalThis, 'fetch');
+    fetchStub.onCall(0).resolves(jsonResponse(200, { access_token: 'mock-token' }));
+    fetchStub.onCall(1).rejects(new Error('Socket hang up'));
 
     const response = await request(buildApp())
       .post('/api/mail')
@@ -437,7 +410,7 @@ describe('Mail Routes', { concurrency: 1 }, () => {
       .expect(500);
 
     assert.strictEqual(
-      axiosPostStub.callCount,
+      fetchStub.callCount,
       2,
       'Should attempt to send email after obtaining token',
     );

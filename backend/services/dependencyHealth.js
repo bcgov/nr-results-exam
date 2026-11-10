@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { httpRequest } = require('./http');
 const Minio = require('minio');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.HEALTH_DEPENDENCY_TIMEOUT_MS ?? 5000);
@@ -10,7 +10,7 @@ let refreshPromise = null;
 let minioClient;
 let minioConfigSignature = null;
 
-function formatAxiosError(error) {
+function formatHttpError(error) {
   if (error.response) {
     return `${error.response.status} ${error.response.statusText}`;
   }
@@ -37,10 +37,12 @@ async function checkChes() {
   const started = Date.now();
 
   try {
-    await axios.post(tokenUrl, 'grant_type=client_credentials', {
+    await httpRequest(tokenUrl, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       auth: { username: clientId, password: clientSecret },
-      timeout: DEFAULT_TIMEOUT_MS,
+      body: 'grant_type=client_credentials',
+      timeoutMs: DEFAULT_TIMEOUT_MS,
     });
 
     return {
@@ -52,7 +54,7 @@ async function checkChes() {
     return {
       status: 'error',
       latencyMs: Date.now() - started,
-      error: formatAxiosError(error),
+      error: formatHttpError(error),
     };
   }
 }
@@ -156,7 +158,7 @@ async function checkCognito() {
   const started = Date.now();
 
   try {
-    await axios.get(wellKnownUrl, { timeout: DEFAULT_TIMEOUT_MS });
+    await httpRequest(wellKnownUrl, { timeoutMs: DEFAULT_TIMEOUT_MS });
     return {
       status: 'ok',
       latencyMs: Date.now() - started,
@@ -166,7 +168,7 @@ async function checkCognito() {
     return {
       status: 'error',
       latencyMs: Date.now() - started,
-      error: formatAxiosError(error),
+      error: formatHttpError(error),
     };
   }
 }
