@@ -1,4 +1,4 @@
-import axios from "axios";
+import { HttpError, httpRequest } from "./http.js";
 
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
 const redirectFromUrl = process.env.REDIRECT_URL?.replace(/\/$/, "");
@@ -41,7 +41,7 @@ const RETRY_DELAY_MS = (() => {
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const isRetryableError = (error) => {
-  if (!axios.isAxiosError(error)) {
+  if (!(error instanceof HttpError)) {
     return false;
   }
 
@@ -326,10 +326,10 @@ const executeCheck = async (check) => {
   if (check.checkRedirect) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
       try {
-        const response = await axios.get(check.url, {
-          maxRedirects: 0,
+        const response = await httpRequest(check.url, {
+          redirect: "manual",
           validateStatus: (status) => status >= 200 && status < 400,
-          timeout: timeoutMs,
+          timeoutMs,
           headers: {
             Origin: origin
           }
@@ -353,8 +353,8 @@ const executeCheck = async (check) => {
         return;
       } catch (error) {
         const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
-        if (axios.isAxiosError(error)) {
-          // Defensive handling: if axios throws despite validateStatus, check for redirect
+        if (error instanceof HttpError) {
+          // Defensive handling: if the request throws despite validateStatus, check for redirect
           // This should be rare since validateStatus allows 200-399, but kept for robustness
           if (error.response?.status === 301 || error.response?.status === 308) {
             const location = error.response.headers.location;
@@ -398,23 +398,22 @@ const executeCheck = async (check) => {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt += 1) {
     try {
       const method = check.method || 'GET';
-      const axiosConfig = {
+      const requestOptions = {
         method: method,
-        url: check.url,
         headers: {
           Origin: origin
         },
-        timeout: timeoutMs,
+        timeoutMs,
         validateStatus: check.validateStatus || ((status) => status >= 200 && status < 300)
       };
 
       // For OPTIONS requests, add CORS preflight headers
       if (method === 'OPTIONS') {
-        axiosConfig.headers[ 'Access-Control-Request-Method' ] = 'GET';
-        axiosConfig.headers[ 'Access-Control-Request-Headers' ] = 'Content-Type';
+        requestOptions.headers[ 'Access-Control-Request-Method' ] = 'GET';
+        requestOptions.headers[ 'Access-Control-Request-Headers' ] = 'Content-Type';
       }
 
-      const response = await axios(axiosConfig);
+      const response = await httpRequest(check.url, requestOptions);
 
       if (!check.validate(response)) {
         throw new Error(
@@ -429,7 +428,7 @@ const executeCheck = async (check) => {
       return;
     } catch (error) {
       const attemptPrefix = `❌ ${check.name} attempt ${attempt}/${MAX_RETRIES}`;
-      if (axios.isAxiosError(error)) {
+      if (error instanceof HttpError) {
         console.error(
           `${attemptPrefix}: request error: ${error.message} (status: ${error.response?.status ?? "n/a"})`
         );

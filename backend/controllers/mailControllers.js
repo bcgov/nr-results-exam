@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const axios = require('axios');
+const { httpRequest } = require('../services/http');
 
 async function requestToken() {
   try {
@@ -28,8 +28,13 @@ async function requestToken() {
       password: clientSecret,
     };
 
-    // Send the POST request using Axios to get the token
-    const response = await axios.post(tokenEndpoint, payload, { headers, auth });
+    // Send the POST request to get the token
+    const response = await httpRequest(tokenEndpoint, {
+      method: 'POST',
+      headers,
+      auth,
+      body: payload,
+    });
 
     // Extract the access_token and session_tag from the response
     const access_token = response.data.access_token;
@@ -77,8 +82,12 @@ async function sendEmail(token, emailDetails) {
       Authorization: `Bearer ${token}`,
     };
 
-    // Send the POST request using Axios to send the email
-    const response = await axios.post(emailEndpoint, emailPayload, { headers });
+    // Send the POST request to send the email
+    const response = await httpRequest(emailEndpoint, {
+      method: 'POST',
+      headers,
+      body: emailPayload,
+    });
 
     // Handle the response here if needed
     console.log('Email sent successfully:', response.data);
