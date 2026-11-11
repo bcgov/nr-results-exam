@@ -36,9 +36,7 @@ let userManagerInstance: UserManager | null = null;
  * Lazily gets or initializes the UserManager singleton.
  */
 export function getUserManager(): UserManager {
-  if (!userManagerInstance) {
-    userManagerInstance = new UserManager(getOidcSettings());
-  }
+  userManagerInstance ??= new UserManager(getOidcSettings());
   return userManagerInstance;
 }
 

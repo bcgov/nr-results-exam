@@ -75,8 +75,61 @@ describe('AuthService', () => {
     expect(user?.providerUsername).toBe('BCEIDBUSINESS\\bizuser');
   });
 
+  test('normalizeIdpProvider handles empty and custom providers', () => {
+    expect(normalizeIdpProvider()).toBe('');
+    expect(normalizeIdpProvider('')).toBe('');
+    expect(normalizeIdpProvider('github')).toBe('GITHUB');
+  });
+
   test('parseToken returns undefined for null/undefined input', () => {
     expect(parseToken(undefined)).toBeUndefined();
     expect(parseToken(null)).toBeUndefined();
+  });
+
+  test('parseToken falls back to id_token, space-separated display name, preferred_username, and roles', () => {
+    const user = parseToken({
+      id_token: 'id-token-789',
+      profile: {
+        identity_provider: 'idir',
+        preferred_username: 'FallbackUser',
+        name: 'Jane Doe',
+        roles: ['VIEWER', 'FAM:INTERNAL'],
+      },
+    });
+
+    expect(user).toEqual({
+      userName: 'FallbackUser',
+      displayName: 'Jane Doe',
+      email: '',
+      idpProvider: 'IDIR',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      providerUsername: 'IDIR\\FallbackUser',
+      roles: ['VIEWER'],
+      authToken: 'id-token-789',
+      exp: undefined,
+    });
+    expect(getAuthIdToken()).toBe('id-token-789');
+  });
+
+  test('parseToken supports plain claim object without profile wrapper or token', () => {
+    const user = parseToken({
+      preferred_username: 'plainuser',
+      display_name: '',
+    });
+
+    expect(user).toEqual({
+      userName: 'plainuser',
+      displayName: '',
+      email: '',
+      idpProvider: '',
+      firstName: '',
+      lastName: '',
+      providerUsername: 'plainuser',
+      roles: [],
+      authToken: undefined,
+      exp: undefined,
+    });
+    expect(getAuthIdToken()).toBeNull();
   });
 });

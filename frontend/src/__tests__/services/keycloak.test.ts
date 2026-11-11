@@ -110,6 +110,7 @@ describe('keycloak OIDC service', () => {
   });
 
   test('signoutRedirect falls back to removeUser when network redirect fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockSignoutRedirect.mockRejectedValueOnce(new Error('Network error'));
     mockRemoveUser.mockResolvedValueOnce(undefined);
 
@@ -117,6 +118,8 @@ describe('keycloak OIDC service', () => {
 
     expect(mockSignoutRedirect).toHaveBeenCalledTimes(1);
     expect(mockRemoveUser).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   test('handleCallback delegates to signinRedirectCallback', async () => {

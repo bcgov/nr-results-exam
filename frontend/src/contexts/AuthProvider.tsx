@@ -37,6 +37,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userRoles, setUserRoles] = useState<string[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
+  const clearUser = useCallback(() => {
+    setUser(undefined);
+    setUserRoles(undefined);
+    setAuthIdToken(null);
+  }, []);
+
   const refreshUserState = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -46,22 +52,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(parsed);
         setUserRoles(parsed?.roles);
       } else {
-        setUser(undefined);
-        setUserRoles(undefined);
-        setAuthIdToken(null);
+        clearUser();
       }
     } catch {
-      setUser(undefined);
-      setUserRoles(undefined);
-      setAuthIdToken(null);
+      clearUser();
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [clearUser]);
 
   useEffect(() => {
     // Initial load
-    refreshUserState();
+    void refreshUserState();
 
     const userManager = getUserManager();
 
@@ -72,43 +74,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     };
 
-    const onUserUnloaded = () => {
-      setUser(undefined);
-      setUserRoles(undefined);
-      setAuthIdToken(null);
-      setIsLoading(false);
-    };
-
-    const onSilentRenewError = () => {
-      setUser(undefined);
-      setUserRoles(undefined);
-      setAuthIdToken(null);
+    const onUserCleared = () => {
+      clearUser();
       setIsLoading(false);
     };
 
     userManager.events.addUserLoaded(onUserLoaded);
-    userManager.events.addUserUnloaded(onUserUnloaded);
-    userManager.events.addAccessTokenExpired(onUserUnloaded);
-    userManager.events.addSilentRenewError(onSilentRenewError);
+    userManager.events.addUserUnloaded(onUserCleared);
+    userManager.events.addAccessTokenExpired(onUserCleared);
+    userManager.events.addSilentRenewError(onUserCleared);
 
     return () => {
       userManager.events.removeUserLoaded(onUserLoaded);
-      userManager.events.removeUserUnloaded(onUserUnloaded);
-      userManager.events.removeAccessTokenExpired(onUserUnloaded);
-      userManager.events.removeSilentRenewError(onSilentRenewError);
+      userManager.events.removeUserUnloaded(onUserCleared);
+      userManager.events.removeAccessTokenExpired(onUserCleared);
+      userManager.events.removeSilentRenewError(onUserCleared);
     };
-  }, [refreshUserState]);
+  }, [refreshUserState, clearUser]);
 
   const login = useCallback((provider: ProviderType) => {
-    signinRedirect(provider);
+    void signinRedirect(provider);
   }, []);
 
   const logout = useCallback(() => {
-    setUser(undefined);
-    setUserRoles(undefined);
-    setAuthIdToken(null);
-    signoutRedirect();
-  }, []);
+    clearUser();
+    void signoutRedirect();
+  }, [clearUser]);
 
   const contextValue: AuthContextType = useMemo(
     () => ({

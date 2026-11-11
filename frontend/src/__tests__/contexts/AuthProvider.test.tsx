@@ -157,4 +157,51 @@ describe('AuthProvider', () => {
     expect(result.current.user).toBeUndefined();
     expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
   });
+
+  test('subscribes to userManager loaded and cleared events and cleans up on unmount', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(null);
+
+    const { result, unmount } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isLoggedIn).toBe(false);
+
+    const onUserLoaded = mockEvents.addUserLoaded.mock.calls[0]?.[0] as (u: any) => void;
+    const onUserCleared = mockEvents.addUserUnloaded.mock.calls[0]?.[0] as () => void;
+
+    const refreshedUser = {
+      profile: { idir_username: 'refreshed.user' },
+      access_token: 'refreshed-token',
+      expired: false,
+    } as any;
+
+    mockParseToken.mockReturnValueOnce({
+      userName: 'refreshed.user',
+      displayName: 'Refreshed User',
+      idpProvider: 'IDIR',
+      roles: ['ADMIN'],
+    });
+
+    act(() => {
+      onUserLoaded(refreshedUser);
+    });
+
+    expect(result.current.isLoggedIn).toBe(true);
+    expect(result.current.userRoles).toEqual(['ADMIN']);
+
+    act(() => {
+      onUserCleared();
+    });
+
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
+
+    unmount();
+
+    expect(mockEvents.removeUserLoaded).toHaveBeenCalledWith(onUserLoaded);
+    expect(mockEvents.removeUserUnloaded).toHaveBeenCalledWith(onUserCleared);
+    expect(mockEvents.removeAccessTokenExpired).toHaveBeenCalledWith(onUserCleared);
+    expect(mockEvents.removeSilentRenewError).toHaveBeenCalledWith(onUserCleared);
+  });
 });

@@ -26,17 +26,17 @@ const AuthCallback: React.FC = () => {
         if (refreshUserState) {
           await refreshUserState();
         }
-        navigate('/dashboard', { replace: true });
+        void navigate('/dashboard', { replace: true });
       } catch (err) {
         console.error('Error during authentication callback:', err);
         setError('Authentication failed. Returning to login...');
         redirectTimer = setTimeout(() => {
-          navigate('/', { replace: true });
+          void navigate('/', { replace: true });
         }, 2000);
       }
     }
 
-    completeAuth();
+    void completeAuth();
 
     return () => {
       if (redirectTimer) {

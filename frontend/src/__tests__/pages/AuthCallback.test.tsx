@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, beforeEach, expect, test, vi } from 'vitest';
 
@@ -41,26 +42,37 @@ describe('AuthCallback component', () => {
     });
   });
 
-  test('guards against double-mount so handleCallback is only called once', async () => {
+  test('guards against StrictMode double-mount so handleCallback is only called once', async () => {
     mockHandleCallback.mockResolvedValue({ access_token: 'test' });
     mockRefreshUserState.mockResolvedValue(undefined);
 
-    const { rerender } = render(<AuthCallback />);
-    rerender(<AuthCallback />);
+    render(
+      <React.StrictMode>
+        <AuthCallback />
+      </React.StrictMode>,
+    );
 
     await waitFor(() => {
       expect(mockHandleCallback).toHaveBeenCalledTimes(1);
     });
   });
 
-  test('handles callback error and displays failure message', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  test('handles callback error, displays failure message, and redirects home after timeout', async () => {
+    vi.useFakeTimers();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockHandleCallback.mockRejectedValueOnce(new Error('Invalid code'));
 
-    render(<AuthCallback />);
+    const { unmount } = render(<AuthCallback />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(screen.getByText('Authentication failed. Returning to login...')).toBeInTheDocument();
     });
+
+    vi.advanceTimersByTime(2000);
+    expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
+
+    unmount();
+    errorSpy.mockRestore();
+    vi.useRealTimers();
   });
 });

@@ -50,8 +50,55 @@ export const normalizeIdpProvider = (provider?: string): string => {
 type TokenSource =
   | User
   | { profile: Record<string, unknown>; access_token?: string; id_token?: string }
-  | { payload: Record<string, unknown>; toString?: () => string }
   | Record<string, unknown>;
+
+const readString = (obj: Record<string, unknown>, key: string): string => {
+  const val = obj[key];
+  return typeof val === 'string' ? val : '';
+};
+
+const extractProfileAndToken = (
+  source: TokenSource,
+): { profile: Record<string, unknown>; tokenStr: string | null } => {
+  if ('profile' in source && source.profile) {
+    const record = source as Record<string, unknown>;
+    const tokenStr = readString(record, 'access_token') || readString(record, 'id_token') || null;
+    return { profile: source.profile as Record<string, unknown>, tokenStr };
+  }
+
+  return { profile: source as Record<string, unknown>, tokenStr: null };
+};
+
+const extractNames = (
+  profile: Record<string, unknown>,
+  displayName: string,
+): { firstName: string; lastName: string } => {
+  const givenName = readString(profile, 'given_name');
+  const familyName = readString(profile, 'family_name');
+
+  if (givenName || familyName || !displayName) {
+    return { firstName: givenName, lastName: familyName };
+  }
+
+  const [parsedFirst, parsedLast] = displayName.includes(',')
+    ? displayName.split(', ').reverse()
+    : displayName.split(' ');
+
+  return {
+    firstName: parsedFirst ? parsedFirst.split(' ')[0].trim() : '',
+    lastName: parsedLast || '',
+  };
+};
+
+const extractRoles = (profile: Record<string, unknown>): string[] => {
+  let rawRoles: unknown[] = [];
+  if (Array.isArray(profile.client_roles)) {
+    rawRoles = profile.client_roles;
+  } else if (Array.isArray(profile.roles)) {
+    rawRoles = profile.roles;
+  }
+  return rawRoles.filter((r): r is string => typeof r === 'string' && !r.startsWith('FAM:'));
+};
 
 /**
  * Parses user identity and profile claims from an OIDC User or JWT payload.
@@ -59,69 +106,23 @@ type TokenSource =
 export const parseToken = (source: TokenSource | null | undefined): FamLoginUser | undefined => {
   if (!source) return undefined;
 
-  let profile: Record<string, unknown>;
-  let tokenStr: string | null = null;
-
-  if ('profile' in source && source.profile) {
-    profile = source.profile as Record<string, unknown>;
-    const access =
-      'access_token' in source && typeof source.access_token === 'string'
-        ? source.access_token
-        : undefined;
-    const id =
-      'id_token' in source && typeof source.id_token === 'string' ? source.id_token : undefined;
-    tokenStr = access || id || null;
-  } else if ('payload' in source && source.payload) {
-    profile = source.payload as Record<string, unknown>;
-    tokenStr = typeof source.toString === 'function' ? source.toString() : null;
-  } else {
-    profile = source as Record<string, unknown>;
-  }
-
+  const { profile, tokenStr } = extractProfileAndToken(source);
   if (tokenStr) {
     setAuthIdToken(tokenStr);
   }
 
-  const rawProvider = profile.identity_provider as string;
-  const idpProvider = normalizeIdpProvider(rawProvider);
-
-  const displayName = (profile.display_name as string) || (profile.name as string) || '';
-
-  let firstName = (profile.given_name as string) || '';
-  let lastName = (profile.family_name as string) || '';
-
-  if (!firstName && !lastName && displayName) {
-    const hasComma = displayName.includes(',');
-    let parsedFirst: string | undefined;
-    let parsedLast: string | undefined;
-
-    if (hasComma) {
-      [parsedLast, parsedFirst] = displayName.split(', ');
-    } else {
-      [parsedFirst, parsedLast] = displayName.split(' ');
-    }
-
-    lastName = parsedLast || '';
-    firstName = parsedFirst ? parsedFirst.split(' ')[0].trim() : '';
-  }
+  const idpProvider = normalizeIdpProvider(readString(profile, 'identity_provider'));
+  const displayName = readString(profile, 'display_name') || readString(profile, 'name');
+  const { firstName, lastName } = extractNames(profile, displayName);
 
   // Preserve username in exact casing issued
   const userName =
-    (profile.idir_username as string) ||
-    (profile.bceid_username as string) ||
-    (profile.preferred_username as string) ||
-    '';
+    readString(profile, 'idir_username') ||
+    readString(profile, 'bceid_username') ||
+    readString(profile, 'preferred_username');
 
-  const email = (profile.email as string) || '';
-
-  // Extract roles from client_roles or roles, filtering out FAM: bookkeeping roles
-  const rawRoles = Array.isArray(profile.client_roles)
-    ? (profile.client_roles as string[])
-    : Array.isArray(profile.roles)
-      ? (profile.roles as string[])
-      : [];
-  const roles = rawRoles.filter((r) => typeof r === 'string' && !r.startsWith('FAM:'));
-
+  const email = readString(profile, 'email');
+  const roles = extractRoles(profile);
   const exp = typeof profile.exp === 'number' ? profile.exp : undefined;
 
   return {
