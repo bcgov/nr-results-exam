@@ -412,7 +412,8 @@ docker compose up backend
 # All required secrets (backend + frontend)
 export CHES_CLIENT_SECRET="your-secret-here"
 export S3_SECRETKEY="your-s3-secret-here"
-export VITE_KEYCLOAK_CLIENT_ID="your-client-id"
+export KEYCLOAK_CLIENT_ID="your-client-id"
+export VITE_KEYCLOAK_CLIENT_ID="$KEYCLOAK_CLIENT_ID"
 
 # Start with Caddy proxy
 docker compose --profile caddy up

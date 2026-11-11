@@ -30,6 +30,15 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const TERMINAL_RENEW_ERRORS = new Set([
+  'login_required',
+  'interaction_required',
+  'consent_required',
+  'invalid_grant',
+  'session_not_active',
+  'account_selection_required',
+]);
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -79,16 +88,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(false);
     };
 
+    const onSilentRenewError = (error: unknown) => {
+      const oauthError =
+        typeof error === 'object' && error !== null && 'error' in error
+          ? (error as { error?: unknown }).error
+          : undefined;
+
+      if (typeof oauthError === 'string' && TERMINAL_RENEW_ERRORS.has(oauthError)) {
+        onUserCleared();
+        return;
+      }
+
+      // Preserve active session on transient renewal timeouts until token expiry fires
+      console.warn('Silent token renewal failed; preserving active session until expiry:', error);
+    };
+
     userManager.events.addUserLoaded(onUserLoaded);
     userManager.events.addUserUnloaded(onUserCleared);
     userManager.events.addAccessTokenExpired(onUserCleared);
-    userManager.events.addSilentRenewError(onUserCleared);
+    userManager.events.addSilentRenewError(onSilentRenewError);
 
     return () => {
       userManager.events.removeUserLoaded(onUserLoaded);
       userManager.events.removeUserUnloaded(onUserCleared);
       userManager.events.removeAccessTokenExpired(onUserCleared);
-      userManager.events.removeSilentRenewError(onUserCleared);
+      userManager.events.removeSilentRenewError(onSilentRenewError);
     };
   }, [refreshUserState, clearUser]);
 

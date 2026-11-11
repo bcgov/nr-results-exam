@@ -44,8 +44,47 @@ on:
         required: true
 
 jobs:
+  resolve-auth:
+    name: Validate Keycloak Config
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      issuer_uri: ${{ steps.auth.outputs.issuer_uri }}
+      client_id: ${{ steps.auth.outputs.client_id }}
+    steps:
+      - name: Resolve and validate Keycloak parameters
+        id: auth
+        env:
+          DEPLOY_ENV: ${{ inputs.environment }}
+          DEPLOY_ZONE: ${{ inputs.zone }}
+          ISSUER_URI: ${{ vars.KEYCLOAK_ISSUER_URI }}
+          CLIENT_ID: ${{ vars.KEYCLOAK_CLIENT_ID }}
+        run: |
+          if [[ "$DEPLOY_ENV" == "prod" || "$DEPLOY_ZONE" == "prod" ]]; then
+            if [[ -z "$ISSUER_URI" || "$ISSUER_URI" != https://loginproxy.gov.bc.ca/* || -z "$CLIENT_ID" ]]; then
+              echo "::error::PROD requires explicit prod KEYCLOAK_ISSUER_URI (https://loginproxy.gov.bc.ca/...) and KEYCLOAK_CLIENT_ID"
+              exit 1
+            fi
+          elif [[ "$DEPLOY_ENV" == "test" || "$DEPLOY_ZONE" == "test" ]]; then
+            if [[ -z "$ISSUER_URI" || "$ISSUER_URI" != https://test.loginproxy.gov.bc.ca/* || -z "$CLIENT_ID" ]]; then
+              echo "::error::TEST requires explicit test KEYCLOAK_ISSUER_URI (https://test.loginproxy.gov.bc.ca/...) and KEYCLOAK_CLIENT_ID"
+              exit 1
+            fi
+          else
+            # DEV fallback is restricted exclusively to non-test/non-prod PR/dev zones
+            ISSUER_URI="${ISSUER_URI:-https://dev.loginproxy.gov.bc.ca/auth/realms/standard}"
+            CLIENT_ID="${CLIENT_ID:-nr-results-exam-frontend}"
+          fi
+
+          echo "issuer_uri=$ISSUER_URI" >> "$GITHUB_OUTPUT"
+          echo "client_id=$CLIENT_ID" >> "$GITHUB_OUTPUT"
+
   deploy-backend:
     name: Deploy Backend
+    needs: [resolve-auth]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -64,11 +103,12 @@ jobs:
             -p CHES_CLIENT_SECRET=${{ secrets.ches_client_secret }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p S3_SECRETKEY=${{ secrets.s3_secretkey }}
-            -p KEYCLOAK_ISSUER_URI=${{ vars.KEYCLOAK_ISSUER_URI || 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard' }}
-            -p KEYCLOAK_CLIENT_ID=${{ vars.KEYCLOAK_CLIENT_ID || 'nr-results-exam-frontend' }}
+            -p KEYCLOAK_ISSUER_URI=${{ needs.resolve-auth.outputs.issuer_uri }}
+            -p KEYCLOAK_CLIENT_ID=${{ needs.resolve-auth.outputs.client_id }}
 
   deploy-frontend:
     name: Deploy Frontend
+    needs: [resolve-auth]
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -86,8 +126,8 @@ jobs:
             -p TAG=${{ inputs.frontend_tag }}
             -p HOSTNAME=${{ inputs.hostname }}
             -p REDIRECT_URL=${{ inputs.redirect_url }}
-            -p KEYCLOAK_ISSUER_URI=${{ vars.KEYCLOAK_ISSUER_URI || 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard' }}
-            -p KEYCLOAK_CLIENT_ID=${{ vars.KEYCLOAK_CLIENT_ID || 'nr-results-exam-frontend' }}
+            -p KEYCLOAK_ISSUER_URI=${{ needs.resolve-auth.outputs.issuer_uri }}
+            -p KEYCLOAK_CLIENT_ID=${{ needs.resolve-auth.outputs.client_id }}
 
   smoke:
     name: Smoke Tests

@@ -1,5 +1,6 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { Mock } from 'vitest';
 
 const routerProviderMock = vi.fn();
@@ -13,7 +14,29 @@ vi.mock('lottie-react', () => ({
   LottieLight: () => <div data-testid="lottie-mock" />,
 }));
 
-import App from '../App';
+vi.mock('../pages/AuthCallback', () => ({
+  default: () => <div data-testid="auth-callback-page" />,
+}));
+
+vi.mock('../screens/Landing', () => ({
+  default: () => <div data-testid="landing-page" />,
+}));
+
+vi.mock('../screens/Dashboard', () => ({
+  default: () => <div data-testid="dashboard-page" />,
+}));
+
+vi.mock('../screens/ErrorHandling', () => ({
+  default: () => <div data-testid="error-page" />,
+}));
+
+vi.mock('../layouts/SideLayout', () => ({
+  default: ({ pageContent }: { pageContent: React.ReactNode }) => (
+    <div data-testid="side-layout">{pageContent}</div>
+  ),
+}));
+
+import App, { appRoutes } from '../App';
 import { useAuth } from '../contexts/AuthProvider';
 
 vi.mock('react-router-dom', async () => {
@@ -27,6 +50,13 @@ vi.mock('react-router-dom', async () => {
     },
     RouterProvider: ({ router }: { router: unknown }) => {
       routerProviderMock(router);
+      if (router && typeof router === 'object' && 'state' in router) {
+        return (
+          <actual.RouterProvider
+            router={router as Parameters<typeof actual.RouterProvider>[0]['router']}
+          />
+        );
+      }
       return <div data-testid="router-provider" />;
     },
   };
@@ -58,32 +88,63 @@ describe('App routing', () => {
     vi.clearAllMocks();
   });
 
-  test('creates public router when user is not authenticated', () => {
-    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: false }));
+  test('renders loading indicator while auth state is loading', () => {
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoading: true }));
 
     render(<App />);
 
-    expect(createBrowserRouterMock).toHaveBeenCalledTimes(1);
-    const [routes] = createBrowserRouterMock.mock.calls[0];
-    expect(Array.isArray(routes)).toBe(true);
-    expect(routes).toHaveLength(2);
-    expect(routes[0]).toMatchObject({ path: '/authCallback' });
-    expect(routes[1]).toMatchObject({ path: '*' });
-    expect(routerProviderMock).toHaveBeenCalledWith({ routes });
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(routerProviderMock).not.toHaveBeenCalled();
   });
 
-  test('creates private router when user is authenticated', () => {
-    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: true }));
-
-    render(<App />);
+  test('keeps a single stable route tree across auth transitions', () => {
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: false }));
+    const { rerender } = render(<App />);
 
     expect(createBrowserRouterMock).toHaveBeenCalledTimes(1);
-    const [routes] = createBrowserRouterMock.mock.calls[0];
-    expect(routes).toHaveLength(2);
-    const protectedRoute = routes[0] as { children?: Array<{ path?: string }> };
-    expect(protectedRoute.children).toEqual(
-      expect.arrayContaining([expect.objectContaining({ path: '/dashboard' })]),
-    );
-    expect(routerProviderMock).toHaveBeenCalledWith({ routes });
+    const [initialRouter] = routerProviderMock.mock.calls[0];
+    expect(appRoutes[0]).toMatchObject({ path: '/authCallback' });
+    expect(appRoutes[2]).toMatchObject({ path: '*' });
+
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: true }));
+    rerender(<App />);
+
+    expect(createBrowserRouterMock).toHaveBeenCalledTimes(1);
+    expect(routerProviderMock.mock.calls[1][0]).toBe(initialRouter);
+  });
+
+  test('renders Landing for unauthenticated users on protected and fallback routes', () => {
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: false }));
+
+    const dashboardRouter = createMemoryRouter(appRoutes, { initialEntries: ['/dashboard'] });
+    const { unmount } = render(<RouterProvider router={dashboardRouter} />);
+    expect(screen.getByTestId('landing-page')).toBeInTheDocument();
+    unmount();
+
+    const unknownRouter = createMemoryRouter(appRoutes, { initialEntries: ['/unknown'] });
+    render(<RouterProvider router={unknownRouter} />);
+    expect(screen.getByTestId('landing-page')).toBeInTheDocument();
+  });
+
+  test('renders AuthCallback even when an unexpired user session is already active', () => {
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: true }));
+
+    const callbackRouter = createMemoryRouter(appRoutes, { initialEntries: ['/authCallback'] });
+    render(<RouterProvider router={callbackRouter} />);
+
+    expect(screen.getByTestId('auth-callback-page')).toBeInTheDocument();
+  });
+
+  test('renders protected routes and ErrorHandling fallback when user is authenticated', () => {
+    mockedUseAuth.mockReturnValue(buildAuthState({ isLoggedIn: true }));
+
+    const dashboardRouter = createMemoryRouter(appRoutes, { initialEntries: ['/dashboard'] });
+    const { unmount } = render(<RouterProvider router={dashboardRouter} />);
+    expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
+    unmount();
+
+    const unknownRouter = createMemoryRouter(appRoutes, { initialEntries: ['/unknown'] });
+    render(<RouterProvider router={unknownRouter} />);
+    expect(screen.getByTestId('error-page')).toBeInTheDocument();
   });
 });

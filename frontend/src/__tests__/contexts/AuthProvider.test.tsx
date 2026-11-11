@@ -168,6 +168,9 @@ describe('AuthProvider', () => {
 
     const onUserLoaded = mockEvents.addUserLoaded.mock.calls[0]?.[0] as (u: any) => void;
     const onUserCleared = mockEvents.addUserUnloaded.mock.calls[0]?.[0] as () => void;
+    const onSilentRenewError = mockEvents.addSilentRenewError.mock.calls[0]?.[0] as (
+      err: unknown,
+    ) => void;
 
     const refreshedUser = {
       profile: { idir_username: 'refreshed.user' },
@@ -189,6 +192,38 @@ describe('AuthProvider', () => {
     expect(result.current.isLoggedIn).toBe(true);
     expect(result.current.userRoles).toEqual(['ADMIN']);
 
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Recoverable renewal timeout preserves active session
+    act(() => {
+      onSilentRenewError(new Error('Frame window timed out'));
+    });
+
+    expect(result.current.isLoggedIn).toBe(true);
+    expect(result.current.user?.userName).toBe('refreshed.user');
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+
+    // Terminal OAuth renewal error clears session immediately
+    act(() => {
+      onSilentRenewError({ error: 'login_required' });
+    });
+
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+
+    // Re-load then test userUnloaded cleanup
+    mockParseToken.mockReturnValueOnce({
+      userName: 'refreshed.user',
+      displayName: 'Refreshed User',
+      idpProvider: 'IDIR',
+      roles: ['ADMIN'],
+    });
+    act(() => {
+      onUserLoaded(refreshedUser);
+    });
+    expect(result.current.isLoggedIn).toBe(true);
+
     act(() => {
       onUserCleared();
     });
@@ -202,6 +237,6 @@ describe('AuthProvider', () => {
     expect(mockEvents.removeUserLoaded).toHaveBeenCalledWith(onUserLoaded);
     expect(mockEvents.removeUserUnloaded).toHaveBeenCalledWith(onUserCleared);
     expect(mockEvents.removeAccessTokenExpired).toHaveBeenCalledWith(onUserCleared);
-    expect(mockEvents.removeSilentRenewError).toHaveBeenCalledWith(onUserCleared);
+    expect(mockEvents.removeSilentRenewError).toHaveBeenCalledWith(onSilentRenewError);
   });
 });

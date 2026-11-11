@@ -41,10 +41,10 @@ parameters:
     value: "info"
   - name: KEYCLOAK_ISSUER_URI
     description: BC Gov SSO (Keycloak) realm issuer URI
-    value: "https://dev.loginproxy.gov.bc.ca/auth/realms/standard"
+    required: true
   - name: KEYCLOAK_CLIENT_ID
     description: BC Gov SSO (Keycloak) client ID
-    value: "nr-results-exam-frontend"
+    required: true
   - name: REDIRECT_URL
     description: Hostname for the redirect-from URL (without protocol, e.g., nr-results-exam-12.apps.silver.devops.gov.bc.ca)
     required: true
