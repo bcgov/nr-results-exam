@@ -66,8 +66,9 @@ describe('App routing', () => {
     expect(createBrowserRouterMock).toHaveBeenCalledTimes(1);
     const [routes] = createBrowserRouterMock.mock.calls[0];
     expect(Array.isArray(routes)).toBe(true);
-    expect(routes).toHaveLength(1);
-    expect(routes[0]).toMatchObject({ path: '*' });
+    expect(routes).toHaveLength(2);
+    expect(routes[0]).toMatchObject({ path: '/authCallback' });
+    expect(routes[1]).toMatchObject({ path: '*' });
     expect(routerProviderMock).toHaveBeenCalledWith({ routes });
   });
 

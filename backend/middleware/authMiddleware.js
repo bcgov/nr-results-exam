@@ -3,19 +3,37 @@ const jwksClient = require('jwks-rsa');
 
 // Singleton JWKS client instance to avoid recreating on every request
 let jwksClientInstance = null;
+let currentJwksUri = null;
 
 /**
- * Get JWKS client - creates client once and reuses it
+ * Normalizes identity provider name.
+ * Keycloak IDIR-MFA emits 'azureidir', which must be normalized to 'IDIR'
+ * to preserve audit string compatibility.
+ */
+function normalizeIdpProvider(provider) {
+  if (!provider) return '';
+  const upper = String(provider).toUpperCase();
+  if (upper === 'AZUREIDIR' || upper === 'IDIR') {
+    return 'IDIR';
+  }
+  if (upper === 'BCEIDBUSINESS' || upper === 'BCEID_BUSINESS' || upper.startsWith('BCEID')) {
+    return 'BCEIDBUSINESS';
+  }
+  return upper;
+}
+
+/**
+ * Get JWKS client - creates client once and reuses it for the same issuer
  */
 function getJwksClient() {
-  if (!jwksClientInstance) {
-    const USER_POOL_ID = process.env.VITE_USER_POOLS_ID;
-    if (!USER_POOL_ID) {
-      throw new Error('User pool ID is not configured');
-    }
-    const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
-    const JWKS_URI = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
+  const ISSUER = process.env.KEYCLOAK_ISSUER_URI;
+  if (!ISSUER) {
+    throw new Error('Keycloak issuer URI is not configured');
+  }
 
+  const JWKS_URI = `${ISSUER.replace(/\/$/, '')}/protocol/openid-connect/certs`;
+
+  if (!jwksClientInstance || currentJwksUri !== JWKS_URI) {
     jwksClientInstance = jwksClient({
       jwksUri: JWKS_URI,
       cache: true,
@@ -23,6 +41,7 @@ function getJwksClient() {
       rateLimit: true,
       jwksRequestsPerMinute: 10,
     });
+    currentJwksUri = JWKS_URI;
   }
   return jwksClientInstance;
 }
@@ -31,19 +50,23 @@ function getJwksClient() {
  * Get the signing key from JWKS
  */
 function getKey(header, callback) {
-  const client = getJwksClient();
-  client.getSigningKey(header.kid, (err, key) => {
-    if (err) {
-      callback(err);
-      return;
-    }
-    const signingKey = key.publicKey || key.rsaPublicKey;
-    callback(null, signingKey);
-  });
+  try {
+    const client = getJwksClient();
+    client.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      const signingKey = key.publicKey || key.rsaPublicKey;
+      callback(null, signingKey);
+    });
+  } catch (err) {
+    callback(err);
+  }
 }
 
 /**
- * Authentication middleware to verify JWT tokens from AWS Cognito
+ * Authentication middleware to verify JWT tokens from BC Gov SSO (Keycloak)
  * Extracts and verifies the token from the Authorization header
  * Attaches decoded user information to req.user
  */
@@ -60,9 +83,7 @@ const authenticateToken = (req, res, next) => {
   }
 
   // Extract the token from "Bearer <token>"
-  const token = authHeader.startsWith('Bearer ')
-    ? authHeader.substring(7).trim()
-    : authHeader.trim();
+  const token = authHeader.replace(/^Bearer\s*/i, '').trim();
 
   if (!token) {
     return res.status(401).json({
@@ -72,28 +93,27 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
-  // Check if Cognito configuration is available
-  const USER_POOL_ID = process.env.VITE_USER_POOLS_ID;
-  if (!USER_POOL_ID) {
-    console.error('VITE_USER_POOLS_ID is not configured');
+  const ISSUER = process.env.KEYCLOAK_ISSUER_URI;
+  if (!ISSUER) {
+    console.error('KEYCLOAK_ISSUER_URI is not configured');
     return res.status(500).json({
       success: false,
       message: 'Authentication configuration error',
-      error: 'User pool not configured',
+      error: 'Keycloak issuer URI not configured',
     });
   }
 
-  const CLIENT_ID = process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
+  const CLIENT_ID = process.env.KEYCLOAK_CLIENT_ID;
   if (!CLIENT_ID) {
-    console.error('VITE_USER_POOLS_WEB_CLIENT_ID is not configured');
+    console.error('KEYCLOAK_CLIENT_ID is not configured');
     return res.status(500).json({
       success: false,
       message: 'Authentication configuration error',
-      error: 'User pool client not configured',
+      error: 'Keycloak client ID not configured',
     });
   }
-  const COGNITO_REGION = process.env.VITE_COGNITO_REGION || 'ca-central-1';
-  const ISSUER = `https://cognito-idp.${COGNITO_REGION}.amazonaws.com/${USER_POOL_ID}`;
+
+  const normalizedIssuer = ISSUER.replace(/\/$/, '');
 
   // Verify the token
   const handleVerification = (err, decoded) => {
@@ -123,9 +143,7 @@ const authenticateToken = (req, res, next) => {
       });
     }
 
-    // Frontend sends Cognito ID tokens; reject access/refresh tokens
-    if (!decoded || decoded.token_use !== 'id') {
-      console.error('Token verification error: unexpected token_use');
+    if (!decoded) {
       return res.status(401).json({
         success: false,
         message: 'Invalid token',
@@ -133,12 +151,50 @@ const authenticateToken = (req, res, next) => {
       });
     }
 
+    // BC Gov SSO standard realm is shared across applications.
+    // Verify that the token was authorized for this client (azp check).
+    if (decoded.azp !== CLIENT_ID) {
+      console.error('Token verification error: authorized party does not match client ID');
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token',
+        error: 'Invalid or expired token',
+      });
+    }
+
+    // Extract and normalize identity claims
+    const idpProvider = normalizeIdpProvider(decoded.identity_provider);
+
+    // Leave username exactly as issued (IDIR or BCeID)
+    const username =
+      decoded.idir_username || decoded.bceid_username || decoded.preferred_username || '';
+
+    // GUID is uppercase wherever used as identity
+    const rawGuid = decoded.idir_user_guid || decoded.bceid_user_guid;
+    const userGuid = rawGuid ? String(rawGuid).toUpperCase() : undefined;
+
+    const displayName = decoded.display_name || decoded.name || '';
+
+    // Extract roles from client_roles or resource_access.<CLIENT_ID>.roles or roles
+    const clientRoles = Array.isArray(decoded.client_roles) ? decoded.client_roles : [];
+    const resourceRoles = Array.isArray(decoded.resource_access?.[CLIENT_ID]?.roles)
+      ? decoded.resource_access[CLIENT_ID].roles
+      : [];
+    const realmRoles = Array.isArray(decoded.roles) ? decoded.roles : [];
+    const combinedRoles = [...new Set([...clientRoles, ...resourceRoles, ...realmRoles])];
+    // Filter out FAM: bookkeeping roles (e.g. FAM:EXPIRES:...)
+    const roles = combinedRoles.filter(
+      (role) => typeof role === 'string' && !role.startsWith('FAM:'),
+    );
+
     // Attach decoded token to request object for use in route handlers
     req.user = {
       email: decoded.email,
-      username: decoded['custom:idp_username'] || decoded['cognito:username'],
-      displayName: decoded['custom:idp_display_name'],
-      idpProvider: decoded['custom:idp_name'],
+      username,
+      displayName,
+      idpProvider,
+      userGuid,
+      roles,
       sub: decoded.sub,
       tokenPayload: decoded,
     };
@@ -152,8 +208,7 @@ const authenticateToken = (req, res, next) => {
       getKey,
       {
         algorithms: ['RS256'],
-        issuer: ISSUER,
-        audience: CLIENT_ID,
+        issuer: normalizedIssuer,
       },
       handleVerification,
     );
@@ -169,4 +224,5 @@ const authenticateToken = (req, res, next) => {
 
 module.exports = {
   authenticateToken,
+  normalizeIdpProvider,
 };

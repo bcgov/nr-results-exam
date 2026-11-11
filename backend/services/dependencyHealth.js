@@ -70,7 +70,13 @@ function getMinioClient() {
 
   const port = process.env.S3_PORT ? Number(process.env.S3_PORT) : undefined;
   const useSSL = process.env.S3_USE_SSL !== 'false';
-  const signature = JSON.stringify({ endPoint, accessKey, secretKey, port, useSSL });
+  const signature = JSON.stringify({
+    endPoint,
+    accessKey,
+    secretKey,
+    port,
+    useSSL,
+  });
 
   if (minioClient && minioConfigSignature === signature) {
     return minioClient;
@@ -143,17 +149,16 @@ async function checkObjectStore() {
   }
 }
 
-async function checkCognito() {
-  const userPoolId = process.env.VITE_USER_POOLS_ID;
-  if (!userPoolId) {
+async function checkKeycloak() {
+  const issuerUri = process.env.KEYCLOAK_ISSUER_URI;
+  if (!issuerUri) {
     return {
       status: 'skipped',
-      message: 'VITE_USER_POOLS_ID is not configured',
+      message: 'KEYCLOAK_ISSUER_URI is not configured',
     };
   }
 
-  const region = process.env.VITE_COGNITO_REGION || 'ca-central-1';
-  const wellKnownUrl = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/openid-configuration`;
+  const wellKnownUrl = `${issuerUri.replace(/\/$/, '')}/.well-known/openid-configuration`;
 
   const started = Date.now();
 
@@ -177,7 +182,7 @@ async function runChecks() {
   const [ches, objectStorage, federatedAuth] = await Promise.all([
     checkChes(),
     checkObjectStore(),
-    checkCognito(),
+    checkKeycloak(),
   ]);
 
   return { ches, objectStorage, federatedAuth };

@@ -11,7 +11,7 @@ describe('env runtime configuration extraction', () => {
       <div
         id="root"
         data-vite-client-id='client-id'
-        data-vite-pool-id='pool-id'
+        data-vite-keycloak-url='https://dev.loginproxy.gov.bc.ca/auth/realms/standard'
         data-vite-zone='ZONE'
         data-vite-backend-url='https://example.test/api'
       ></div>
@@ -19,8 +19,8 @@ describe('env runtime configuration extraction', () => {
 
     const { env } = await import('../env');
 
-    expect(env.VITE_USER_POOLS_WEB_CLIENT_ID).toBe('client-id');
-    expect(env.VITE_USER_POOLS_ID).toBe('pool-id');
+    expect(env.VITE_KEYCLOAK_CLIENT_ID).toBe('client-id');
+    expect(env.VITE_KEYCLOAK_URL).toBe('https://dev.loginproxy.gov.bc.ca/auth/realms/standard');
     expect(env.VITE_ZONE).toBe('ZONE');
     expect(env.VITE_BACKEND_URL).toBe('https://example.test/api');
   });
@@ -29,8 +29,8 @@ describe('env runtime configuration extraction', () => {
     document.body.innerHTML = `
       <div
         id="root"
-        data-vite-client-id='{{env "VITE_USER_POOLS_WEB_CLIENT_ID"}}'
-        data-vite-pool-id='{{env "VITE_USER_POOLS_ID"}}'
+        data-vite-client-id='{{env "VITE_KEYCLOAK_CLIENT_ID"}}'
+        data-vite-keycloak-url='{{env "VITE_KEYCLOAK_URL"}}'
         data-vite-zone='{{env "VITE_ZONE"}}'
         data-vite-backend-url='{{env "VITE_BACKEND_URL"}}'
       ></div>
@@ -38,8 +38,8 @@ describe('env runtime configuration extraction', () => {
 
     const { env } = await import('../env');
 
-    expect(env.VITE_USER_POOLS_WEB_CLIENT_ID).toBeUndefined();
-    expect(env.VITE_USER_POOLS_ID).toBeUndefined();
+    expect(env.VITE_KEYCLOAK_CLIENT_ID).toBeUndefined();
+    expect(env.VITE_KEYCLOAK_URL).toBeUndefined();
     expect(env.VITE_ZONE).toBeUndefined();
     expect(env.VITE_BACKEND_URL).toBeUndefined();
   });

@@ -11,9 +11,14 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import TestC from './screens/TestC';
 import TestA from './screens/TestA';
 import ErrorHandling from './screens/ErrorHandling';
+import AuthCallback from './pages/AuthCallback';
 import { useAuth } from './contexts/AuthProvider';
 
 const publicRoutes: RouteObject[] = [
+  {
+    path: '/authCallback',
+    element: <AuthCallback />,
+  },
   {
     path: '*',
     element: <Landing />,
