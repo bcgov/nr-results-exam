@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, beforeEach, expect, test, vi } from 'vitest';
 
 const mockNavigate = vi.fn();
-const mockRefreshUserState = vi.fn();
 const mockHandleCallback = vi.fn();
 
 vi.mock('react-router-dom', () => ({
@@ -14,12 +13,6 @@ vi.mock('../../services/keycloak', () => ({
   handleCallback: () => mockHandleCallback(),
 }));
 
-vi.mock('../../contexts/AuthProvider', () => ({
-  useAuth: () => ({
-    refreshUserState: mockRefreshUserState,
-  }),
-}));
-
 import AuthCallback from '../../pages/AuthCallback';
 
 describe('AuthCallback component', () => {
@@ -27,9 +20,8 @@ describe('AuthCallback component', () => {
     vi.clearAllMocks();
   });
 
-  test('completes auth exchange, refreshes state, and navigates to dashboard', async () => {
+  test('completes auth exchange and navigates to dashboard', async () => {
     mockHandleCallback.mockResolvedValueOnce({ access_token: 'test' });
-    mockRefreshUserState.mockResolvedValueOnce(undefined);
 
     render(<AuthCallback />);
 
@@ -37,14 +29,12 @@ describe('AuthCallback component', () => {
 
     await waitFor(() => {
       expect(mockHandleCallback).toHaveBeenCalledTimes(1);
-      expect(mockRefreshUserState).toHaveBeenCalledTimes(1);
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
   });
 
   test('guards against StrictMode double-mount so handleCallback is only called once', async () => {
     mockHandleCallback.mockResolvedValue({ access_token: 'test' });
-    mockRefreshUserState.mockResolvedValue(undefined);
 
     render(
       <React.StrictMode>

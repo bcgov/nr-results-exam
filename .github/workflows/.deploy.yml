@@ -76,7 +76,7 @@ jobs:
           elif [[ -z "$DEPLOY_ENV" && "$DEPLOY_ZONE" =~ ^[0-9]+$ ]]; then
             # DEV is only an explicit PR deploy: numeric zone (PR number), no environment
             ISSUER_URI="${ISSUER_URI:-https://dev.loginproxy.gov.bc.ca/auth/realms/standard}"
-            CLIENT_ID="${CLIENT_ID:-nr-results-exam-frontend}"
+            CLIENT_ID="${CLIENT_ID:-results-results-exam-6731}"
           else
             echo "::error::Unrecognized deploy target (environment='$DEPLOY_ENV', zone='$DEPLOY_ZONE'); expected prod, test, or a PR number"
             exit 1

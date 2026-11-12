@@ -23,7 +23,6 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (provider: ProviderType) => void;
   logout: () => void;
-  refreshUserState?: () => Promise<void>;
 }
 
 interface AuthProviderProps {
@@ -52,30 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setAuthIdToken(null);
   }, []);
 
-  const refreshUserState = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const oidcUser = await getCurrentUser();
-      if (oidcUser && !oidcUser.expired) {
-        const parsed = parseToken(oidcUser);
-        setUser(parsed);
-        setUserRoles(parsed?.roles);
-      } else {
-        clearUser();
-      }
-    } catch {
-      clearUser();
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clearUser]);
-
   useEffect(() => {
-    // Initial load
-    void refreshUserState();
-
-    const userManager = getUserManager();
-
     const onUserLoaded = (loadedUser: import('oidc-client-ts').User) => {
       const parsed = parseToken(loadedUser);
       setUser(parsed);
@@ -87,6 +63,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearUser();
       setIsLoading(false);
     };
+
+    async function loadInitialUser() {
+      try {
+        const oidcUser = await getCurrentUser();
+        if (oidcUser && !oidcUser.expired) {
+          onUserLoaded(oidcUser);
+        } else {
+          onUserCleared();
+        }
+      } catch {
+        onUserCleared();
+      }
+    }
+
+    void loadInitialUser();
+
+    const userManager = getUserManager();
 
     const onSilentRenewError = (error: unknown) => {
       const oauthError =
@@ -114,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       userManager.events.removeAccessTokenExpired(onUserCleared);
       userManager.events.removeSilentRenewError(onSilentRenewError);
     };
-  }, [refreshUserState, clearUser]);
+  }, [clearUser]);
 
   const login = useCallback((provider: ProviderType) => {
     void signinRedirect(provider);
@@ -133,9 +126,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isLoading,
       login,
       logout,
-      refreshUserState,
     }),
-    [user, userRoles, isLoading, login, logout, refreshUserState],
+    [user, userRoles, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

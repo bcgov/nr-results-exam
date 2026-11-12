@@ -1,12 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { handleCallback } from '../../services/keycloak';
-import { useAuth } from '../../contexts/AuthProvider';
 import { Loading } from '@carbon/react';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const { refreshUserState } = useAuth();
   const hasHandledRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,9 +21,6 @@ const AuthCallback: React.FC = () => {
     async function completeAuth() {
       try {
         await handleCallback();
-        if (refreshUserState) {
-          await refreshUserState();
-        }
         void navigate('/dashboard', { replace: true });
       } catch (err) {
         console.error('Error during authentication callback:', err);
@@ -43,7 +38,7 @@ const AuthCallback: React.FC = () => {
         clearTimeout(redirectTimer);
       }
     };
-  }, [navigate, refreshUserState]);
+  }, [navigate]);
 
   if (error) {
     return (
