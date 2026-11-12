@@ -34,12 +34,12 @@ vi.mock('oidc-client-ts', () => {
   };
 });
 
-vi.mock('../../env', () => ({
-  env: {
-    VITE_KEYCLOAK_URL: 'https://test.loginproxy.gov.bc.ca/auth/realms/standard',
-    VITE_KEYCLOAK_CLIENT_ID: 'my-client-app',
-  },
+const mockEnv = vi.hoisted(() => ({
+  VITE_KEYCLOAK_URL: 'https://test.loginproxy.gov.bc.ca/auth/realms/standard' as string | undefined,
+  VITE_KEYCLOAK_CLIENT_ID: 'my-client-app' as string | undefined,
 }));
+
+vi.mock('../../env', () => ({ env: mockEnv }));
 
 import {
   getOidcSettings,
@@ -72,6 +72,19 @@ describe('keycloak OIDC service', () => {
     expect(settings.loadUserInfo).toBe(false);
     expect(settings.redirect_uri).toContain('/authCallback');
   });
+
+  test.each(['VITE_KEYCLOAK_URL', 'VITE_KEYCLOAK_CLIENT_ID'] as const)(
+    'getOidcSettings throws instead of defaulting when %s is missing',
+    (key) => {
+      const original = mockEnv[key];
+      mockEnv[key] = undefined;
+      try {
+        expect(() => getOidcSettings()).toThrow(/Keycloak is not configured/);
+      } finally {
+        mockEnv[key] = original;
+      }
+    },
+  );
 
   test('getUserManager returns UserManager singleton instance', () => {
     const manager1 = getUserManager();

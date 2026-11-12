@@ -53,6 +53,19 @@ describe('AuthService', () => {
     expect(getAuthIdToken()).toBe('access-token-123');
   });
 
+  test('parseToken merges client_roles, resource_access.<azp>.roles and roles like the backend', () => {
+    const user = parseToken({
+      profile: {
+        azp: 'my-client',
+        client_roles: ['A', 'FAM:X'],
+        resource_access: { 'my-client': { roles: ['B', 'A'] }, other: { roles: ['NOPE'] } },
+        roles: ['C'],
+      },
+    });
+
+    expect(user?.roles).toEqual(['A', 'B', 'C']);
+  });
+
   test('parseToken extracts given_name and family_name when present', () => {
     const oidcUser = {
       access_token: 'access-token-456',

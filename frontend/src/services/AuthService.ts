@@ -90,14 +90,18 @@ const extractNames = (
   };
 };
 
+// Same sources as backend/middleware/authMiddleware.js: client_roles,
+// resource_access.<azp>.roles and roles, merged and de-duplicated.
 const extractRoles = (profile: Record<string, unknown>): string[] => {
-  let rawRoles: unknown[] = [];
-  if (Array.isArray(profile.client_roles)) {
-    rawRoles = profile.client_roles;
-  } else if (Array.isArray(profile.roles)) {
-    rawRoles = profile.roles;
-  }
-  return rawRoles.filter((r): r is string => typeof r === 'string' && !r.startsWith('FAM:'));
+  const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+  const azp = readString(profile, 'azp');
+  const resourceAccess = profile.resource_access as Record<string, { roles?: unknown } | undefined>;
+  const merged = new Set([
+    ...asArray(profile.client_roles),
+    ...asArray(azp ? resourceAccess?.[azp]?.roles : undefined),
+    ...asArray(profile.roles),
+  ]);
+  return [...merged].filter((r): r is string => typeof r === 'string' && !r.startsWith('FAM:'));
 };
 
 /**

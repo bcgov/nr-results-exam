@@ -10,9 +10,13 @@ export type ProviderType = 'idir' | 'bceid';
  */
 export function getOidcSettings(): UserManagerSettings {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-  const authority =
-    env.VITE_KEYCLOAK_URL || 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard';
-  const clientId = env.VITE_KEYCLOAK_CLIENT_ID || 'nr-results-exam-frontend';
+  const authority = env.VITE_KEYCLOAK_URL;
+  const clientId = env.VITE_KEYCLOAK_CLIENT_ID;
+  if (!authority || !clientId) {
+    throw new Error(
+      'Keycloak is not configured: VITE_KEYCLOAK_URL and VITE_KEYCLOAK_CLIENT_ID are required',
+    );
+  }
 
   return {
     authority,

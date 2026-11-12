@@ -73,10 +73,13 @@ jobs:
               echo "::error::TEST requires explicit test KEYCLOAK_ISSUER_URI (https://test.loginproxy.gov.bc.ca/...) and KEYCLOAK_CLIENT_ID"
               exit 1
             fi
-          else
-            # DEV fallback is restricted exclusively to non-test/non-prod PR/dev zones
+          elif [[ -z "$DEPLOY_ENV" && "$DEPLOY_ZONE" =~ ^[0-9]+$ ]]; then
+            # DEV is only an explicit PR deploy: numeric zone (PR number), no environment
             ISSUER_URI="${ISSUER_URI:-https://dev.loginproxy.gov.bc.ca/auth/realms/standard}"
             CLIENT_ID="${CLIENT_ID:-nr-results-exam-frontend}"
+          else
+            echo "::error::Unrecognized deploy target (environment='$DEPLOY_ENV', zone='$DEPLOY_ZONE'); expected prod, test, or a PR number"
+            exit 1
           fi
 
           echo "issuer_uri=$ISSUER_URI" >> "$GITHUB_OUTPUT"
