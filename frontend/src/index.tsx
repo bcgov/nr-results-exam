@@ -13,8 +13,7 @@ if (!container) {
 }
 const root = createRoot(container);
 
-// Cookie security configuration is handled in CognitoAuthService
-// See docs/COOKIE_SECURITY.md for detailed documentation
+// Authentication is handled via Keycloak OIDC in AuthProvider
 root.render(
   <React.StrictMode>
     <ClassPrefix prefix="bx">

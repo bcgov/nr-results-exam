@@ -1,63 +1,16 @@
-# Cookie Security Documentation
+# Session & Cookie Security Documentation
 
 ## Overview
 
-This document provides detailed information about cookies used in the NR Results Exam application, their security configurations, and rationale for specific settings.
+This document provides information about token storage and cookies used in the NR Results Exam application.
 
-## Cookie Inventory
+## Token Storage (BC Gov SSO / Keycloak)
 
-### 1. AWS Cognito Authentication Cookies
+Authentication uses **BC Gov SSO (Keycloak)** via `oidc-client-ts` with Authorization Code + PKCE.
 
-The application uses direct Cognito OAuth integration (without AWS Amplify) for authentication, which sets the following cookies:
-
-#### Application-Controlled Cookies
-
-**Cookies Set by CognitoAuthService:**
-- `CognitoIdentityServiceProvider.<client-id>.LastAuthUser` - Stores the last authenticated user identifier
-- `CognitoIdentityServiceProvider.<client-id>.<user-id>.idToken` - JWT ID token containing user identity
-- `CognitoIdentityServiceProvider.<client-id>.<user-id>.accessToken` - JWT access token for API authorization
-- `CognitoIdentityServiceProvider.<client-id>.<user-id>.refreshToken` - Refresh token for obtaining new tokens
-- `CognitoIdentityServiceProvider.<client-id>.<user-id>.clockDrift` - Clock drift for token validation
-
-**Security Configuration:**
-- **SameSite:** `Lax` - Prevents cross-site request forgery (CSRF) attacks while allowing normal navigation
-- **Secure:** `true` - Ensures cookies are only sent over HTTPS connections
-- **Domain:** Application domain (window.location.hostname)
-- **Path:** `/` - Cookies available to entire application
-- **Expires:** 365 days - Matches Cognito token lifetime
-
-**Rationale:**
-- `SameSite=Lax` is appropriate because:
-  - The application does NOT require cross-site cookie sharing
-  - Authentication flows are initiated from the same site
-  - OAuth redirect flows work correctly with `Lax` mode
-  - Provides better CSRF protection than `None`
-- `Secure=true` ensures cookies are only transmitted over encrypted connections
-- HttpOnly is NOT set on these cookies because the application JavaScript needs programmatic access to read them for token management and API requests
-
-#### Cognito-Hosted UI Cookies
-
-**Note:** When using Cognito Hosted UI for OAuth flows, Cognito itself may set additional cookies:
-- `XSRF-TOKEN` - CSRF protection token (set by Cognito, not controllable by application)
-- Session cookies from `*.amazoncognito.com` domain
-
-These cookies are managed entirely by AWS Cognito and cannot be configured by the application. They may use `SameSite=None; Secure` to support OAuth redirect flows across domains.
-
-## Security Considerations
-
-### Why Not HttpOnly?
-
-The application requires programmatic access to authentication tokens stored in cookies. Setting `HttpOnly=true` would prevent the application from:
-- Reading tokens for API requests
-- Validating token expiration
-- Managing user session state
-- Exchanging authorization codes for tokens during OAuth callback
-
-**Mitigation:** While cookies are not HttpOnly, the application implements:
-- Content Security Policy (CSP) headers to prevent XSS attacks
-- Regular security scanning with ZAP
-- Input validation and output encoding
-- Strict CORS policies
+- **OIDC Tokens & State**: Stored in browser `sessionStorage` (`WebStorageStateStore`), scoped to the active browser tab/session and cleared automatically when the tab closes or on sign-out (`removeUser()`).
+- **No Application Auth Cookies**: The application does not set custom cookies for storing JWTs or refresh tokens.
+- **Identity Provider Session Cookies**: Managed by BC Gov SSO (`*.loginproxy.gov.bc.ca`) during login/logout redirects and silent renewal.
 
 ### Why SameSite=Lax Instead of Strict?
 

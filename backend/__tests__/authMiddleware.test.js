@@ -10,12 +10,10 @@ const originalRequire = Module.prototype.require;
 
 // Store original environment variables
 const originalEnv = {
-  userPoolId: process.env.VITE_USER_POOLS_ID,
-  cognitoRegion: process.env.VITE_COGNITO_REGION,
-  hasUserPoolId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_ID'),
-  clientId: process.env.VITE_USER_POOLS_WEB_CLIENT_ID,
-  hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_WEB_CLIENT_ID'),
-  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION'),
+  issuerUri: process.env.KEYCLOAK_ISSUER_URI,
+  clientId: process.env.KEYCLOAK_CLIENT_ID,
+  hasIssuerUri: Object.prototype.hasOwnProperty.call(process.env, 'KEYCLOAK_ISSUER_URI'),
+  hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'KEYCLOAK_CLIENT_ID'),
 };
 
 /**
@@ -59,33 +57,25 @@ function buildApp(mockJwt, mockJwks) {
 describe('Authentication Middleware', { concurrency: 1 }, () => {
   beforeEach(() => {
     sinon.restore();
-    process.env.VITE_USER_POOLS_ID = 'ca-central-1_TestPool123';
-    process.env.VITE_COGNITO_REGION = 'ca-central-1';
-    process.env.VITE_USER_POOLS_WEB_CLIENT_ID = 'test-client-id';
+    process.env.KEYCLOAK_ISSUER_URI = 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard';
+    process.env.KEYCLOAK_CLIENT_ID = 'test-client-id';
     sinon.stub(console, 'error');
   });
 
   afterEach(() => {
     sinon.restore();
-    // Clear require cache
     delete require.cache[require.resolve('../middleware/authMiddleware')];
 
-    if (originalEnv.hasUserPoolId) {
-      process.env.VITE_USER_POOLS_ID = originalEnv.userPoolId;
+    if (originalEnv.hasIssuerUri) {
+      process.env.KEYCLOAK_ISSUER_URI = originalEnv.issuerUri;
     } else {
-      delete process.env.VITE_USER_POOLS_ID;
+      delete process.env.KEYCLOAK_ISSUER_URI;
     }
 
     if (originalEnv.hasClientId) {
-      process.env.VITE_USER_POOLS_WEB_CLIENT_ID = originalEnv.clientId;
+      process.env.KEYCLOAK_CLIENT_ID = originalEnv.clientId;
     } else {
-      delete process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
-    }
-
-    if (originalEnv.hasCognitoRegion) {
-      process.env.VITE_COGNITO_REGION = originalEnv.cognitoRegion;
-    } else {
-      delete process.env.VITE_COGNITO_REGION;
+      delete process.env.KEYCLOAK_CLIENT_ID;
     }
   });
 
@@ -108,38 +98,18 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   });
 
   test('should deny access when Bearer prefix is provided without token', async () => {
-    // For this test, we need to build app without mock since we're testing the validation logic
-    // Clear cache first
-    delete require.cache[require.resolve('../middleware/authMiddleware')];
-
-    const { authenticateToken } = require('../middleware/authMiddleware');
-    const app = express();
-    app.use(express.json());
-    app.get('/protected', authenticateToken, (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: 'Access granted',
-        user: req.user,
-      });
-    });
-
-    const response = await request(app)
+    const response = await request(buildApp())
       .get('/protected')
       .set('Authorization', 'Bearer ')
       .expect(401);
 
     assert.strictEqual(response.body.success, false);
-    // Empty token after "Bearer " will be caught by early validation
-    // Note: In some cases it may reach JWT validation which also properly rejects it
-    assert(
-      response.body.message === 'Authentication required' ||
-        response.body.message === 'Invalid token',
-      `Expected 'Authentication required' or 'Invalid token', got '${response.body.message}'`,
-    );
+    assert.strictEqual(response.body.message, 'Authentication required');
+    assert.strictEqual(response.body.error, 'No token provided');
   });
 
-  test('should return 500 when user pool is not configured', async () => {
-    delete process.env.VITE_USER_POOLS_ID;
+  test('should return 500 when Keycloak issuer URI is not configured', async () => {
+    delete process.env.KEYCLOAK_ISSUER_URI;
 
     const response = await request(buildApp())
       .get('/protected')
@@ -148,22 +118,28 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Authentication configuration error');
-    assert.strictEqual(response.body.error, 'User pool not configured');
+    assert.strictEqual(response.body.error, 'Keycloak issuer URI not configured');
+  });
+
+  test('should return 500 when Keycloak client ID is not configured', async () => {
+    delete process.env.KEYCLOAK_CLIENT_ID;
+
+    const response = await request(buildApp())
+      .get('/protected')
+      .set('Authorization', 'Bearer mock-token')
+      .expect(500);
+
+    assert.strictEqual(response.body.success, false);
+    assert.strictEqual(response.body.message, 'Authentication configuration error');
+    assert.strictEqual(response.body.error, 'Keycloak client ID not configured');
   });
 
   test('should deny access with invalid token', async () => {
-    // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         const error = new Error('invalid signature');
         error.name = 'JsonWebTokenError';
         callback(error);
-      },
-      JsonWebTokenError: class JsonWebTokenError extends Error {
-        constructor(message) {
-          super(message);
-          this.name = 'JsonWebTokenError';
-        }
       },
     };
 
@@ -178,7 +154,6 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
   });
 
   test('should deny access with expired token', async () => {
-    // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         const error = new Error('jwt expired');
@@ -197,18 +172,59 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.error, 'Your session has expired. Please log in again.');
   });
 
-  test('should allow access with valid token', async () => {
+  test('should reject token with mismatched azp (authorized party)', async () => {
     const mockPayload = {
-      sub: '12345678-1234-1234-1234-123456789012',
-      token_use: 'id',
-      email: 'testuser@example.com',
-      'custom:idp_username': 'testuser',
-      'custom:idp_display_name': 'Test User',
-      'custom:idp_name': 'IDIR',
-      'cognito:username': 'testuser',
+      sub: 'user-sub-123',
+      azp: 'different-app-client-id',
+      email: 'user@example.com',
     };
 
-    // Create mock JWT module
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        callback(null, mockPayload);
+      },
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer valid-token-wrong-azp')
+      .expect(401);
+
+    assert.strictEqual(response.body.message, 'Invalid token');
+  });
+
+  test('should reject token missing azp', async () => {
+    const mockPayload = {
+      sub: 'user-sub-123',
+      email: 'user@example.com',
+    };
+
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        callback(null, mockPayload);
+      },
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer token-without-azp')
+      .expect(401);
+
+    assert.strictEqual(response.body.message, 'Invalid token');
+  });
+
+  test('should allow access with valid token matching azp', async () => {
+    const mockPayload = {
+      sub: '12345678-1234-1234-1234-123456789012',
+      azp: 'test-client-id',
+      email: 'testuser@example.com',
+      idir_username: 'jsmith',
+      idir_user_guid: '11223344-5566-7788-9900-aabbccddeeff',
+      display_name: 'Smith, John',
+      identity_provider: 'azureidir',
+      client_roles: ['RESULTS_USER', 'FAM:EXPIRES:2026-12-31:RESULTS_USER'],
+    };
+
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
@@ -223,23 +239,26 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.success, true);
     assert.strictEqual(response.body.message, 'Access granted');
     assert.strictEqual(response.body.user.email, 'testuser@example.com');
-    assert.strictEqual(response.body.user.username, 'testuser');
-    assert.strictEqual(response.body.user.displayName, 'Test User');
+    // Username casing preserved exactly as issued
+    assert.strictEqual(response.body.user.username, 'jsmith');
+    assert.strictEqual(response.body.user.displayName, 'Smith, John');
+    // azureidir normalized to IDIR
     assert.strictEqual(response.body.user.idpProvider, 'IDIR');
-    assert.strictEqual(response.body.user.sub, '12345678-1234-1234-1234-123456789012');
+    // GUID uppercased
+    assert.strictEqual(response.body.user.userGuid, '11223344-5566-7788-9900-AABBCCDDEEFF');
+    // FAM: bookkeeping roles filtered out
+    assert.deepStrictEqual(response.body.user.roles, ['RESULTS_USER']);
   });
 
-  test('should extract username from cognito:username when custom:idp_username is not available', async () => {
+  test('should normalize idir and uppercase lower-case GUID', async () => {
     const mockPayload = {
-      sub: '12345678-1234-1234-1234-123456789012',
-      token_use: 'id',
-      email: 'testuser@example.com',
-      'cognito:username': 'cognitouser',
-      'custom:idp_display_name': 'Test User',
-      'custom:idp_name': 'BCEID',
+      sub: '1234',
+      azp: 'test-client-id',
+      idir_username: 'JDOE',
+      idir_user_guid: 'abcdef12-3456-7890-abcd-ef1234567890',
+      identity_provider: 'idir',
     };
 
-    // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
@@ -248,23 +267,55 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     const response = await request(buildApp(mockJwt))
       .get('/protected')
-      .set('Authorization', 'Bearer valid-token')
+      .set('Authorization', 'Bearer token')
       .expect(200);
 
-    assert.strictEqual(response.body.success, true);
-    assert.strictEqual(response.body.user.username, 'cognitouser');
+    assert.strictEqual(response.body.user.idpProvider, 'IDIR');
+    assert.strictEqual(response.body.user.username, 'JDOE');
+    assert.strictEqual(response.body.user.userGuid, 'ABCDEF12-3456-7890-ABCD-EF1234567890');
+  });
+
+  test('should normalize bceidbusiness and extract BCeID claims', async () => {
+    const mockPayload = {
+      sub: '5678',
+      azp: 'test-client-id',
+      bceid_username: 'biz_user',
+      bceid_user_guid: 'bc1234-abcd',
+      name: 'Business User',
+      identity_provider: 'bceidbusiness',
+      resource_access: {
+        'test-client-id': {
+          roles: ['EXAM_TAKER'],
+        },
+      },
+    };
+
+    const mockJwt = {
+      verify: (token, getKey, options, callback) => {
+        callback(null, mockPayload);
+      },
+    };
+
+    const response = await request(buildApp(mockJwt))
+      .get('/protected')
+      .set('Authorization', 'Bearer token')
+      .expect(200);
+
+    assert.strictEqual(response.body.user.idpProvider, 'BCEIDBUSINESS');
+    assert.strictEqual(response.body.user.username, 'biz_user');
+    assert.strictEqual(response.body.user.userGuid, 'BC1234-ABCD');
+    assert.strictEqual(response.body.user.displayName, 'Business User');
+    assert.deepStrictEqual(response.body.user.roles, ['EXAM_TAKER']);
   });
 
   test('should accept token without Bearer prefix', async () => {
     const mockPayload = {
-      sub: '12345678-1234-1234-1234-123456789012',
-      token_use: 'id',
-      email: 'testuser@example.com',
-      'custom:idp_username': 'testuser',
-      'cognito:username': 'testuser',
+      sub: '1234',
+      azp: 'test-client-id',
+      email: 'test@example.com',
+      preferred_username: 'user1',
     };
 
-    // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(null, mockPayload);
@@ -273,15 +324,14 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
 
     const response = await request(buildApp(mockJwt))
       .get('/protected')
-      .set('Authorization', 'valid-token-without-bearer')
+      .set('Authorization', 'token-without-bearer')
       .expect(200);
 
     assert.strictEqual(response.body.success, true);
-    assert.strictEqual(response.body.user.email, 'testuser@example.com');
+    assert.strictEqual(response.body.user.username, 'user1');
   });
 
   test('should handle generic verification errors', async () => {
-    // Create mock JWT module
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
         callback(new Error('Generic verification error'));
@@ -291,108 +341,6 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     const response = await request(buildApp(mockJwt))
       .get('/protected')
       .set('Authorization', 'Bearer problematic-token')
-      .expect(500);
-
-    assert.strictEqual(response.body.success, false);
-    assert.strictEqual(response.body.message, 'Authentication configuration error');
-    assert.strictEqual(response.body.error, 'Unable to verify token');
-  });
-
-  test('should include token payload in req.user', async () => {
-    const mockPayload = {
-      sub: '12345678-1234-1234-1234-123456789012',
-      token_use: 'id',
-      email: 'testuser@example.com',
-      'custom:idp_username': 'testuser',
-      'custom:idp_display_name': 'Test User',
-      'custom:idp_name': 'IDIR',
-      'cognito:username': 'testuser',
-      'custom:roles': ['admin', 'user'],
-    };
-
-    // Create mock JWT module
-    const mockJwt = {
-      verify: (token, getKey, options, callback) => {
-        callback(null, mockPayload);
-      },
-    };
-
-    const response = await request(buildApp(mockJwt))
-      .get('/protected')
-      .set('Authorization', 'Bearer valid-token')
-      .expect(200);
-
-    assert.strictEqual(response.body.success, true);
-    assert.deepStrictEqual(response.body.user.tokenPayload['custom:roles'], ['admin', 'user']);
-  });
-
-  test('should obtain signing key from JWKS when verifying token', async () => {
-    let jwksClientCalls = 0;
-    let lastJwksOptions = null;
-    let getSigningKeyCalls = 0;
-
-    const mockPayload = {
-      sub: '12345678-1234-1234-1234-123456789012',
-      token_use: 'id',
-      email: 'jwksuser@example.com',
-      'custom:idp_username': 'jwksuser',
-      'custom:idp_display_name': 'JWKS User',
-      'custom:idp_name': 'IDIR',
-    };
-
-    const mockJwks = sinon.stub().callsFake((options) => {
-      jwksClientCalls += 1;
-      lastJwksOptions = options;
-      return {
-        getSigningKey: sinon.stub().callsFake((kid, callback) => {
-          getSigningKeyCalls += 1;
-          assert.strictEqual(kid, 'test-kid');
-          callback(null, { publicKey: 'mock-public-key' });
-        }),
-      };
-    });
-
-    const mockJwt = {
-      verify: (token, getKey, options, callback) => {
-        assert.strictEqual(options.algorithms[0], 'RS256');
-        getKey({ kid: 'test-kid' }, (err, signingKey) => {
-          assert.ifError(err);
-          assert.strictEqual(signingKey, 'mock-public-key');
-          callback(null, mockPayload);
-        });
-      },
-    };
-
-    const app = buildApp(mockJwt, mockJwks);
-
-    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
-
-    // Second request should reuse cached JWKS client
-    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
-
-    assert.strictEqual(jwksClientCalls, 1);
-    assert.strictEqual(getSigningKeyCalls, 2);
-    assert.ok(lastJwksOptions.jwksUri.includes('/.well-known/jwks.json'));
-  });
-
-  test('should return authentication configuration error when JWKS signing key retrieval fails', async () => {
-    const mockJwks = () => ({
-      getSigningKey: (kid, callback) => {
-        callback(new Error('JWKS key retrieval failed'));
-      },
-    });
-
-    const mockJwt = {
-      verify: (token, getKey, options, callback) => {
-        getKey({ kid: 'bad-kid' }, (err) => {
-          callback(err);
-        });
-      },
-    };
-
-    const response = await request(buildApp(mockJwt, mockJwks))
-      .get('/protected')
-      .set('Authorization', 'Bearer token')
       .expect(500);
 
     assert.strictEqual(response.body.success, false);
@@ -417,67 +365,80 @@ describe('Authentication Middleware', { concurrency: 1 }, () => {
     assert.strictEqual(response.body.error, 'Unable to verify token');
   });
 
-  test('should pass issuer and audience to jwt.verify', async () => {
-    let captured = null;
+  test('should obtain signing key from Keycloak certs endpoint', async () => {
+    let jwksClientCalls = 0;
+    let lastJwksOptions = null;
+    let getSigningKeyCalls = 0;
+
+    const mockPayload = {
+      sub: '12345678-1234-1234-1234-123456789012',
+      azp: 'test-client-id',
+      email: 'jwksuser@example.com',
+      idir_username: 'jwksuser',
+      identity_provider: 'idir',
+    };
+
+    const mockJwks = sinon.stub().callsFake((options) => {
+      jwksClientCalls += 1;
+      lastJwksOptions = options;
+      return {
+        getSigningKey: sinon.stub().callsFake((kid, callback) => {
+          getSigningKeyCalls += 1;
+          assert.strictEqual(kid, 'test-kid');
+          callback(null, { publicKey: 'mock-public-key' });
+        }),
+      };
+    });
+
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
-        captured = options;
-        callback(null, { sub: 'abc', token_use: 'id' });
+        assert.strictEqual(options.algorithms[0], 'RS256');
+        assert.strictEqual(options.issuer, 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard');
+        getKey({ kid: 'test-kid' }, (err, signingKey) => {
+          assert.ifError(err);
+          assert.strictEqual(signingKey, 'mock-public-key');
+          callback(null, mockPayload);
+        });
       },
     };
 
-    await request(buildApp(mockJwt))
-      .get('/protected')
-      .set('Authorization', 'Bearer valid-token')
-      .expect(200);
+    const app = buildApp(mockJwt, mockJwks);
 
-    assert.deepStrictEqual(captured.algorithms, ['RS256']);
+    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
+
+    // Second request should reuse cached JWKS client
+    await request(app).get('/protected').set('Authorization', 'Bearer valid-token').expect(200);
+
+    assert.strictEqual(jwksClientCalls, 1);
+    assert.strictEqual(getSigningKeyCalls, 2);
     assert.strictEqual(
-      captured.issuer,
-      'https://cognito-idp.ca-central-1.amazonaws.com/ca-central-1_TestPool123',
+      lastJwksOptions.jwksUri,
+      'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/certs',
     );
-    assert.strictEqual(captured.audience, 'test-client-id');
   });
 
-  test('should reject access tokens (token_use !== id)', async () => {
+  test('should return 500 when JWKS signing key retrieval fails', async () => {
+    const mockJwks = () => ({
+      getSigningKey: (kid, callback) => {
+        callback(new Error('JWKS key retrieval failed'));
+      },
+    });
+
     const mockJwt = {
       verify: (token, getKey, options, callback) => {
-        callback(null, { sub: 'abc', token_use: 'access', client_id: 'test-client-id' });
+        getKey({ kid: 'bad-kid' }, (err) => {
+          callback(err);
+        });
       },
     };
 
-    const response = await request(buildApp(mockJwt))
-      .get('/protected')
-      .set('Authorization', 'Bearer access-token')
-      .expect(401);
-
-    assert.strictEqual(response.body.message, 'Invalid token');
-  });
-
-  test('should reject tokens missing token_use', async () => {
-    const mockJwt = {
-      verify: (token, getKey, options, callback) => {
-        callback(null, { sub: 'abc' });
-      },
-    };
-
-    const response = await request(buildApp(mockJwt))
+    const response = await request(buildApp(mockJwt, mockJwks))
       .get('/protected')
       .set('Authorization', 'Bearer token')
-      .expect(401);
-
-    assert.strictEqual(response.body.message, 'Invalid token');
-  });
-
-  test('should return 500 when client ID is not configured', async () => {
-    delete process.env.VITE_USER_POOLS_WEB_CLIENT_ID;
-
-    const response = await request(buildApp())
-      .get('/protected')
-      .set('Authorization', 'Bearer mock-token')
       .expect(500);
 
+    assert.strictEqual(response.body.success, false);
     assert.strictEqual(response.body.message, 'Authentication configuration error');
-    assert.strictEqual(response.body.error, 'User pool client not configured');
+    assert.strictEqual(response.body.error, 'Unable to verify token');
   });
 });

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 import { Loading } from '@carbon/react';
@@ -11,18 +12,26 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import TestC from './screens/TestC';
 import TestA from './screens/TestA';
 import ErrorHandling from './screens/ErrorHandling';
+import AuthCallback from './pages/AuthCallback';
 import { useAuth } from './contexts/AuthProvider';
 
-const publicRoutes: RouteObject[] = [
-  {
-    path: '*',
-    element: <Landing />,
-  },
-];
+const AuthGate: React.FC = () => {
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn ? <ProtectedRoute /> : <Landing />;
+};
 
-const privateRoutes: RouteObject[] = [
+const AuthenticatedFallback: React.FC = () => {
+  const { isLoggedIn } = useAuth();
+  return isLoggedIn ? <ErrorHandling /> : <Landing />;
+};
+
+export const appRoutes: RouteObject[] = [
   {
-    element: <ProtectedRoute />,
+    path: '/authCallback',
+    element: <AuthCallback />,
+  },
+  {
+    element: <AuthGate />,
     errorElement: <ErrorHandling />,
     children: [
       { path: '/', element: <Navigate to="/dashboard" /> },
@@ -35,21 +44,20 @@ const privateRoutes: RouteObject[] = [
       { path: '/testC', element: <SideLayout pageContent={<TestC />} /> },
     ],
   },
-  // catch all route for unmatched routes
   {
     path: '*',
-    element: <ErrorHandling />,
+    element: <AuthenticatedFallback />,
   },
 ];
 
 const App: React.FC = () => {
   const auth = useAuth();
+  const browserRouter = useMemo(() => createBrowserRouter(appRoutes), []);
 
   if (auth.isLoading) {
     return <Loading description="Loading..." withOverlay={true} />;
   }
 
-  const browserRouter = createBrowserRouter(auth.isLoggedIn ? privateRoutes : publicRoutes);
   return <RouterProvider router={browserRouter} />;
 };
 

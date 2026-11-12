@@ -6,7 +6,7 @@ This document describes the authentication requirements and available endpoints 
 
 ## Authentication
 
-All API endpoints (except `/health`) require authentication using JWT tokens from AWS Cognito.
+All API endpoints (except `/health`) require authentication using JWT tokens from BC Gov SSO (Keycloak).
 
 ### Authentication Header
 
@@ -16,23 +16,22 @@ Include the JWT token in the `Authorization` header of all API requests:
 Authorization: Bearer <jwt-token>
 ```
 
-The JWT token is obtained from AWS Cognito via the frontend authentication flow (IDIR/BCeID).
+The JWT token is obtained from BC Gov SSO (Keycloak) via the frontend OIDC Authorization Code + PKCE flow (IDIR/BCeID).
 
 ### Token Verification
 
 The backend verifies JWT tokens by:
 1. Extracting the token from the Authorization header
-2. Fetching the public signing keys from AWS Cognito JWKS endpoint
-3. Verifying the token signature using the public key
-4. Extracting user information from the verified token
+2. Fetching the public signing keys from the Keycloak JWKS endpoint (`/protocol/openid-connect/certs`)
+3. Verifying the token signature, issuer, and `azp` (authorized party) against the configured client ID
+4. Extracting and normalizing user information from the verified token
 
 ### Configuration
 
 The following environment variables must be set for authentication to work:
 
-- `VITE_USER_POOLS_ID`: AWS Cognito User Pool ID
-- `VITE_COGNITO_REGION`: AWS region (default: ca-central-1)
-- `VITE_USER_POOLS_WEB_CLIENT_ID`: Cognito app client ID; required ID token audience (`aud`)
+- `KEYCLOAK_ISSUER_URI`: Keycloak realm issuer URI (e.g., `https://dev.loginproxy.gov.bc.ca/auth/realms/standard`)
+- `KEYCLOAK_CLIENT_ID`: Keycloak client ID; required `azp` (authorized party) claim
 
 ## Endpoints
 
@@ -40,7 +39,7 @@ The following environment variables must be set for authentication to work:
 
 **GET** `/health`
 
-Returns the API uptime along with dependency status for CHES, S3 object storage, and Cognito (FAM).  
+Returns the API uptime along with dependency status for CHES, S3 object storage, and Keycloak (BC Gov SSO).  
 Use `GET /health?deep=true` to force a live dependency check instead of the cached snapshot.
 
 **Response:**

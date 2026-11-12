@@ -20,7 +20,7 @@ function getConfigFromMeta(): WindowConfig {
   }
 
   const clientId = rootElement.getAttribute('data-vite-client-id');
-  const poolId = rootElement.getAttribute('data-vite-pool-id');
+  const keycloakUrl = rootElement.getAttribute('data-vite-keycloak-url');
   const zone = rootElement.getAttribute('data-vite-zone');
   const backendUrl = rootElement.getAttribute('data-vite-backend-url');
 
@@ -29,7 +29,7 @@ function getConfigFromMeta(): WindowConfig {
   // Return empty object to fall back to import.meta.env values
   const hasUnprocessedTemplates =
     clientId?.includes('{{') ||
-    poolId?.includes('{{') ||
+    keycloakUrl?.includes('{{') ||
     zone?.includes('{{') ||
     backendUrl?.includes('{{');
 
@@ -40,8 +40,8 @@ function getConfigFromMeta(): WindowConfig {
   // Only return values that are actually present (not null/empty)
   // This allows import.meta.env to provide fallback values
   const config: WindowConfig = {};
-  if (clientId) config.VITE_USER_POOLS_WEB_CLIENT_ID = clientId;
-  if (poolId) config.VITE_USER_POOLS_ID = poolId;
+  if (clientId) config.VITE_KEYCLOAK_CLIENT_ID = clientId;
+  if (keycloakUrl) config.VITE_KEYCLOAK_URL = keycloakUrl;
   if (zone) config.VITE_ZONE = zone;
   if (backendUrl) config.VITE_BACKEND_URL = backendUrl;
 

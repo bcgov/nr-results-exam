@@ -6,10 +6,10 @@ const rateLimit = require('express-rate-limit');
 
 // Store original environment variables
 const originalEnv = {
-  userPoolId: process.env.VITE_USER_POOLS_ID,
-  cognitoRegion: process.env.VITE_COGNITO_REGION,
-  hasUserPoolId: Object.prototype.hasOwnProperty.call(process.env, 'VITE_USER_POOLS_ID'),
-  hasCognitoRegion: Object.prototype.hasOwnProperty.call(process.env, 'VITE_COGNITO_REGION'),
+  issuerUri: process.env.KEYCLOAK_ISSUER_URI,
+  clientId: process.env.KEYCLOAK_CLIENT_ID,
+  hasIssuerUri: Object.prototype.hasOwnProperty.call(process.env, 'KEYCLOAK_ISSUER_URI'),
+  hasClientId: Object.prototype.hasOwnProperty.call(process.env, 'KEYCLOAK_CLIENT_ID'),
 };
 
 // Create a mock authenticateToken middleware that bypasses JWT verification
@@ -99,8 +99,8 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
   const stores = [];
 
   beforeEach(() => {
-    process.env.VITE_USER_POOLS_ID = 'test-pool-id';
-    process.env.VITE_COGNITO_REGION = 'ca-central-1';
+    process.env.KEYCLOAK_ISSUER_URI = 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard';
+    process.env.KEYCLOAK_CLIENT_ID = 'test-client-id';
     stores.length = 0; // Clear array
   });
 
@@ -116,16 +116,16 @@ describe('Rate Limiting', { concurrency: 1 }, () => {
     }
     stores.length = 0;
 
-    if (originalEnv.hasUserPoolId) {
-      process.env.VITE_USER_POOLS_ID = originalEnv.userPoolId;
+    if (originalEnv.hasIssuerUri) {
+      process.env.KEYCLOAK_ISSUER_URI = originalEnv.issuerUri;
     } else {
-      delete process.env.VITE_USER_POOLS_ID;
+      delete process.env.KEYCLOAK_ISSUER_URI;
     }
 
-    if (originalEnv.hasCognitoRegion) {
-      process.env.VITE_COGNITO_REGION = originalEnv.cognitoRegion;
+    if (originalEnv.hasClientId) {
+      process.env.KEYCLOAK_CLIENT_ID = originalEnv.clientId;
     } else {
-      delete process.env.VITE_COGNITO_REGION;
+      delete process.env.KEYCLOAK_CLIENT_ID;
     }
   });
 
