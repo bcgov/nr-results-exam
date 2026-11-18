@@ -111,7 +111,7 @@ jobs:
               -Dsonar.tests=src/__tests__/
             triggers: frontend/
     steps:
-      - uses: bcgov/actions/test-and-analyse@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+      - uses: bcgov/actions/test-and-analyse@a32f1904a14c4bda07b998aa0e19cd321ae82dd4 # v0.13.0
         with:
           commands: |
             npm ci
@@ -147,6 +147,6 @@ jobs:
     timeout-minutes: 1
     steps:
       - name: Analysis Results
-        uses: bcgov/actions/workflow-results@d209bb08aabe15e5e69aca53b24d338a7b2843d5 # v0.12.0
+        uses: bcgov/actions/workflow-results@a32f1904a14c4bda07b998aa0e19cd321ae82dd4 # v0.13.0
         with:
           needs: ${{ toJson(needs) }}
