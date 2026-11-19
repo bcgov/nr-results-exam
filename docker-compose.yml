@@ -29,7 +29,7 @@ services:
       retries: 5
       start_period: 10s
       timeout: 5s
-    image: node:26.13.0-bookworm-slim
+    image: node:26.13.1-bookworm-slim
     ports: ["5000:5000"]
     restart: always
     volumes: ["./backend:/app", "/app/node_modules"]
@@ -44,7 +44,7 @@ services:
       VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-https://dev.loginproxy.gov.bc.ca/auth/realms/standard}
       VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-nr-results-exam-frontend}
       VITE_ZONE: ${VITE_ZONE:-DEV}
-    image: node:26.13.0-bookworm-slim
+    image: node:26.13.1-bookworm-slim
     ports: ["3000:3000"]
     volumes: ["./frontend:/app", "/app/node_modules"]
     working_dir: "/app"
