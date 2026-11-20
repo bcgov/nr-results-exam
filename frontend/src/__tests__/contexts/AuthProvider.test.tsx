@@ -7,18 +7,29 @@ vi.mock('../../env', () => ({
   env: {
     NODE_ENV: 'development',
     VITE_ZONE: 'test',
-    VITE_USER_POOLS_WEB_CLIENT_ID: 'fake-client-id',
+    VITE_KEYCLOAK_CLIENT_ID: 'fake-client-id',
+    VITE_KEYCLOAK_URL: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard',
   },
 }));
 
-vi.mock('../../services/CognitoAuthService', () => ({
-  cognitoAuth: {
-    getTokens: vi.fn(),
-    signInWithRedirect: vi.fn(),
-    signOut: vi.fn(),
-    handleCallback: vi.fn(),
-    refreshTokens: vi.fn(),
-  },
+const mockEvents = {
+  addUserLoaded: vi.fn(),
+  removeUserLoaded: vi.fn(),
+  addUserUnloaded: vi.fn(),
+  removeUserUnloaded: vi.fn(),
+  addAccessTokenExpired: vi.fn(),
+  removeAccessTokenExpired: vi.fn(),
+  addSilentRenewError: vi.fn(),
+  removeSilentRenewError: vi.fn(),
+};
+
+vi.mock('../../services/keycloak', () => ({
+  getCurrentUser: vi.fn(),
+  signinRedirect: vi.fn(),
+  signoutRedirect: vi.fn(),
+  getUserManager: vi.fn(() => ({
+    events: mockEvents,
+  })),
 }));
 
 vi.mock('../../services/AuthService', () => ({
@@ -27,10 +38,12 @@ vi.mock('../../services/AuthService', () => ({
 }));
 
 import { AuthProvider, useAuth } from '../../contexts/AuthProvider';
-import { cognitoAuth } from '../../services/CognitoAuthService';
+import { getCurrentUser, signinRedirect, signoutRedirect } from '../../services/keycloak';
 import { parseToken, setAuthIdToken } from '../../services/AuthService';
 
-const mockCognitoAuth = vi.mocked(cognitoAuth);
+const mockGetCurrentUser = vi.mocked(getCurrentUser);
+const mockSigninRedirect = vi.mocked(signinRedirect);
+const mockSignoutRedirect = vi.mocked(signoutRedirect);
 const mockParseToken = vi.mocked(parseToken);
 const mockSetAuthIdToken = vi.mocked(setAuthIdToken);
 
@@ -47,18 +60,19 @@ describe('AuthProvider', () => {
     );
   });
 
-  test('provides authenticated state when id token is available', async () => {
-    const mockIdToken = {
-      toString: () => 'token-value',
-      payload: { sub: 'user-123' },
-    };
+  test('provides authenticated state when user is available', async () => {
+    const mockUser = {
+      profile: { sub: 'user-123', idir_username: 'jane.doe' },
+      access_token: 'valid-access-token',
+      expired: false,
+    } as any;
 
-    mockCognitoAuth.getTokens.mockResolvedValueOnce({
-      idToken: mockIdToken,
-    });
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+    mockGetCurrentUser.mockResolvedValueOnce(mockUser);
     mockParseToken.mockReturnValueOnce({
-      userName: 'jane.doe@gov.bc.ca',
+      userName: 'jane.doe',
+      displayName: 'Jane Doe',
+      idpProvider: 'IDIR',
+      roles: ['RESULTS_USER'],
     });
 
     const { result } = renderHook(() => useAuth(), { wrapper });
@@ -67,22 +81,25 @@ describe('AuthProvider', () => {
 
     expect(result.current.isLoggedIn).toBe(true);
     expect(result.current.user).toEqual({
-      userName: 'jane.doe@gov.bc.ca',
+      userName: 'jane.doe',
+      displayName: 'Jane Doe',
+      idpProvider: 'IDIR',
+      roles: ['RESULTS_USER'],
     });
-    expect(mockParseToken).toHaveBeenCalledWith(mockIdToken);
-    expect(mockSetAuthIdToken).toHaveBeenCalledWith('token-value');
+    expect(result.current.userRoles).toEqual(['RESULTS_USER']);
+    expect(mockParseToken).toHaveBeenCalledWith(mockUser);
 
     await act(() => {
       result.current.logout();
     });
 
-    expect(mockCognitoAuth.signOut).toHaveBeenCalledTimes(1);
+    expect(mockSignoutRedirect).toHaveBeenCalledTimes(1);
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
     expect(result.current.isLoggedIn).toBe(false);
   });
 
-  test('handles missing id token by resetting auth state', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+  test('handles missing or expired user by resetting auth state', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(null);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -94,32 +111,28 @@ describe('AuthProvider', () => {
     expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
   });
 
-  test('recovers from session errors and formats login provider', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+  test('login calls signinRedirect with provider hint', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(null);
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(result.current.isLoggedIn).toBe(false);
-
     await act(() => {
       result.current.login('idir');
     });
 
-    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenCalledWith('idir');
+    expect(mockSigninRedirect).toHaveBeenCalledWith('idir');
 
     await act(() => {
       result.current.login('bceid');
     });
 
-    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenLastCalledWith('bceid');
+    expect(mockSigninRedirect).toHaveBeenLastCalledWith('bceid');
   });
 
-  test('login function is memoized and maintains same reference', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+  test('login and logout functions maintain stable references', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(null);
 
     const { result, rerender } = renderHook(() => useAuth(), { wrapper });
 
@@ -128,138 +141,102 @@ describe('AuthProvider', () => {
     const firstLogin = result.current.login;
     const firstLogout = result.current.logout;
 
-    // Re-render should return the same function references due to useCallback
     rerender();
     expect(result.current.login).toBe(firstLogin);
     expect(result.current.logout).toBe(firstLogout);
   });
 
-  test('logout clears user and userRoles state', async () => {
-    const mockIdToken = {
-      toString: () => 'token-value',
-      payload: { sub: 'user-123' },
-    };
+  test('refreshUserState handles errors gracefully', async () => {
+    mockGetCurrentUser.mockRejectedValueOnce(new Error('Storage failure'));
 
-    mockCognitoAuth.getTokens.mockResolvedValueOnce({
-      idToken: mockIdToken,
-    });
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isLoggedIn).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
+  });
+
+  test('subscribes to userManager loaded and cleared events and cleans up on unmount', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce(null);
+
+    const { result, unmount } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.isLoggedIn).toBe(false);
+
+    const onUserLoaded = mockEvents.addUserLoaded.mock.calls[0]?.[0] as (u: any) => void;
+    const onUserCleared = mockEvents.addUserUnloaded.mock.calls[0]?.[0] as () => void;
+    const onSilentRenewError = mockEvents.addSilentRenewError.mock.calls[0]?.[0] as (
+      err: unknown,
+    ) => void;
+
+    const refreshedUser = {
+      profile: { idir_username: 'refreshed.user' },
+      access_token: 'refreshed-token',
+      expired: false,
+    } as any;
+
     mockParseToken.mockReturnValueOnce({
-      userName: 'test.user@gov.bc.ca',
-      firstName: 'Test',
-      lastName: 'User',
+      userName: 'refreshed.user',
+      displayName: 'Refreshed User',
+      idpProvider: 'IDIR',
+      roles: ['ADMIN'],
     });
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
+    act(() => {
+      onUserLoaded(refreshedUser);
+    });
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.isLoggedIn).toBe(true);
-    expect(result.current.user).toBeDefined();
+    expect(result.current.userRoles).toEqual(['ADMIN']);
 
-    await act(() => {
-      result.current.logout();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Recoverable renewal timeout preserves active session
+    act(() => {
+      onSilentRenewError(new Error('Frame window timed out'));
     });
 
-    expect(mockCognitoAuth.signOut).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoggedIn).toBe(true);
+    expect(result.current.user?.userName).toBe('refreshed.user');
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+
+    // Terminal OAuth renewal error clears session immediately
+    act(() => {
+      onSilentRenewError({ error: 'login_required' });
+    });
+
     expect(result.current.isLoggedIn).toBe(false);
     expect(result.current.user).toBeUndefined();
-    expect(result.current.userRoles).toBeUndefined();
-  });
 
-  test('context value is memoized and updates when dependencies change', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    const initialIsLoading = result.current.isLoading;
-    const initialIsLoggedIn = result.current.isLoggedIn;
-
-    // After state changes, context value should update
-    expect(initialIsLoading).toBe(false);
-    expect(initialIsLoggedIn).toBe(false);
-
-    // Verify context value structure
-    expect(result.current).toHaveProperty('user');
-    expect(result.current).toHaveProperty('userRoles');
-    expect(result.current).toHaveProperty('isLoggedIn');
-    expect(result.current).toHaveProperty('isLoading');
-    expect(result.current).toHaveProperty('login');
-    expect(result.current).toHaveProperty('logout');
-  });
-
-  test('refreshUserState handles token parsing errors gracefully', async () => {
-    const mockIdToken = {
-      toString: () => 'token-value',
-      payload: { sub: 'user-123' },
-    };
-
-    mockCognitoAuth.getTokens.mockResolvedValueOnce({
-      idToken: mockIdToken,
+    // Re-load then test userUnloaded cleanup
+    mockParseToken.mockReturnValueOnce({
+      userName: 'refreshed.user',
+      displayName: 'Refreshed User',
+      idpProvider: 'IDIR',
+      roles: ['ADMIN'],
     });
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
-    // Mock parseToken to throw an error
-    mockParseToken.mockImplementationOnce(() => {
-      throw new Error('Token parsing failed');
+    act(() => {
+      onUserLoaded(refreshedUser);
+    });
+    expect(result.current.isLoggedIn).toBe(true);
+
+    act(() => {
+      onUserCleared();
     });
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    // Should handle parsing error and reset state
     expect(result.current.isLoggedIn).toBe(false);
     expect(result.current.user).toBeUndefined();
-  });
+    expect(mockSetAuthIdToken).toHaveBeenCalledWith(null);
 
-  test('login function calls cognitoAuth with correct provider', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
+    unmount();
 
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    // Test login with idir provider
-    await act(() => {
-      result.current.login('idir');
-    });
-
-    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenCalledWith('idir');
-
-    // Test login with bceid provider
-    await act(() => {
-      result.current.login('bceid');
-    });
-
-    expect(mockCognitoAuth.signInWithRedirect).toHaveBeenLastCalledWith('bceid');
-  });
-
-  test('contextValue useMemo updates when login or logout functions change', async () => {
-    mockCognitoAuth.getTokens.mockResolvedValueOnce(undefined);
-    mockCognitoAuth.handleCallback.mockResolvedValueOnce(false);
-
-    const { result } = renderHook(() => useAuth(), { wrapper });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-    const initialContextValue = result.current;
-    const initialLogin = result.current.login;
-    const initialLogout = result.current.logout;
-
-    // Verify login and logout are included in context value
-    expect(initialContextValue.login).toBe(initialLogin);
-    expect(initialContextValue.logout).toBe(initialLogout);
-
-    // Call logout to trigger state change
-    await act(() => {
-      result.current.logout();
-    });
-
-    // Context value should update due to state changes, but login/logout functions should remain the same
-    expect(result.current.login).toBe(initialLogin);
-    expect(result.current.logout).toBe(initialLogout);
+    expect(mockEvents.removeUserLoaded).toHaveBeenCalledWith(onUserLoaded);
+    expect(mockEvents.removeUserUnloaded).toHaveBeenCalledWith(onUserCleared);
+    expect(mockEvents.removeAccessTokenExpired).toHaveBeenCalledWith(onUserCleared);
+    expect(mockEvents.removeSilentRenewError).toHaveBeenCalledWith(onSilentRenewError);
   });
 });

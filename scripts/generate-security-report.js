@@ -280,7 +280,7 @@ let healthMetrics = {
   healthLatencyMs: 'N/A',
   chesLatency: 'N/A',
   s3Latency: 'N/A',
-  cognitoLatency: 'N/A'
+  ssoLatency: 'N/A'
 };
 
 try {
@@ -297,7 +297,7 @@ try {
     const deps = healthData.dependencies || {};
     if (deps.ches) healthMetrics.chesLatency = deps.ches.status === 'ok' ? `${deps.ches.latencyMs}ms` : 'FAIL';
     if (deps.objectStorage) healthMetrics.s3Latency = deps.objectStorage.status === 'ok' ? `${deps.objectStorage.latencyMs}ms` : 'FAIL';
-    if (deps.federatedAuth) healthMetrics.cognitoLatency = deps.federatedAuth.status === 'ok' ? `${deps.federatedAuth.latencyMs}ms` : 'FAIL';
+    if (deps.federatedAuth) healthMetrics.ssoLatency = deps.federatedAuth.status === 'ok' ? `${deps.federatedAuth.latencyMs}ms` : 'FAIL';
   }
 } catch (e) {
   console.error('Warning: Failed to fetch target deep health check.', e.message);
@@ -521,7 +521,7 @@ Continuous synthetic monitoring of backend dependencies and response latency:
 - **Health Check Round-trip Latency**: \`${healthMetrics.healthLatencyMs}\`
 - **CHES (Email Client Services)**: \`${healthMetrics.chesLatency}\`
 - **Object Storage (S3 / MinIO)**: \`${healthMetrics.s3Latency}\`
-- **Cognito Federated Authentication**: \`${healthMetrics.cognitoLatency}\`
+- **Keycloak Federated Authentication (BC Gov SSO)**: \`${healthMetrics.ssoLatency}\`
 
 ---
 

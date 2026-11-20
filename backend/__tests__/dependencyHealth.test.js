@@ -11,8 +11,7 @@ const ENV_KEYS = [
   'S3_ACCESSKEY',
   'S3_SECRETKEY',
   'S3_BUCKETNAME',
-  'VITE_USER_POOLS_ID',
-  'VITE_COGNITO_REGION',
+  'KEYCLOAK_ISSUER_URI',
 ];
 
 const ORIGINAL_ENV = {};
@@ -40,8 +39,7 @@ beforeEach(() => {
   process.env.S3_ACCESSKEY = 'access';
   process.env.S3_SECRETKEY = 'secret';
   process.env.S3_BUCKETNAME = 'bucket';
-  process.env.VITE_USER_POOLS_ID = 'pool';
-  process.env.VITE_COGNITO_REGION = 'ca-central-1';
+  process.env.KEYCLOAK_ISSUER_URI = 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard';
 });
 
 afterEach(() => {
@@ -66,7 +64,10 @@ describe('dependencyHealth', () => {
     const service = loadService();
     const result = await service.getHealthStatus({ forceRefresh: true });
 
-    const calls = fetchMock.mock.calls.map(({ arguments: [url, init] }) => ({ url, init }));
+    const calls = fetchMock.mock.calls.map(({ arguments: [url, init] }) => ({
+      url,
+      init,
+    }));
     const tokenCall = calls.find(({ url }) => url === 'https://example.com/token');
     assert.strictEqual(tokenCall.init.method, 'POST');
     assert.strictEqual(tokenCall.init.body, 'grant_type=client_credentials');
@@ -75,11 +76,13 @@ describe('dependencyHealth', () => {
       `Basic ${Buffer.from('client:secret').toString('base64')}`,
     );
     assert.ok(tokenCall.init.signal instanceof AbortSignal);
-    const cognitoCall = calls.find(({ url }) =>
-      url.startsWith('https://cognito-idp.ca-central-1.amazonaws.com/pool/'),
+    const keycloakCall = calls.find(
+      ({ url }) =>
+        url ===
+        'https://dev.loginproxy.gov.bc.ca/auth/realms/standard/.well-known/openid-configuration',
     );
-    assert.strictEqual(cognitoCall.init.method, 'GET');
-    assert.ok(cognitoCall.init.signal instanceof AbortSignal);
+    assert.strictEqual(keycloakCall.init.method, 'GET');
+    assert.ok(keycloakCall.init.signal instanceof AbortSignal);
 
     assert.strictEqual(result.status, 'ok');
     assert.strictEqual(result.dependencies.ches.status, 'ok');

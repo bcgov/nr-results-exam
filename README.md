@@ -109,7 +109,7 @@ This repository is operating in maintenance/sustainment mode as verified by the 
 
 ### Runtime Health Checks
 
-- `/health` now includes dependency probes for CHES, the S3/MinIO bucket, and Cognito (FAM).  
+- `/health` now includes dependency probes for CHES, the S3/MinIO bucket, and Keycloak (BC Gov SSO).  
   The endpoint caches results for 60 seconds and returns `503` if any dependency reports `status: "error"`.
 - Append `?deep=true` to force a live probe when troubleshooting (synthetic monitors can call the same URL).
 - Responses list each dependency with `status`, latency, and bucket/endpoint metadata. The payload also exposes `lastCheckedAt` and `refreshInProgress` so operators know whether the values are cached.
@@ -242,7 +242,7 @@ test and deploy.
   - Carbon Design System
   - Bootstrap
 - Authentication
-  - AWS Cognito (FAM)
+  - BC Gov SSO (Keycloak) via OIDC + PKCE
 - Web Application Firewall
   - [Coraza WAF](https://github.com/corazawaf/coraza-caddy) integrated with Caddy
 
@@ -369,19 +369,17 @@ Set these before running the apps or Docker Compose. Export values in your shell
 - `S3_ACCESSKEY` (default: `nr-fsa-tst`)
 - `S3_BUCKETNAME` (default: `tivpth`)
 - `S3_ENDPOINT` (default: `nrs.objectstore.gov.bc.ca`)
-- `VITE_USER_POOLS_ID` (default: `ca-central-1_UpeAqsYt4`)
-- `VITE_COGNITO_REGION` (default: `ca-central-1`)
+- `KEYCLOAK_ISSUER_URI` (default: `https://dev.loginproxy.gov.bc.ca/auth/realms/standard`)
+- `KEYCLOAK_CLIENT_ID` (default: `nr-results-exam-frontend`)
 
 ### Frontend
 
 > **Note**: Frontend variables are only required when running full-stack with Docker Compose (Caddy or frontend profiles). For backend-only development, these are not needed.
 
 **Optional with defaults (defined in templates):**
-- `VITE_USER_POOLS_WEB_CLIENT_ID` (default: `7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z`) - Can be overridden for environment-specific values
+- `VITE_KEYCLOAK_CLIENT_ID` (default: `nr-results-exam-frontend`)
+- `VITE_KEYCLOAK_URL` (default: `https://dev.loginproxy.gov.bc.ca/auth/realms/standard`)
 - `VITE_MAIN_VERSION` (default: `1.0.0`)
-- `VITE_COGNITO_REGION` (default: `ca-central-1`)
-- `VITE_USER_POOLS_ID` (default: `ca-central-1_UpeAqsYt4`) - Can be overridden via GitHub vars if needed
-- `VITE_AWS_DOMAIN` (default: `lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com`) - Can be overridden via GitHub vars if needed
 - `VITE_ZONE` (default: `DEV` for local, derived from deployment zone in OpenShift)
 
 **Note**: `VITE_BACKEND_URL` is no longer required. The frontend uses relative URLs (e.g., `/api/*`) which are proxied by Caddy to the backend service.
@@ -414,7 +412,8 @@ docker compose up backend
 # All required secrets (backend + frontend)
 export CHES_CLIENT_SECRET="your-secret-here"
 export S3_SECRETKEY="your-s3-secret-here"
-export VITE_USER_POOLS_WEB_CLIENT_ID="your-client-id"
+export KEYCLOAK_CLIENT_ID="your-client-id"
+export VITE_KEYCLOAK_CLIENT_ID="$KEYCLOAK_CLIENT_ID"
 
 # Start with Caddy proxy
 docker compose --profile caddy up
@@ -466,10 +465,10 @@ The following environment variables must be set before running Docker Compose. *
 **Optional Variables with Defaults:**
 All other variables have sensible defaults defined in templates and mirrored in docker-compose.yml:
 - `VITE_MAIN_VERSION` (default: 1.0.0)
-- `VITE_COGNITO_REGION` (default: ca-central-1)
-- `VITE_USER_POOLS_ID` (default: ca-central-1_UpeAqsYt4)
-- `VITE_USER_POOLS_WEB_CLIENT_ID` (default: 7k8j9l0m1n2o3p4q5r6s7t8u9v0w1x2y3z)
-- `VITE_AWS_DOMAIN` (default: lza-prod-fam-user-pool-domain.auth.ca-central-1.amazoncognito.com)
+- `KEYCLOAK_ISSUER_URI` (default: https://dev.loginproxy.gov.bc.ca/auth/realms/standard)
+- `KEYCLOAK_CLIENT_ID` (default: nr-results-exam-frontend)
+- `VITE_KEYCLOAK_URL` (default: https://dev.loginproxy.gov.bc.ca/auth/realms/standard)
+- `VITE_KEYCLOAK_CLIENT_ID` (default: nr-results-exam-frontend)
 - `VITE_ZONE` (default: DEV)
 - `CHES_CLIENT_ID` (default: 09C5071A-ACE9B6FACF6)
 - `CHES_TOKEN_URL` (default: https://test.loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token)
