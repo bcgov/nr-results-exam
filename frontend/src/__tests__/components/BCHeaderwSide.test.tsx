@@ -6,6 +6,13 @@ import BCHeaderwSide from '../../components/BCHeaderwSide';
 import { AuthProvider } from '../../contexts/AuthProvider';
 import { ThemePreference } from '../../utils/ThemePreference';
 
+vi.mock('../../env', () => ({
+  env: {
+    VITE_KEYCLOAK_URL: 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard',
+    VITE_KEYCLOAK_CLIENT_ID: 'test-client',
+  },
+}));
+
 const navigateMock = vi.fn();
 
 vi.mock('react-router-dom', async () => {

@@ -55,8 +55,8 @@ describe('Question Routes', { concurrency: 1 }, () => {
     process.env.S3_ACCESSKEY = 'test-access-key';
     process.env.S3_SECRETKEY = 'test-secret-key';
     process.env.S3_BUCKETNAME = 'test-bucket';
-    process.env.VITE_USER_POOLS_ID = 'test-pool-id';
-    process.env.VITE_COGNITO_REGION = 'ca-central-1';
+    process.env.KEYCLOAK_ISSUER_URI = 'https://dev.loginproxy.gov.bc.ca/auth/realms/standard';
+    process.env.KEYCLOAK_CLIENT_ID = 'test-client-id';
 
     // Stub Minio.Client BEFORE requiring the controller
     minioClientStub = sinon.stub(Minio, 'Client');
