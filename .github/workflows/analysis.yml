@@ -16,25 +16,6 @@ concurrency:
 permissions: {}
 
 jobs:
-  codeql:
-    name: CodeQL
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-26.04
-    permissions:
-      actions: read
-      contents: read
-      security-events: write # CodeQL results upload
-    steps:
-      - uses: actions/checkout@v7
-      - uses: github/codeql-action/init@v4
-        with:
-          languages: javascript
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: "/language:javascript"
-
   # https://github.com/marketplace/actions/aqua-security-trivy
   trivy:
     name: Trivy Security Scan
@@ -111,7 +92,7 @@ jobs:
               -Dsonar.tests=src/__tests__/
             triggers: frontend/
     steps:
-      - uses: bcgov/actions/test-and-analyse@6c8ac0469fcf0d826533bc526c90119b8f149884 # v0.13.0
+      - uses: bcgov/actions/test-and-analyse@acc058abf85bb183dad21b839a92a40a4ff47af3 # v0.14.0
         with:
           commands: |
             npm ci
@@ -137,7 +118,7 @@ jobs:
   # ==========================================================================
   results:
     name: Analysis Results
-    needs: [codeql, trivy, tests]
+    needs: [trivy, tests]
     if: always()
     permissions:
       contents: read
@@ -147,6 +128,6 @@ jobs:
     timeout-minutes: 1
     steps:
       - name: Analysis Results
-        uses: bcgov/actions/workflow-results@6c8ac0469fcf0d826533bc526c90119b8f149884 # v0.13.0
+        uses: bcgov/actions/workflow-results@acc058abf85bb183dad21b839a92a40a4ff47af3 # v0.14.0
         with:
           needs: ${{ toJson(needs) }}
